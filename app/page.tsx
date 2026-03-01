@@ -243,7 +243,7 @@ function EmailGate({ onUnlock, url, score }: {
         body: JSON.stringify({ email, url, score }),
       });
     } catch {
-      // Fail silently — never block the user from seeing their results
+      // Fail silently
     }
 
     onUnlock(email);
@@ -278,20 +278,11 @@ function EmailGate({ onUnlock, url, score }: {
         🔒
       </div>
 
-      <h2 style={{
-        fontFamily: "'Syne', sans-serif",
-        fontWeight: 800, fontSize: 22,
-        color: "#f1f5f9", marginBottom: 10,
-      }}>
+      <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 22, color: "#f1f5f9", marginBottom: 10 }}>
         Audit Complete
       </h2>
 
-      <p style={{
-        color: "#64748b",
-        fontFamily: "'DM Mono', monospace",
-        fontSize: 12, lineHeight: 1.8,
-        marginBottom: 28, maxWidth: 320,
-      }}>
+      <p style={{ color: "#64748b", fontFamily: "'DM Mono', monospace", fontSize: 12, lineHeight: 1.8, marginBottom: 28, maxWidth: 320 }}>
         Your Conversion Health Score and full breakdown are ready.
         Enter your work email to unlock your report instantly.
       </p>
@@ -303,14 +294,10 @@ function EmailGate({ onUnlock, url, score }: {
         onChange={(e) => setEmail(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && !submitting && handleSubmit()}
         style={{
-          width: "100%", maxWidth: 340,
-          background: "#0f172a",
-          border: `1px solid ${inputError ? "#ef4444" : "#1e293b"}`,
-          color: "#e2e8f0",
-          fontFamily: "'DM Mono', monospace",
-          fontSize: 14, padding: "13px 16px",
-          borderRadius: 6, outline: "none",
-          marginBottom: 8,
+          width: "100%", maxWidth: 340, background: "#0f172a",
+          border: `1px solid ${inputError ? "#ef4444" : "#1e293b"}`, color: "#e2e8f0",
+          fontFamily: "'DM Mono', monospace", fontSize: 14, padding: "13px 16px",
+          borderRadius: 6, outline: "none", marginBottom: 8,
         }}
       />
 
@@ -328,25 +315,12 @@ function EmailGate({ onUnlock, url, score }: {
         style={{
           width: "100%", maxWidth: 340,
           background: submitting || !email ? "#1e293b" : "linear-gradient(135deg, #0ea5e9, #0284c7)",
-          color: "#fff", border: "none",
-          fontFamily: "'Syne', sans-serif",
-          fontWeight: 700, fontSize: 14,
-          padding: "14px 24px", borderRadius: 6,
-          cursor: submitting || !email ? "not-allowed" : "pointer",
-          marginTop: 4,
-          boxShadow: submitting || !email ? "none" : "0 4px 20px rgba(14,165,233,0.3)",
+          color: "#fff", border: "none", fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 14,
+          padding: "14px 24px", borderRadius: 6, cursor: submitting || !email ? "not-allowed" : "pointer", marginTop: 4,
         }}
       >
         {submitting ? "Unlocking..." : "Unlock My Score →"}
       </motion.button>
-
-      <p style={{
-        color: "#1e293b",
-        fontFamily: "'DM Mono', monospace",
-        fontSize: 11, marginTop: 14,
-      }}>
-        No spam. Your report, nothing else.
-      </p>
     </motion.div>
   );
 }
@@ -366,61 +340,24 @@ function ResultsPanel({ result, url, onBookCall }: {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      style={{
-        background: "#080d17",
-        border: "1px solid #1e293b",
-        borderRadius: 12,
-        padding: "36px",
-        marginTop: 32,
-        position: "relative",
-        overflow: "hidden",
-      }}
+      style={{ background: "#080d17", border: "1px solid #1e293b", borderRadius: 12, padding: "36px", marginTop: 32, position: "relative", overflow: "hidden" }}
     >
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: 2,
-        background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
-      }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${color}, transparent)` }} />
 
       <AnimatePresence>
-        {!unlocked && (
-          <EmailGate
-            url={url}
-            score={result.score}
-            onUnlock={() => setUnlocked(true)}
-          />
-        )}
+        {!unlocked && <EmailGate url={url} score={result.score} onUnlock={() => setUnlocked(true)} />}
       </AnimatePresence>
 
-      <div style={{
-        filter: unlocked ? "none" : "blur(8px)",
-        transition: "filter 0.6s ease",
-        userSelect: unlocked ? "auto" : "none",
-      }}>
-        <div style={{
-          display: "flex", justifyContent: "space-between",
-          alignItems: "flex-start", flexWrap: "wrap",
-          gap: 20, marginBottom: 8,
-        }}>
+      <div style={{ filter: unlocked ? "none" : "blur(8px)", transition: "filter 0.6s ease", userSelect: unlocked ? "auto" : "none" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20, marginBottom: 8 }}>
           <div>
-            <div style={{
-              display: "inline-block",
-              background: `${color}15`,
-              border: `1px solid ${color}40`,
-              color,
-              fontFamily: "'DM Mono', monospace",
-              fontSize: 11, letterSpacing: 3,
-              padding: "4px 12px", borderRadius: 2, marginBottom: 8,
-            }}>
+            <div style={{ display: "inline-block", background: `${color}15`, border: `1px solid ${color}40`, color, fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 3, padding: "4px 12px", borderRadius: 2, marginBottom: 8 }}>
               {label}
             </div>
-            <p style={{ color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 11, wordBreak: "break-all" }}>
-              {url}
-            </p>
+            <p style={{ color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 11, wordBreak: "break-all" }}>{url}</p>
             <div style={{ marginTop: 16 }}>
               <CountUp target={result.score} color={color} />
-              <span style={{ color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
-                CONVERSION HEALTH SCORE
-              </span>
+              <span style={{ color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>CONVERSION HEALTH SCORE</span>
             </div>
           </div>
           <CircularGauge score={result.score} />
@@ -428,19 +365,11 @@ function ResultsPanel({ result, url, onBookCall }: {
 
         <div style={{ borderTop: "1px solid #0f172a", margin: "28px 0" }} />
 
-        <MetricRow label="FIRST CONTENTFUL PAINT" value={result.fcp.toFixed(1)} unit="s"
-          warn={result.fcp > 1.8}
-          description={result.fcp > 1.8 ? "Slow initial render — users see a blank screen too long." : undefined}
-        />
-        <MetricRow label="LARGEST CONTENTFUL PAINT" value={result.lcp.toFixed(1)} unit="s"
-          warn={result.lcp > 2.5}
-          description={result.lcp > 2.5 ? "Main content loads too late. Google penalises this in ad Quality Scores." : undefined}
-        />
+        <MetricRow label="FIRST CONTENTFUL PAINT" value={result.fcp.toFixed(1)} unit="s" warn={result.fcp > 1.8} />
+        <MetricRow label="LARGEST CONTENTFUL PAINT" value={result.lcp.toFixed(1)} unit="s" warn={result.lcp > 2.5} />
         <MetricRow label="TOTAL BLOCKING TIME" value={result.tbt} unit="ms" warn={result.tbt > 200} />
         <MetricRow label="CLS (LAYOUT SHIFT)" value={result.cls.toFixed(3)} unit="" warn={result.cls > 0.1} />
-        <MetricRow label="AI RESPONSE AGENT" value="FAIL" unit="" warn={true}
-          description="No sub-15s lead response agent detected. Average response time on your site: 11+ hours."
-        />
+        <MetricRow label="AI RESPONSE AGENT" value="FAIL" unit="" warn={true} description="No sub-15s lead response agent detected." />
 
         <div style={{ borderTop: "1px solid #0f172a", margin: "28px 0" }} />
 
@@ -448,30 +377,15 @@ function ResultsPanel({ result, url, onBookCall }: {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          style={{
-            background: isCritical ? "rgba(239,68,68,0.05)" : "rgba(245,158,11,0.05)",
-            border: `1px solid ${isCritical ? "#ef444430" : "#f59e0b30"}`,
-            borderLeft: `4px solid ${isCritical ? "#ef4444" : "#f59e0b"}`,
-            borderRadius: 6, padding: "20px 24px",
-          }}
+          style={{ background: isCritical ? "rgba(239,68,68,0.05)" : "rgba(245,158,11,0.05)", border: `1px solid ${isCritical ? "#ef444430" : "#f59e0b30"}`, borderLeft: `4px solid ${isCritical ? "#ef4444" : "#f59e0b"}`, borderRadius: 6, padding: "20px 24px" }}
         >
-          <p style={{
-            fontFamily: "'Syne', sans-serif", fontWeight: 700,
-            color: isCritical ? "#ef4444" : "#f59e0b",
-            fontSize: 13, marginBottom: 10,
-          }}>
+          <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, color: isCritical ? "#ef4444" : "#f59e0b", fontSize: 13, marginBottom: 10 }}>
             {isCritical ? "🔴 CRITICAL REVENUE BLEED DETECTED" : "🟡 PERFORMANCE WARNING"}
           </p>
           <p style={{ color: "#94a3b8", fontFamily: "'DM Mono', monospace", fontSize: 12, lineHeight: 1.9 }}>
-            Your site is loading in{" "}
-            <strong style={{ color: "#e2e8f0" }}>{result.lcp.toFixed(1)}s</strong>.
-            Industry data shows a {result.lcp.toFixed(1)}s load time results in a{" "}
-            <strong style={{ color: "#ef4444" }}>{result.bounceRate}% bounce rate</strong>.
-            You are bleeding roughly{" "}
-            <strong style={{ color: "#ef4444" }}>{result.adLossPercent}% of your paid ad traffic</strong>{" "}
-            before they ever see your offer — and losing approximately{" "}
-            <strong style={{ color: "#ef4444" }}>{result.conversionLoss}% of potential conversions</strong>{" "}
-            every single day.
+            Your site is loading in <strong style={{ color: "#e2e8f0" }}>{result.lcp.toFixed(1)}s</strong>.
+            Industry data shows a {result.lcp.toFixed(1)}s load time results in a <strong style={{ color: "#ef4444" }}>{result.bounceRate}% bounce rate</strong>.
+            You are bleeding roughly <strong style={{ color: "#ef4444" }}>{result.adLossPercent}% of your paid ad traffic</strong> before they ever see your offer — and losing approximately <strong style={{ color: "#ef4444" }}>{result.conversionLoss}% of potential conversions</strong> every single day.
           </p>
         </motion.div>
 
@@ -479,23 +393,10 @@ function ResultsPanel({ result, url, onBookCall }: {
           whileHover={{ y: -2, boxShadow: "0 12px 40px rgba(239,68,68,0.4)" }}
           whileTap={{ y: 0 }}
           onClick={onBookCall}
-          style={{
-            display: "block", width: "100%",
-            background: "linear-gradient(135deg, #ef4444, #b91c1c)",
-            color: "#fff", border: "none",
-            fontFamily: "'Syne', sans-serif",
-            fontWeight: 800, fontSize: 15,
-            padding: "18px 28px", borderRadius: 6,
-            cursor: "pointer", marginTop: 28,
-            boxShadow: "0 4px 24px rgba(239,68,68,0.25)",
-          }}
+          style={{ display: "block", width: "100%", background: "linear-gradient(135deg, #ef4444, #b91c1c)", color: "#fff", border: "none", fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: 15, padding: "18px 28px", borderRadius: 6, cursor: "pointer", marginTop: 28 }}
         >
           Fix This & Install 15-Second AI Response Agent →
         </motion.button>
-
-        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#1e293b", textAlign: "center", marginTop: 12 }}>
-          Free 20-min infrastructure audit · No credit card required
-        </p>
       </div>
     </motion.div>
   );
@@ -511,8 +412,23 @@ export default function Home() {
   async function runAudit() {
     let targetUrl = url.trim();
     if (!targetUrl) return;
+
+    // --- 1. THE ENGINEERING BYPASS ---
+    // Type test.com to test the UI and Lead Capture without hitting Google
+    if (targetUrl.toLowerCase().includes("test.com")) {
+      setLoading(true);
+      setError("");
+      setResult(null);
+      await new Promise(r => setTimeout(r, 3000));
+      setResult({
+        score: 38, fcp: 2.1, lcp: 4.5, tbt: 350, cls: 0.15,
+        adLossPercent: 40, conversionLoss: 25, bounceRate: 45,
+      });
+      setLoading(false);
+      return;
+    }
     
-    // UI Auto-fix: Add https:// if the user forgets it
+    // --- 2. URL FORMATTING ---
     if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
       targetUrl = 'https://' + targetUrl;
       setUrl(targetUrl);
@@ -523,13 +439,12 @@ export default function Home() {
     setLoading(true);
 
     try {
-      // THE PIVOT: We ping Google directly from the user's browser. 
-      // This uses their IP address, bypassing Vercel's rate limits completely.
+      // --- 3. THE CLIENT-SIDE FETCH (Bypasses Vercel Rate Limit) ---
       const googleApiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&strategy=mobile`;
       
       const [apiRes] = await Promise.all([
         fetch(googleApiUrl),
-        new Promise((r) => setTimeout(r, 6000)), // Artificial loading time for psychological effect
+        new Promise((r) => setTimeout(r, 6000)),
       ]);
 
       const data = await apiRes.json();
@@ -541,10 +456,8 @@ export default function Home() {
         return;
       }
 
-      // Extract the data directly in the frontend
       const cats = data.lighthouseResult?.categories;
       const audits = data.lighthouseResult?.audits;
-
       const rawScore = (cats?.performance?.score as number) ?? 0;
       const score = Math.round(rawScore * 100);
       const fcp = ((audits?.["first-contentful-paint"]?.numericValue as number) ?? 0) / 1000;
@@ -570,139 +483,41 @@ export default function Home() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-          background: #030712;
-          color: #e2e8f0;
-          min-height: 100vh;
-          font-family: 'Syne', sans-serif;
-          overflow-x: hidden;
-        }
-        body::before {
-          content: '';
-          position: fixed; inset: 0;
-          background-image:
-            linear-gradient(rgba(14,165,233,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(14,165,233,0.04) 1px, transparent 1px);
-          background-size: 44px 44px;
-          pointer-events: none; z-index: 0;
-        }
-        input[type="text"], input[type="email"] {
-          background: #080d17;
-          border: 1px solid #1e293b;
-          color: #e2e8f0;
-          font-family: 'DM Mono', monospace;
-          font-size: 14px;
-          padding: 14px 18px;
-          border-radius: 6px;
-          outline: none;
-          transition: border-color 0.2s;
-          width: 100%;
-        }
+        body { background: #030712; color: #e2e8f0; min-height: 100vh; font-family: 'Syne', sans-serif; overflow-x: hidden; }
+        body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(14,165,233,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(14,165,233,0.04) 1px, transparent 1px); background-size: 44px 44px; pointer-events: none; z-index: 0; }
+        input[type="text"], input[type="email"] { background: #080d17; border: 1px solid #1e293b; color: #e2e8f0; font-family: 'DM Mono', monospace; font-size: 14px; padding: 14px 18px; border-radius: 6px; outline: none; transition: border-color 0.2s; width: 100%; }
         input[type="text"]:focus, input[type="email"]:focus { border-color: #0ea5e9; }
-        input::placeholder { color: #1e293b; }
       `}</style>
 
       <div style={{ position: "relative", zIndex: 1, maxWidth: 700, margin: "0 auto", padding: "60px 24px 100px" }}>
-
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{
-            display: "inline-block",
-            background: "#080d17",
-            border: "1px solid #0ea5e920",
-            color: "#0ea5e9",
-            fontFamily: "'DM Mono', monospace",
-            fontSize: 11, letterSpacing: 3,
-            padding: "6px 14px", borderRadius: 2, marginBottom: 32,
-          }}
-        >
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} style={{ display: "inline-block", background: "#080d17", border: "1px solid #0ea5e920", color: "#0ea5e9", fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 3, padding: "6px 14px", borderRadius: 2, marginBottom: 32 }}>
           NEXUS DIAGNOSTICS · CONVERSION INFRASTRUCTURE AUDIT
         </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          style={{ fontSize: "clamp(40px, 8vw, 72px)", fontWeight: 800, lineHeight: 1.0, letterSpacing: -2, marginBottom: 20 }}
-        >
-          Stop<br />
-          <span style={{ color: "#EF4444" }}>Bleeding</span><br />
-          Ad Spend.
+        <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ fontSize: "clamp(40px, 8vw, 72px)", fontWeight: 800, lineHeight: 1.0, letterSpacing: -2, marginBottom: 20 }}>
+          Stop<br /><span style={{ color: "#EF4444" }}>Bleeding</span><br />Ad Spend.
         </motion.h1>
 
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          style={{ color: "#475569", fontFamily: "'DM Mono', monospace", fontSize: 13, lineHeight: 1.9, marginBottom: 48 }}
-        >
-          Paste your URL. We run a live PageSpeed audit and translate every<br />
-          millisecond of latency into the exact revenue you are losing.
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} style={{ color: "#475569", fontFamily: "'DM Mono', monospace", fontSize: 13, lineHeight: 1.9, marginBottom: 48 }}>
+          Paste your URL. We run a live PageSpeed audit and translate every<br />millisecond of latency into the exact revenue you are losing.
         </motion.p>
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          style={{ display: "flex", gap: 10 }}
-        >
-          <input
-            type="text"
-            placeholder="https://yoursite.com"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && !loading && runAudit()}
-            disabled={loading}
-          />
-          <motion.button
-            whileHover={{ y: -1, boxShadow: "0 6px 24px rgba(14,165,233,0.3)" }}
-            whileTap={{ y: 0 }}
-            onClick={runAudit}
-            disabled={loading || !url.trim()}
-            style={{
-              background: loading || !url.trim() ? "#1e293b" : "linear-gradient(135deg, #0ea5e9, #0284c7)",
-              color: "#fff", border: "none",
-              fontFamily: "'Syne', sans-serif",
-              fontWeight: 700, fontSize: 14,
-              padding: "16px 32px", borderRadius: 8,
-              cursor: loading || !url.trim() ? "not-allowed" : "pointer",
-              whiteSpace: "nowrap",
-              transition: "all 0.3s ease",
-              boxShadow: loading || !url.trim() ? "none" : "0 0 20px rgba(14, 165, 233, 0.4)",
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-              flexShrink: 0,
-            }}
-          >
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} style={{ display: "flex", gap: 10 }}>
+          <input type="text" placeholder="https://yoursite.com" value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && !loading && runAudit()} disabled={loading} />
+          <motion.button whileHover={{ y: -1, boxShadow: "0 6px 24px rgba(14,165,233,0.3)" }} whileTap={{ y: 0 }} onClick={runAudit} disabled={loading || !url.trim()} style={{ background: loading || !url.trim() ? "#1e293b" : "linear-gradient(135deg, #0ea5e9, #0284c7)", color: "#fff", border: "none", fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: 13, padding: "14px 28px", borderRadius: 6, cursor: loading || !url.trim() ? "not-allowed" : "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>
             {loading ? "Scanning…" : "Run Audit →"}
           </motion.button>
         </motion.div>
 
-        {error && (
-          <p style={{ color: "#ef4444", fontFamily: "'DM Mono', monospace", fontSize: 12, marginTop: 12 }}>
-            ⚠ {error}
-          </p>
-        )}
+        {error && <p style={{ color: "#ef4444", fontFamily: "'DM Mono', monospace", fontSize: 12, marginTop: 12 }}>⚠ {error}</p>}
 
         <AnimatePresence>
-          {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <TerminalLoader />
-            </motion.div>
-          )}
+          {loading && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><TerminalLoader /></motion.div>}
         </AnimatePresence>
 
         <AnimatePresence>
-          {result && !loading && (
-            <ResultsPanel
-              result={result}
-              url={url}
-              onBookCall={() => window.open("https://calendly.com/YOUR-LINK", "_blank")}
-            />
-          )}
+          {result && !loading && <ResultsPanel result={result} url={url} onBookCall={() => window.open("https://calendly.com/YOUR-LINK", "_blank")} />}
         </AnimatePresence>
-
       </div>
     </>
   );
