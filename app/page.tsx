@@ -515,7 +515,7 @@ export default function Home() {
     // UI Auto-fix: Add https:// if the user forgets it
     if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
       targetUrl = 'https://' + targetUrl;
-      setUrl(targetUrl); // Update the input box visually so they know we fixed it
+      setUrl(targetUrl);
     }
 
     setError("");
@@ -523,32 +523,43 @@ export default function Home() {
     setLoading(true);
 
     try {
+      // THE PIVOT: We ping Google directly from the user's browser. 
+      // This uses their IP address, bypassing Vercel's rate limits completely.
+      const googleApiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(targetUrl)}&strategy=mobile`;
+      
       const [apiRes] = await Promise.all([
-        fetch(`/api/audit?url=${encodeURIComponent(targetUrl)}`),
-        new Promise((r) => setTimeout(r, 6000)), // Shortened the fake loading time so it feels faster
+        fetch(googleApiUrl),
+        new Promise((r) => setTimeout(r, 6000)), // Artificial loading time for psychological effect
       ]);
 
       const data = await apiRes.json();
       
       if (!apiRes.ok) {
-        // Now it will display the exact reason it failed (Rate limit, bad URL, etc.)
-        setError(data.error || "Audit failed. Please try again.");
+        if (apiRes.status === 429) setError("Rate limit hit. Please try again in 1 minute.");
+        else if (apiRes.status === 400) setError("Google cannot reach this URL. Ensure it is a valid, live website.");
+        else setError("Audit failed. Please try again.");
         return;
       }
 
-      const score = Math.round(((data.score as number) ?? 0) * 100);
+      // Extract the data directly in the frontend
+      const cats = data.lighthouseResult?.categories;
+      const audits = data.lighthouseResult?.audits;
+
+      const rawScore = (cats?.performance?.score as number) ?? 0;
+      const score = Math.round(rawScore * 100);
+      const fcp = ((audits?.["first-contentful-paint"]?.numericValue as number) ?? 0) / 1000;
+      const lcp = ((audits?.["largest-contentful-paint"]?.numericValue as number) ?? 0) / 1000;
+      const tbt = Math.round((audits?.["total-blocking-time"]?.numericValue as number) ?? 0);
+      const cls = (audits?.["cumulative-layout-shift"]?.numericValue as number) ?? 0;
+
       setResult({
-        score, 
-        fcp: (data.fcp as number) ?? 0, 
-        lcp: (data.lcp as number) ?? 0, 
-        tbt: (data.tbt as number) ?? 0, 
-        cls: (data.cls as number) ?? 0,
+        score, fcp, lcp, tbt, cls,
         adLossPercent: calcAdLoss(score),
         conversionLoss: calcConvLoss(score),
-        bounceRate: calcBounceRate((data.lcp as number) ?? 0),
+        bounceRate: calcBounceRate(lcp),
       });
     } catch {
-      setError("Network timeout. The server is taking too long to respond.");
+      setError("Network timeout. Please check the URL and try again.");
     } finally {
       setLoading(false);
     }
