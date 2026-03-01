@@ -1,123 +1,68 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface AuditResult {
   score: number;
-  loadTime: number;
   fcp: number;
   lcp: number;
   tbt: number;
   cls: number;
   adLossPercent: number;
   conversionLoss: number;
+  bounceRate: number;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function scoreColor(score: number) {
   if (score >= 80) return "#22c55e";
   if (score >= 50) return "#f59e0b";
-  return "#ef4444";
+  return "#EF4444";
 }
 
 function scoreLabel(score: number) {
-  if (score >= 80) return "ACCEPTABLE";
+  if (score >= 80) return "HEALTHY";
   if (score >= 50) return "WARNING";
   return "CRITICAL";
 }
 
-function adLoss(score: number) {
-  // rough heuristic: every 10 points below 90 → ~5% paid traffic lost
+function calcAdLoss(score: number) {
   return Math.max(0, Math.round(((90 - score) / 10) * 5));
 }
 
-function convLoss(score: number) {
+function calcConvLoss(score: number) {
   return Math.max(0, Math.round(((90 - score) / 10) * 3));
 }
 
-// ─── Circular Gauge ───────────────────────────────────────────────────────────
-function CircularGauge({ score, animated }: { score: number; animated: boolean }) {
-  const r = 80;
-  const circ = 2 * Math.PI * r;
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    if (!animated) return;
-    let start = 0;
-    const end = score;
-    const duration = 1200;
-    const startTime = performance.now();
-    const frame = (now: number) => {
-      const t = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setDisplay(Math.round(eased * end));
-      if (t < 1) requestAnimationFrame(frame);
-    };
-    requestAnimationFrame(frame);
-  }, [score, animated]);
-
-  const offset = circ - (display / 100) * circ;
-  const color = scoreColor(score);
-
-  return (
-    <div className="gauge-wrapper">
-      <svg width="200" height="200" viewBox="0 0 200 200">
-        <circle cx="100" cy="100" r={r} fill="none" stroke="#1e293b" strokeWidth="12" />
-        <circle
-          cx="100"
-          cy="100"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="12"
-          strokeLinecap="round"
-          strokeDasharray={circ}
-          strokeDashoffset={offset}
-          transform="rotate(-90 100 100)"
-          style={{ transition: "stroke-dashoffset 0.05s, stroke 0.3s", filter: `drop-shadow(0 0 8px ${color})` }}
-        />
-        <text x="100" y="96" textAnchor="middle" fill={color} fontSize="38" fontFamily="'DM Mono', monospace" fontWeight="700">
-          {display}
-        </text>
-        <text x="100" y="120" textAnchor="middle" fill="#64748b" fontSize="11" fontFamily="'DM Mono', monospace" letterSpacing="3">
-          / 100
-        </text>
-      </svg>
-      <style>{`
-        .gauge-wrapper svg circle { transition: stroke-dashoffset 0.05s linear; }
-      `}</style>
-    </div>
-  );
+function calcBounceRate(lcp: number) {
+  if (lcp <= 1) return 9;
+  if (lcp <= 2.5) return 22;
+  if (lcp <= 4) return 38;
+  if (lcp <= 6) return 53;
+  return 72;
 }
 
-// ─── Metric Row ───────────────────────────────────────────────────────────────
-function MetricRow({ label, value, unit, warn }: { label: string; value: number | string; unit: string; warn?: boolean }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #1e293b" }}>
-      <span style={{ color: "#64748b", fontFamily: "'DM Mono', monospace", fontSize: "12px", letterSpacing: "1px" }}>{label}</span>
-      <span style={{ color: warn ? "#ef4444" : "#e2e8f0", fontFamily: "'DM Mono', monospace", fontSize: "14px", fontWeight: 600 }}>
-        {value}
-        <span style={{ color: "#475569", marginLeft: 4, fontSize: "11px" }}>{unit}</span>
-      </span>
-    </div>
-  );
-}
-
-// ─── Loader Lines ─────────────────────────────────────────────────────────────
+// ─── Terminal Log Lines ───────────────────────────────────────────────────────
 const LOG_LINES = [
-  "› Connecting to PageSpeed Insights API...",
-  "› Fetching mobile & desktop scores...",
-  "› Analyzing Core Web Vitals...",
-  "› Calculating First Contentful Paint...",
-  "› Measuring Largest Contentful Paint...",
-  "› Estimating paid traffic bleed...",
-  "› Translating metrics to revenue impact...",
-  "› Generating diagnostic report...",
+  "> Initializing audit engine...",
+  "> Connecting to PageSpeed Insights API...",
+  "> Pinging global CDN nodes...",
+  "> Analyzing DOM tree structure...",
+  "> Calculating mobile latency on 4G...",
+  "> Measuring First Contentful Paint...",
+  "> Measuring Largest Contentful Paint...",
+  "> Scanning for AI response agents...",
+  "> Estimating paid traffic drop-off...",
+  "> Translating metrics to revenue impact...",
+  "> Compiling Conversion Health Score...",
+  "> Report ready. Preparing reveal...",
 ];
 
-function LoaderLog() {
+function TerminalLoader() {
   const [lines, setLines] = useState<string[]>([]);
+  const [cursor, setCursor] = useState(true);
   const idx = useRef(0);
 
   useEffect(() => {
@@ -126,19 +71,433 @@ function LoaderLog() {
         setLines((prev) => [...prev, LOG_LINES[idx.current]]);
         idx.current++;
       }
-    }, 1600);
-    return () => clearInterval(interval);
+    }, 950);
+    const cursorInterval = setInterval(() => setCursor((c) => !c), 500);
+    return () => {
+      clearInterval(interval);
+      clearInterval(cursorInterval);
+    };
   }, []);
 
   return (
-    <div style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", color: "#22c55e", lineHeight: "2", marginTop: "24px", minHeight: "120px" }}>
-      {lines.map((l, i) => (
-        <div key={i} style={{ opacity: 1, animation: "fadeIn 0.4s ease" }}>
-          {l}
-        </div>
+    <div style={{
+      background: "#050a12",
+      border: "1px solid #0ea5e920",
+      borderRadius: 8,
+      padding: "24px 28px",
+      fontFamily: "'DM Mono', monospace",
+      fontSize: 13,
+      lineHeight: 2,
+      marginTop: 28,
+      minHeight: 200,
+    }}>
+      <div style={{ color: "#475569", fontSize: 11, letterSpacing: 3, marginBottom: 16 }}>
+        NEXUS DIAGNOSTIC ENGINE v2.4
+      </div>
+      {lines.map((line, i) => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0, x: -8 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.3 }}
+          style={{ color: i === lines.length - 1 ? "#0ea5e9" : "#22c55e" }}
+        >
+          {line}
+          {i === lines.length - 1 && (
+            <span style={{ opacity: cursor ? 1 : 0, color: "#0ea5e9" }}>█</span>
+          )}
+        </motion.div>
       ))}
-      <style>{`@keyframes fadeIn { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }`}</style>
     </div>
+  );
+}
+
+// ─── Animated Score Number ────────────────────────────────────────────────────
+function CountUp({ target, color }: { target: number; color: string }) {
+  const [val, setVal] = useState(0);
+
+  useEffect(() => {
+    const duration = 1800;
+    const start = performance.now();
+    const frame = (now: number) => {
+      const t = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 4);
+      setVal(Math.round(eased * target));
+      if (t < 1) requestAnimationFrame(frame);
+    };
+    requestAnimationFrame(frame);
+  }, [target]);
+
+  return (
+    <span style={{
+      fontFamily: "'Syne', sans-serif",
+      fontSize: "clamp(72px, 14vw, 120px)",
+      fontWeight: 800,
+      color,
+      lineHeight: 1,
+      filter: `drop-shadow(0 0 24px ${color}60)`,
+      display: "block",
+    }}>
+      {val}
+    </span>
+  );
+}
+
+// ─── Circular Gauge ───────────────────────────────────────────────────────────
+function CircularGauge({ score }: { score: number }) {
+  const r = 70;
+  const circ = 2 * Math.PI * r;
+  const [offset, setOffset] = useState(circ);
+  const color = scoreColor(score);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      setOffset(circ - (score / 100) * circ);
+    }, 200);
+    return () => clearTimeout(timeout);
+  }, [score, circ]);
+
+  return (
+    <svg width="180" height="180" viewBox="0 0 180 180">
+      <circle cx="90" cy="90" r={r} fill="none" stroke="#0f172a" strokeWidth="10" />
+      <circle
+        cx="90" cy="90" r={r}
+        fill="none"
+        stroke={color}
+        strokeWidth="10"
+        strokeLinecap="round"
+        strokeDasharray={circ}
+        strokeDashoffset={offset}
+        transform="rotate(-90 90 90)"
+        style={{
+          transition: "stroke-dashoffset 1.6s cubic-bezier(0.34, 1.56, 0.64, 1), stroke 0.3s",
+          filter: `drop-shadow(0 0 6px ${color})`,
+        }}
+      />
+      <text x="90" y="82" textAnchor="middle" fill={color} fontSize="11"
+        fontFamily="'DM Mono', monospace" letterSpacing="2">
+        SCORE
+      </text>
+      <text x="90" y="108" textAnchor="middle" fill="#475569" fontSize="11"
+        fontFamily="'DM Mono', monospace">
+        / 100
+      </text>
+    </svg>
+  );
+}
+
+// ─── Metric Row ───────────────────────────────────────────────────────────────
+function MetricRow({ label, value, unit, warn, description }: {
+  label: string;
+  value: string | number;
+  unit: string;
+  warn?: boolean;
+  description?: string;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{ padding: "14px 0", borderBottom: "1px solid #0f172a" }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ color: "#475569", fontFamily: "'DM Mono', monospace", fontSize: 11, letterSpacing: 2 }}>
+          {label}
+        </span>
+        <span style={{ color: warn ? "#EF4444" : "#e2e8f0", fontFamily: "'DM Mono', monospace", fontSize: 15, fontWeight: 600 }}>
+          {value}
+          <span style={{ color: "#334155", fontSize: 11, marginLeft: 4 }}>{unit}</span>
+        </span>
+      </div>
+      {description && (
+        <p style={{ color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 11, marginTop: 4, lineHeight: 1.6 }}>
+          {description}
+        </p>
+      )}
+    </motion.div>
+  );
+}
+
+// ─── Email Gate Modal ─────────────────────────────────────────────────────────
+function EmailGate({ onUnlock, url, score }: {
+  onUnlock: (email: string) => void;
+  url: string;
+  score: number;
+}) {
+  const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [inputError, setInputError] = useState("");
+
+  async function handleSubmit() {
+    if (!email.includes("@") || !email.includes(".")) {
+      setInputError("Please enter a valid work email.");
+      return;
+    }
+    setSubmitting(true);
+    setInputError("");
+
+    try {
+      await fetch("/api/capture", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, url, score }),
+      });
+    } catch {
+      // Fail silently — never block the user from seeing their results
+    }
+
+    onUnlock(email);
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        background: "rgba(3, 7, 18, 0.92)",
+        backdropFilter: "blur(12px)",
+        borderRadius: 12,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "40px 32px",
+        zIndex: 10,
+        textAlign: "center",
+      }}
+    >
+      <div style={{
+        width: 48, height: 48, borderRadius: "50%",
+        background: "rgba(239,68,68,0.1)",
+        border: "1px solid #ef444440",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        marginBottom: 20, fontSize: 22,
+      }}>
+        🔒
+      </div>
+
+      <h2 style={{
+        fontFamily: "'Syne', sans-serif",
+        fontWeight: 800, fontSize: 22,
+        color: "#f1f5f9", marginBottom: 10,
+      }}>
+        Audit Complete
+      </h2>
+
+      <p style={{
+        color: "#64748b",
+        fontFamily: "'DM Mono', monospace",
+        fontSize: 12, lineHeight: 1.8,
+        marginBottom: 28, maxWidth: 320,
+      }}>
+        Your Conversion Health Score and full breakdown are ready.
+        Enter your work email to unlock your report instantly.
+      </p>
+
+      <input
+        type="email"
+        placeholder="you@company.com"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && !submitting && handleSubmit()}
+        style={{
+          width: "100%", maxWidth: 340,
+          background: "#0f172a",
+          border: `1px solid ${inputError ? "#ef4444" : "#1e293b"}`,
+          color: "#e2e8f0",
+          fontFamily: "'DM Mono', monospace",
+          fontSize: 14, padding: "13px 16px",
+          borderRadius: 6, outline: "none",
+          marginBottom: 8,
+        }}
+      />
+
+      {inputError && (
+        <p style={{ color: "#ef4444", fontFamily: "'DM Mono', monospace", fontSize: 11, marginBottom: 10 }}>
+          {inputError}
+        </p>
+      )}
+
+      <motion.button
+        whileHover={{ y: -1, boxShadow: "0 6px 24px rgba(14,165,233,0.35)" }}
+        whileTap={{ y: 0 }}
+        onClick={handleSubmit}
+        disabled={submitting || !email}
+        style={{
+          width: "100%", maxWidth: 340,
+          background: submitting || !email ? "#1e293b" : "linear-gradient(135deg, #0ea5e9, #0284c7)",
+          color: "#fff", border: "none",
+          fontFamily: "'Syne', sans-serif",
+          fontWeight: 700, fontSize: 14,
+          padding: "14px 24px", borderRadius: 6,
+          cursor: submitting || !email ? "not-allowed" : "pointer",
+          marginTop: 4,
+          boxShadow: submitting || !email ? "none" : "0 4px 20px rgba(14,165,233,0.3)",
+        }}
+      >
+        {submitting ? "Unlocking..." : "Unlock My Score →"}
+      </motion.button>
+
+      <p style={{
+        color: "#1e293b",
+        fontFamily: "'DM Mono', monospace",
+        fontSize: 11, marginTop: 14,
+      }}>
+        No spam. Your report, nothing else.
+      </p>
+    </motion.div>
+  );
+}
+
+// ─── Results Panel ─────────────────────────────────────────────────────────────
+function ResultsPanel({ result, url, onBookCall }: {
+  result: AuditResult;
+  url: string;
+  onBookCall: () => void;
+}) {
+  const [unlocked, setUnlocked] = useState(false);
+  const color = scoreColor(result.score);
+  const label = scoreLabel(result.score);
+  const isCritical = result.score < 50;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      style={{
+        background: "#080d17",
+        border: "1px solid #1e293b",
+        borderRadius: 12,
+        padding: "36px",
+        marginTop: 32,
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <div style={{
+        position: "absolute", top: 0, left: 0, right: 0, height: 2,
+        background: `linear-gradient(90deg, transparent, ${color}, transparent)`,
+      }} />
+
+      <AnimatePresence>
+        {!unlocked && (
+          <EmailGate
+            url={url}
+            score={result.score}
+            onUnlock={() => setUnlocked(true)}
+          />
+        )}
+      </AnimatePresence>
+
+      <div style={{
+        filter: unlocked ? "none" : "blur(8px)",
+        transition: "filter 0.6s ease",
+        userSelect: unlocked ? "auto" : "none",
+      }}>
+        <div style={{
+          display: "flex", justifyContent: "space-between",
+          alignItems: "flex-start", flexWrap: "wrap",
+          gap: 20, marginBottom: 8,
+        }}>
+          <div>
+            <div style={{
+              display: "inline-block",
+              background: `${color}15`,
+              border: `1px solid ${color}40`,
+              color,
+              fontFamily: "'DM Mono', monospace",
+              fontSize: 11, letterSpacing: 3,
+              padding: "4px 12px", borderRadius: 2, marginBottom: 8,
+            }}>
+              {label}
+            </div>
+            <p style={{ color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 11, wordBreak: "break-all" }}>
+              {url}
+            </p>
+            <div style={{ marginTop: 16 }}>
+              <CountUp target={result.score} color={color} />
+              <span style={{ color: "#334155", fontFamily: "'DM Mono', monospace", fontSize: 13 }}>
+                CONVERSION HEALTH SCORE
+              </span>
+            </div>
+          </div>
+          <CircularGauge score={result.score} />
+        </div>
+
+        <div style={{ borderTop: "1px solid #0f172a", margin: "28px 0" }} />
+
+        <MetricRow label="FIRST CONTENTFUL PAINT" value={result.fcp.toFixed(1)} unit="s"
+          warn={result.fcp > 1.8}
+          description={result.fcp > 1.8 ? "Slow initial render — users see a blank screen too long." : undefined}
+        />
+        <MetricRow label="LARGEST CONTENTFUL PAINT" value={result.lcp.toFixed(1)} unit="s"
+          warn={result.lcp > 2.5}
+          description={result.lcp > 2.5 ? "Main content loads too late. Google penalises this in ad Quality Scores." : undefined}
+        />
+        <MetricRow label="TOTAL BLOCKING TIME" value={result.tbt} unit="ms" warn={result.tbt > 200} />
+        <MetricRow label="CLS (LAYOUT SHIFT)" value={result.cls.toFixed(3)} unit="" warn={result.cls > 0.1} />
+        <MetricRow label="AI RESPONSE AGENT" value="FAIL" unit="" warn={true}
+          description="No sub-15s lead response agent detected. Average response time on your site: 11+ hours."
+        />
+
+        <div style={{ borderTop: "1px solid #0f172a", margin: "28px 0" }} />
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          style={{
+            background: isCritical ? "rgba(239,68,68,0.05)" : "rgba(245,158,11,0.05)",
+            border: `1px solid ${isCritical ? "#ef444430" : "#f59e0b30"}`,
+            borderLeft: `4px solid ${isCritical ? "#ef4444" : "#f59e0b"}`,
+            borderRadius: 6, padding: "20px 24px",
+          }}
+        >
+          <p style={{
+            fontFamily: "'Syne', sans-serif", fontWeight: 700,
+            color: isCritical ? "#ef4444" : "#f59e0b",
+            fontSize: 13, marginBottom: 10,
+          }}>
+            {isCritical ? "🔴 CRITICAL REVENUE BLEED DETECTED" : "🟡 PERFORMANCE WARNING"}
+          </p>
+          <p style={{ color: "#94a3b8", fontFamily: "'DM Mono', monospace", fontSize: 12, lineHeight: 1.9 }}>
+            Your site is loading in{" "}
+            <strong style={{ color: "#e2e8f0" }}>{result.lcp.toFixed(1)}s</strong>.
+            Industry data shows a {result.lcp.toFixed(1)}s load time results in a{" "}
+            <strong style={{ color: "#ef4444" }}>{result.bounceRate}% bounce rate</strong>.
+            You are bleeding roughly{" "}
+            <strong style={{ color: "#ef4444" }}>{result.adLossPercent}% of your paid ad traffic</strong>{" "}
+            before they ever see your offer — and losing approximately{" "}
+            <strong style={{ color: "#ef4444" }}>{result.conversionLoss}% of potential conversions</strong>{" "}
+            every single day.
+          </p>
+        </motion.div>
+
+        <motion.button
+          whileHover={{ y: -2, boxShadow: "0 12px 40px rgba(239,68,68,0.4)" }}
+          whileTap={{ y: 0 }}
+          onClick={onBookCall}
+          style={{
+            display: "block", width: "100%",
+            background: "linear-gradient(135deg, #ef4444, #b91c1c)",
+            color: "#fff", border: "none",
+            fontFamily: "'Syne', sans-serif",
+            fontWeight: 800, fontSize: 15,
+            padding: "18px 28px", borderRadius: 6,
+            cursor: "pointer", marginTop: 28,
+            boxShadow: "0 4px 24px rgba(239,68,68,0.25)",
+          }}
+        >
+          Fix This & Install 15-Second AI Response Agent →
+        </motion.button>
+
+        <p style={{ fontFamily: "'DM Mono', monospace", fontSize: 11, color: "#1e293b", textAlign: "center", marginTop: 12 }}>
+          Free 20-min infrastructure audit · No credit card required
+        </p>
+      </div>
+    </motion.div>
   );
 }
 
@@ -148,17 +507,14 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AuditResult | null>(null);
   const [error, setError] = useState("");
-  const [gaugeAnimated, setGaugeAnimated] = useState(false);
 
   async function runAudit() {
     if (!url.trim()) return;
     setError("");
     setResult(null);
     setLoading(true);
-    setGaugeAnimated(false);
 
     try {
-      // Minimum 12s perceived delay for "weight"
       const [apiRes] = await Promise.all([
         fetch(`/api/audit?url=${encodeURIComponent(url.trim())}`),
         new Promise((r) => setTimeout(r, 12000)),
@@ -167,42 +523,30 @@ export default function Home() {
       if (!apiRes.ok) throw new Error("API error");
       const data = await apiRes.json();
 
-      const score = Math.round((data.score ?? 0) * 100);
-      const fcp = data.fcp ?? 0;
-      const lcp = data.lcp ?? 0;
-      const tbt = data.tbt ?? 0;
-      const cls = data.cls ?? 0;
-      const loadTime = lcp;
+      const score = Math.round(((data.score as number) ?? 0) * 100);
+      const fcp = (data.fcp as number) ?? 0;
+      const lcp = (data.lcp as number) ?? 0;
+      const tbt = (data.tbt as number) ?? 0;
+      const cls = (data.cls as number) ?? 0;
 
       setResult({
-        score,
-        loadTime,
-        fcp,
-        lcp,
-        tbt,
-        cls,
-        adLossPercent: adLoss(score),
-        conversionLoss: convLoss(score),
+        score, fcp, lcp, tbt, cls,
+        adLossPercent: calcAdLoss(score),
+        conversionLoss: calcConvLoss(score),
+        bounceRate: calcBounceRate(lcp),
       });
-
-      setTimeout(() => setGaugeAnimated(true), 100);
     } catch {
-      setError("Could not reach the API. Check your /api/audit route.");
+      setError("Audit failed. Check your /api/audit route is deployed correctly.");
     } finally {
       setLoading(false);
     }
   }
 
-  const color = result ? scoreColor(result.score) : "#3b82f6";
-  const label = result ? scoreLabel(result.score) : "";
-
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap');
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         body {
           background: #030712;
           color: #e2e8f0;
@@ -210,190 +554,76 @@ export default function Home() {
           font-family: 'Syne', sans-serif;
           overflow-x: hidden;
         }
-
-        /* Grid background */
         body::before {
           content: '';
-          position: fixed;
-          inset: 0;
+          position: fixed; inset: 0;
           background-image:
-            linear-gradient(rgba(30, 41, 59, 0.4) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(30, 41, 59, 0.4) 1px, transparent 1px);
-          background-size: 40px 40px;
-          pointer-events: none;
-          z-index: 0;
+            linear-gradient(rgba(14,165,233,0.04) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(14,165,233,0.04) 1px, transparent 1px);
+          background-size: 44px 44px;
+          pointer-events: none; z-index: 0;
         }
-
-        .container {
-          position: relative;
-          z-index: 1;
-          max-width: 680px;
-          margin: 0 auto;
-          padding: 60px 24px 80px;
-        }
-
-        .badge {
-          display: inline-block;
-          background: #0f172a;
-          border: 1px solid #1e293b;
-          color: #64748b;
-          font-family: 'DM Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 3px;
-          padding: 6px 14px;
-          border-radius: 2px;
-          margin-bottom: 32px;
-          text-transform: uppercase;
-        }
-
-        h1 {
-          font-size: clamp(36px, 7vw, 60px);
-          font-weight: 800;
-          line-height: 1.05;
-          letter-spacing: -1px;
-          margin-bottom: 16px;
-        }
-
-        h1 span { color: #ef4444; }
-
-        .sub {
-          color: #64748b;
-          font-family: 'DM Mono', monospace;
-          font-size: 13px;
-          line-height: 1.8;
-          margin-bottom: 48px;
-        }
-
-        .input-row {
-          display: flex;
-          gap: 10px;
-          margin-bottom: 12px;
-        }
-
-        input[type="text"] {
-          flex: 1;
-          background: #0f172a;
+        input[type="text"], input[type="email"] {
+          background: #080d17;
           border: 1px solid #1e293b;
           color: #e2e8f0;
           font-family: 'DM Mono', monospace;
           font-size: 14px;
           padding: 14px 18px;
-          border-radius: 4px;
+          border-radius: 6px;
           outline: none;
           transition: border-color 0.2s;
-        }
-
-        input[type="text"]:focus { border-color: #3b82f6; }
-        input[type="text"]::placeholder { color: #334155; }
-
-        button.primary {
-          background: #ef4444;
-          color: #fff;
-          border: none;
-          font-family: 'Syne', sans-serif;
-          font-weight: 700;
-          font-size: 13px;
-          letter-spacing: 1px;
-          padding: 14px 28px;
-          border-radius: 4px;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-        }
-
-        button.primary:hover { background: #dc2626; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(239,68,68,0.3); }
-        button.primary:active { transform: translateY(0); }
-        button.primary:disabled { background: #334155; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        .card {
-          background: #0a0f1a;
-          border: 1px solid #1e293b;
-          border-radius: 8px;
-          padding: 36px;
-          margin-top: 40px;
-        }
-
-        .status-pill {
-          display: inline-block;
-          font-family: 'DM Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 3px;
-          padding: 4px 12px;
-          border-radius: 2px;
-          margin-bottom: 24px;
-        }
-
-        .alert-box {
-          border-radius: 6px;
-          padding: 20px 24px;
-          margin: 28px 0;
-          border-left: 4px solid;
-        }
-
-        .alert-box p {
-          font-family: 'DM Mono', monospace;
-          font-size: 13px;
-          line-height: 1.8;
-        }
-
-        .cta-btn {
-          display: block;
           width: 100%;
-          background: linear-gradient(135deg, #ef4444, #b91c1c);
-          color: #fff;
-          border: none;
-          font-family: 'Syne', sans-serif;
-          font-weight: 800;
-          font-size: 15px;
-          letter-spacing: 0.5px;
-          padding: 18px 28px;
-          border-radius: 6px;
-          cursor: pointer;
-          text-align: center;
-          margin-top: 32px;
-          transition: transform 0.15s, box-shadow 0.2s;
-          box-shadow: 0 4px 24px rgba(239,68,68,0.25);
         }
-
-        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(239,68,68,0.4); }
-        .cta-btn:active { transform: translateY(0); }
-
-        .divider {
-          border: none;
-          border-top: 1px solid #1e293b;
-          margin: 28px 0;
-        }
-
-        .spinner {
-          width: 18px; height: 18px;
-          border: 2px solid #1e293b;
-          border-top-color: #3b82f6;
-          border-radius: 50%;
-          display: inline-block;
-          animation: spin 0.8s linear infinite;
-          margin-right: 8px;
-          vertical-align: middle;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        .error { color: #ef4444; font-family: 'DM Mono', monospace; font-size: 13px; margin-top: 12px; }
+        input[type="text"]:focus, input[type="email"]:focus { border-color: #0ea5e9; }
+        input::placeholder { color: #1e293b; }
       `}</style>
 
-      <div className="container">
-        <div className="badge">Nexus Diagnostics · v2.0</div>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 700, margin: "0 auto", padding: "60px 24px 100px" }}>
 
-        <h1>
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            display: "inline-block",
+            background: "#080d17",
+            border: "1px solid #0ea5e920",
+            color: "#0ea5e9",
+            fontFamily: "'DM Mono', monospace",
+            fontSize: 11, letterSpacing: 3,
+            padding: "6px 14px", borderRadius: 2, marginBottom: 32,
+          }}
+        >
+          NEXUS DIAGNOSTICS · CONVERSION INFRASTRUCTURE AUDIT
+        </motion.div>
+
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          style={{ fontSize: "clamp(40px, 8vw, 72px)", fontWeight: 800, lineHeight: 1.0, letterSpacing: -2, marginBottom: 20 }}
+        >
           Stop<br />
-          <span>Bleeding</span><br />
+          <span style={{ color: "#EF4444" }}>Bleeding</span><br />
           Ad Spend.
-        </h1>
+        </motion.h1>
 
-        <p className="sub">
-          Paste your URL below. We run a live PageSpeed audit and<br />
-          translate every millisecond into real revenue you are losing.
-        </p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          style={{ color: "#475569", fontFamily: "'DM Mono', monospace", fontSize: 13, lineHeight: 1.9, marginBottom: 48 }}
+        >
+          Paste your URL. We run a live PageSpeed audit and translate every<br />
+          millisecond of latency into the exact revenue you are losing.
+        </motion.p>
 
-        <div className="input-row">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{ display: "flex", gap: 10 }}
+        >
           <input
             type="text"
             placeholder="https://yoursite.com"
@@ -402,93 +632,51 @@ export default function Home() {
             onKeyDown={(e) => e.key === "Enter" && !loading && runAudit()}
             disabled={loading}
           />
-          <button className="primary" onClick={runAudit} disabled={loading || !url.trim()}>
-            {loading ? (
-              <>
-                <span className="spinner" />
-                Scanning…
-              </>
-            ) : (
-              "Run Audit →"
-            )}
-          </button>
-        </div>
+          <motion.button
+            whileHover={{ y: -1, boxShadow: "0 6px 24px rgba(14,165,233,0.3)" }}
+            whileTap={{ y: 0 }}
+            onClick={runAudit}
+            disabled={loading || !url.trim()}
+            style={{
+              background: loading || !url.trim() ? "#1e293b" : "linear-gradient(135deg, #0ea5e9, #0284c7)",
+              color: "#fff", border: "none",
+              fontFamily: "'Syne', sans-serif",
+              fontWeight: 700, fontSize: 13,
+              padding: "14px 28px", borderRadius: 6,
+              cursor: loading || !url.trim() ? "not-allowed" : "pointer",
+              whiteSpace: "nowrap",
+              transition: "background 0.2s",
+              flexShrink: 0,
+            }}
+          >
+            {loading ? "Scanning…" : "Run Audit →"}
+          </motion.button>
+        </motion.div>
 
-        {error && <p className="error">⚠ {error}</p>}
-
-        {/* ── Loading State ── */}
-        {loading && (
-          <div className="card">
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "12px", color: "#64748b", letterSpacing: "2px" }}>
-              RUNNING DIAGNOSTIC · PLEASE WAIT
-            </p>
-            <LoaderLog />
-          </div>
+        {error && (
+          <p style={{ color: "#ef4444", fontFamily: "'DM Mono', monospace", fontSize: 12, marginTop: 12 }}>
+            ⚠ {error}
+          </p>
         )}
 
-        {/* ── Results ── */}
-        {result && !loading && (
-          <div className="card" style={{ animation: "fadeIn 0.5s ease" }}>
-            {/* Header */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16, marginBottom: 8 }}>
-              <div>
-                <span
-                  className="status-pill"
-                  style={{ background: `${color}18`, color, border: `1px solid ${color}40` }}
-                >
-                  {label}
-                </span>
-                <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: "#475569", marginTop: 4, wordBreak: "break-all" }}>
-                  {url}
-                </p>
-              </div>
-              <CircularGauge score={result.score} animated={gaugeAnimated} />
-            </div>
+        <AnimatePresence>
+          {loading && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <TerminalLoader />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            <hr className="divider" />
+        <AnimatePresence>
+          {result && !loading && (
+            <ResultsPanel
+              result={result}
+              url={url}
+              onBookCall={() => window.open("https://calendly.com/YOUR-LINK", "_blank")}
+            />
+          )}
+        </AnimatePresence>
 
-            {/* Metrics */}
-            <MetricRow label="FIRST CONTENTFUL PAINT" value={result.fcp.toFixed(1)} unit="s" warn={result.fcp > 1.8} />
-            <MetricRow label="LARGEST CONTENTFUL PAINT" value={result.lcp.toFixed(1)} unit="s" warn={result.lcp > 2.5} />
-            <MetricRow label="TOTAL BLOCKING TIME" value={result.tbt} unit="ms" warn={result.tbt > 200} />
-            <MetricRow label="CUMULATIVE LAYOUT SHIFT" value={result.cls.toFixed(3)} unit="" warn={result.cls > 0.1} />
-
-            <hr className="divider" />
-
-            {/* Business translation */}
-            <div
-              className="alert-box"
-              style={{
-                background: result.score < 50 ? "rgba(239,68,68,0.06)" : "rgba(245,158,11,0.06)",
-                borderColor: result.score < 50 ? "#ef4444" : "#f59e0b",
-              }}
-            >
-              <p style={{ color: result.score < 50 ? "#ef4444" : "#f59e0b", fontWeight: 700, marginBottom: 8, fontFamily: "'Syne', sans-serif", fontSize: "14px" }}>
-                {result.score < 50 ? "🔴 CRITICAL REVENUE BLEED DETECTED" : "🟡 PERFORMANCE WARNING"}
-              </p>
-              <p style={{ color: "#94a3b8" }}>
-                Your site is scoring <strong style={{ color: scoreColor(result.score) }}>{result.score}/100</strong>.
-                Based on industry benchmarks, you are likely losing{" "}
-                <strong style={{ color: "#ef4444" }}>{result.adLossPercent}% of paid ad traffic</strong>{" "}
-                before they ever see your offer — and approximately{" "}
-                <strong style={{ color: "#ef4444" }}>{result.conversionLoss}% of potential conversions</strong>{" "}
-                due to slow page load.
-              </p>
-            </div>
-
-            {/* CTA */}
-            <button
-              className="cta-btn"
-              onClick={() => window.open("https://calendly.com/YOUR-LINK", "_blank")}
-            >
-              Fix This Bottleneck & Install 15-Second AI Response Agent →
-            </button>
-
-            <p style={{ fontFamily: "'DM Mono', monospace", fontSize: "11px", color: "#334155", textAlign: "center", marginTop: 14 }}>
-              Free 20-min infrastructure audit · No credit card required
-            </p>
-          </div>
-        )}
       </div>
     </>
   );
