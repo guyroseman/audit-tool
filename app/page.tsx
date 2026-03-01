@@ -509,37 +509,46 @@ export default function Home() {
   const [error, setError] = useState("");
 
   async function runAudit() {
-    if (!url.trim()) return;
+    let targetUrl = url.trim();
+    if (!targetUrl) return;
+    
+    // UI Auto-fix: Add https:// if the user forgets it
+    if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
+      targetUrl = 'https://' + targetUrl;
+      setUrl(targetUrl); // Update the input box visually so they know we fixed it
+    }
+
     setError("");
     setResult(null);
     setLoading(true);
 
     try {
       const [apiRes] = await Promise.all([
-        fetch(`/api/audit?url=${encodeURIComponent(url.trim())}`),
-        new Promise((r) => setTimeout(r, 12000)),
+        fetch(`/api/audit?url=${encodeURIComponent(targetUrl)}`),
+        new Promise((r) => setTimeout(r, 6000)), // Shortened the fake loading time so it feels faster
       ]);
 
       const data = await apiRes.json();
+      
       if (!apiRes.ok) {
-        setError(data.error ?? "Audit failed. Please try again.");
+        // Now it will display the exact reason it failed (Rate limit, bad URL, etc.)
+        setError(data.error || "Audit failed. Please try again.");
         return;
       }
 
       const score = Math.round(((data.score as number) ?? 0) * 100);
-      const fcp = (data.fcp as number) ?? 0;
-      const lcp = (data.lcp as number) ?? 0;
-      const tbt = (data.tbt as number) ?? 0;
-      const cls = (data.cls as number) ?? 0;
-
       setResult({
-        score, fcp, lcp, tbt, cls,
+        score, 
+        fcp: (data.fcp as number) ?? 0, 
+        lcp: (data.lcp as number) ?? 0, 
+        tbt: (data.tbt as number) ?? 0, 
+        cls: (data.cls as number) ?? 0,
         adLossPercent: calcAdLoss(score),
         conversionLoss: calcConvLoss(score),
-        bounceRate: calcBounceRate(lcp),
+        bounceRate: calcBounceRate((data.lcp as number) ?? 0),
       });
     } catch {
-      setError("Audit failed. Check your /api/audit route is deployed correctly.");
+      setError("Network timeout. The server is taking too long to respond.");
     } finally {
       setLoading(false);
     }
@@ -644,11 +653,14 @@ export default function Home() {
               background: loading || !url.trim() ? "#1e293b" : "linear-gradient(135deg, #0ea5e9, #0284c7)",
               color: "#fff", border: "none",
               fontFamily: "'Syne', sans-serif",
-              fontWeight: 700, fontSize: 13,
-              padding: "14px 28px", borderRadius: 6,
+              fontWeight: 700, fontSize: 14,
+              padding: "16px 32px", borderRadius: 8,
               cursor: loading || !url.trim() ? "not-allowed" : "pointer",
               whiteSpace: "nowrap",
-              transition: "background 0.2s",
+              transition: "all 0.3s ease",
+              boxShadow: loading || !url.trim() ? "none" : "0 0 20px rgba(14, 165, 233, 0.4)",
+              textTransform: "uppercase",
+              letterSpacing: "1px",
               flexShrink: 0,
             }}
           >
