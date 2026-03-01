@@ -520,8 +520,11 @@ export default function Home() {
         new Promise((r) => setTimeout(r, 12000)),
       ]);
 
-      if (!apiRes.ok) throw new Error("API error");
       const data = await apiRes.json();
+      if (!apiRes.ok) {
+        setError(data.error ?? "Audit failed. Please try again.");
+        return;
+      }
 
       const score = Math.round(((data.score as number) ?? 0) * 100);
       const fcp = (data.fcp as number) ?? 0;
