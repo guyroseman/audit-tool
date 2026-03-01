@@ -1,31 +1,21 @@
-// src/app/api/capture/route.ts
+import { NextResponse } from 'next/server';
 
-import { NextRequest, NextResponse } from "next/server";
-
-const MAKE_WEBHOOK_URL = "https://hook.eu1.make.com/kwm73poyuxkmn5auu6c1twugqnewcn3k";
-
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   try {
-    const { email, url, score } = await req.json();
+    const body = await req.json();
+    
+    // Your live Google Apps Script Webhook
+    const googleSheetUrl = "https://script.google.com/macros/s/AKfycbwbV1hYR06GWKHRpytVJe_w9z7BD_g3mYRFc_H6m-_FHpLr_rXjaMRK3XC-TKwQ_k3k/exec";
 
-    if (!email || !url || score === undefined) {
-      return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    }
-
-    await fetch(MAKE_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        timestamp: new Date().toISOString(),
-        url,
-        email,
-        score,
-      }),
+    // Silently forward the lead data to your spreadsheet
+    await fetch(googleSheetUrl, {
+      method: 'POST',
+      body: JSON.stringify(body),
     });
 
     return NextResponse.json({ success: true });
-  } catch (err) {
-    console.error("Capture error:", err);
-    return NextResponse.json({ error: "Internal error" }, { status: 500 });
+  } catch (error) {
+    console.error("Failed to capture lead:", error);
+    return NextResponse.json({ error: 'Failed to capture lead' }, { status: 500 });
   }
 }
