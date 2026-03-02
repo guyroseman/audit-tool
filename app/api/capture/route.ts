@@ -7,9 +7,13 @@ export async function POST(req: Request) {
     // Your live Google Apps Script Webhook
     const googleSheetUrl = "https://script.google.com/macros/s/AKfycbwbV1hYR06GWKHRpytVJe_w9z7BD_g3mYRFc_H6m-_FHpLr_rXjaMRK3XC-TKwQ_k3k/exec";
 
-    // Silently forward the lead data to your spreadsheet
+    // Forward the lead data to your spreadsheet WITH the correct JSON headers
     await fetch(googleSheetUrl, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
       body: JSON.stringify(body),
     });
 
