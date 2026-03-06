@@ -121,16 +121,16 @@ export default function RootLayout({
             var cursor = document.getElementById('cursor');
             var ring = document.getElementById('cursor-ring');
             var mx = 0, my = 0, rx = 0, ry = 0;
+            // Track raw mouse — no lag on the dot
             document.addEventListener('mousemove', function(e) {
               mx = e.clientX; my = e.clientY;
-              cursor.style.left = mx + 'px';
-              cursor.style.top = my + 'px';
-            });
+              cursor.style.transform = 'translate(' + (mx - 6) + 'px,' + (my - 6) + 'px)';
+            }, { passive: true });
+            // Ring follows with slight spring — faster lerp = less lag
             function animRing() {
-              rx += (mx - rx) * 0.12;
-              ry += (my - ry) * 0.12;
-              ring.style.left = rx + 'px';
-              ring.style.top = ry + 'px';
+              rx += (mx - rx) * 0.22;
+              ry += (my - ry) * 0.22;
+              ring.style.transform = 'translate(' + (rx - 18) + 'px,' + (ry - 18) + 'px)';
               requestAnimationFrame(animRing);
             }
             animRing();

@@ -49,9 +49,10 @@ body {
   border-radius: 50%;
   pointer-events: none;
   z-index: 9999;
-  transform: translate(-50%, -50%);
-  transition: width 0.2s, height 0.2s, background 0.2s;
+  top: 0; left: 0;
+  will-change: transform;
   mix-blend-mode: screen;
+  box-shadow: 0 0 10px var(--accent-glow);
 }
 #cursor-ring {
   position: fixed;
@@ -60,11 +61,12 @@ body {
   border-radius: 50%;
   pointer-events: none;
   z-index: 9998;
-  transform: translate(-50%, -50%);
-  transition: transform 0.08s linear, width 0.2s, height 0.2s;
+  top: 0; left: 0;
+  will-change: transform;
+  transition: width 0.15s, height 0.15s, border-color 0.15s;
 }
-body:has(button:hover) #cursor,
-body:has(a:hover) #cursor { width: 20px; height: 20px; }
+a:hover ~ #cursor-ring,
+button:hover ~ #cursor-ring { width: 48px; height: 48px; border-color: rgba(232,52,26,0.8); }
 
 /* ── Noise texture overlay ── */
 body::before {
