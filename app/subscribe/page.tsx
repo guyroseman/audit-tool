@@ -19,10 +19,12 @@ const PLANS = [
       ["📊", "Core Web Vitals trend charts"],
       ["🔔", "Email alerts for score drops > 10 points"],
     ],
-    cta: "START FREE 7-DAY TRIAL",
+    cta: "ACTIVATE PRO DASHBOARD",
     ctaBg: "#a78bfa",
     ctaShadow: "rgba(167,139,250,0.4)",
-    guarantee: "Cancel anytime · No card charged for 7 days",
+    guarantee: "Cancel anytime · Secure checkout via Lemon Squeezy",
+    // YOUR LIVE LEMON SQUEEZY LINK:
+    checkoutUrl: "https://nexus-diagnostics.lemonsqueezy.com/checkout/buy/a537b230-59dc-4950-8b58-58af49e3301a"
   },
   {
     id: "pulse-pro",
@@ -42,38 +44,35 @@ const PLANS = [
       ["👥", "3 team seats included"],
       ["🎯", "Priority email support"],
     ],
-    cta: "START FREE 7-DAY TRIAL",
+    cta: "ACTIVATE AGENCY DASHBOARD",
     ctaBg: "#e8341a",
     ctaShadow: "rgba(232,52,26,0.4)",
     guarantee: "Cancel anytime · White-label ready from day 1",
+    // FOR NOW, redirecting to the same link. Create a $149 product in Lemon Squeezy later and put that link here!
+    checkoutUrl: "https://nexus-diagnostics.lemonsqueezy.com/checkout/buy/a537b230-59dc-4950-8b58-58af49e3301a"
   },
 ];
 
 const FAQ = [
-  { q: "What happens after the 7-day trial?", a: "You're automatically billed at the plan rate. We'll email you 24 hours before to remind you. Cancel any time in one click — no forms, no calls." },
+  { q: "What happens after I subscribe?", a: "You will be instantly redirected to your Pro Dashboard, where you can configure your competitor URLs and set up your webhooks." },
   { q: "Do I need to install anything?", a: "No. Just enter your URL and your competitors' URLs. We do everything else — auditing, monitoring, alerting, reporting." },
   { q: "How accurate are the competitor scores?", a: "We use the same Google PageSpeed API that powers Chrome's Lighthouse tool. Same data Google uses to rank your site." },
-  { q: "Can I change plans later?", a: "Yes. Upgrade or downgrade at any time. Prorated billing applies automatically." },
+  { q: "Can I cancel later?", a: "Yes. You can manage your subscription or cancel at any time via the Customer Portal." },
   { q: "What if my score is already good?", a: "Then you use Pulse to make sure it stays that way — and to find out the moment a competitor closes the gap." },
 ];
 
 const TESTIMONIALS = [
   { name: "James H.", role: "SaaS Founder", body: "Found out my main competitor dropped from 81 to 47 overnight. I called 3 of their prospects that week. Pulse paid for itself in 20 minutes.", score: "↑ 58pts in 30 days" },
-  { name: "Asha P.", role: "E-commerce Director", body: "We were bleeding on mobile and didn't know. The weekly audit caught a third-party script that added 3.2s to every page load. Fixed in a day.", score: "£12k recovered" },
+  { name: "Asha P.", role: "E-commerce Director", body: "We were bleeding on mobile and didn't know. The weekly audit caught a third-party script that added 3.2s to every page load. Fixed in a day.", score: "$12k recovered" },
   { name: "Tom W.", role: "Agency Owner", body: "I resell Pulse Pro as part of our SEO retainer. Clients love the white-label PDF. It's basically a recurring revenue stream that runs itself.", score: "12 clients on Pulse" },
 ];
 
 export default function Subscribe() {
   const [billing, setBilling] = useState<"monthly"|"annual">("monthly");
   const [openFaq, setOpenFaq] = useState<number|null>(null);
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<string|null>(null);
 
-  function handleTrial(planId: string) {
-    setSelectedPlan(planId);
-    // In production: redirect to Stripe checkout
-    // window.location.href = `https://buy.stripe.com/YOUR_LINK?prefilled_plan=${planId}`;
+  function handleCheckout(url: string) {
+    window.location.href = url;
   }
 
   const discount = billing === "annual" ? 0.17 : 0;
@@ -114,7 +113,7 @@ export default function Subscribe() {
           <div style={{ display: "inline-flex", alignItems: "center", gap: 0, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: 4, marginBottom: 40 }}>
             {(["monthly","annual"] as const).map(b => (
               <button key={b} onClick={() => setBilling(b)}
-                style={{ padding: "8px 20px", borderRadius: 6, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.1em", cursor: "none", border: "none", background: billing === b ? "#a78bfa" : "transparent", color: billing === b ? "#fff" : "var(--muted)", transition: "all 0.2s", position: "relative" }}>
+                style={{ padding: "8px 20px", borderRadius: 6, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.1em", cursor: "pointer", border: "none", background: billing === b ? "#a78bfa" : "transparent", color: billing === b ? "#fff" : "var(--muted)", transition: "all 0.2s", position: "relative" }}>
                 {b.toUpperCase()}
                 {b === "annual" && billing !== "annual" && (
                   <span style={{ position: "absolute", top: -8, right: -8, fontFamily: "var(--font-mono)", fontSize: 8, color: "#10b981", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)", padding: "1px 5px", borderRadius: 4, letterSpacing: "0.08em" }}>-17%</span>
@@ -139,16 +138,16 @@ export default function Subscribe() {
                 <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--text)", letterSpacing: "0.08em", marginBottom: 8 }}>{plan.name}</div>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 6 }}>
                   <span style={{ fontFamily: "var(--font-display)", fontSize: 52, color: plan.badgeColor, lineHeight: 1, letterSpacing: "0.02em" }}>
-                    £{billing === "annual" ? Math.round(plan.price * (1 - discount)) : plan.price}
+                    ${billing === "annual" ? Math.round(plan.price * (1 - discount)) : plan.price}
                   </span>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted)", marginBottom: 8 }}>/{plan.period}</span>
                   {billing === "annual" && (
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", textDecoration: "line-through", marginBottom: 8 }}>£{plan.price}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", textDecoration: "line-through", marginBottom: 8 }}>${plan.price}</span>
                   )}
                 </div>
                 {billing === "annual" && (
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#10b981" }}>
-                    You save £{Math.round(plan.price * discount * 12)}/year
+                    You save ${Math.round(plan.price * discount * 12)}/year
                   </div>
                 )}
               </div>
@@ -165,47 +164,11 @@ export default function Subscribe() {
                 ))}
               </div>
 
-              <AnimatePresence>
-                {selectedPlan === plan.id ? (
-                  <motion.div key="form" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-                    <div style={{ padding: "16px", borderRadius: 10, background: "var(--surface2)", border: "1px solid var(--border2)", marginBottom: 12 }}>
-                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text2)", marginBottom: 12, lineHeight: 1.5 }}>
-                        Enter your email to start your free 7-day trial. We&apos;ll send you setup instructions instantly.
-                      </p>
-                      {!submitted ? (
-                        <>
-                          <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                            onKeyDown={e => { if(e.key==="Enter"&&email.includes("@")) setSubmitted(true); }}
-                            placeholder="you@company.com"
-                            style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 7, padding: "12px 14px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13, marginBottom: 10 }} />
-                          <button onClick={() => email.includes("@") && setSubmitted(true)}
-                            style={{ width: "100%", padding: "13px", borderRadius: 7, background: plan.ctaBg, color: "#fff", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", border: "none", cursor: "none", boxShadow: `0 0 20px ${plan.ctaShadow}` }}>
-                            ACTIVATE FREE TRIAL →
-                          </button>
-                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", marginTop: 8, textAlign: "center" }}>
-                            No card charged for 7 days · Cancel anytime
-                          </p>
-                        </>
-                      ) : (
-                        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                          style={{ textAlign: "center", padding: "16px 0" }}>
-                          <div style={{ fontSize: 28, marginBottom: 8 }}>✅</div>
-                          <p style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#10b981", letterSpacing: "0.05em", marginBottom: 6 }}>TRIAL ACTIVATED</p>
-                          <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", lineHeight: 1.6 }}>
-                            Check your inbox — setup instructions incoming. First report ready in 24 hours.
-                          </p>
-                        </motion.div>
-                      )}
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.button key="cta" onClick={() => handleTrial(plan.id)}
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-                    style={{ width: "100%", padding: "15px", borderRadius: 10, background: plan.ctaBg, color: "#fff", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", border: "none", cursor: "none", boxShadow: `0 0 24px ${plan.ctaShadow}` }}>
-                    {plan.cta} →
-                  </motion.button>
-                )}
-              </AnimatePresence>
+              <motion.button onClick={() => handleCheckout(plan.checkoutUrl)}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                style={{ width: "100%", padding: "15px", borderRadius: 10, background: plan.ctaBg, color: "#fff", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", border: "none", cursor: "pointer", boxShadow: `0 0 24px ${plan.ctaShadow}` }}>
+                {plan.cta} →
+              </motion.button>
 
               <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted2)", textAlign: "center", marginTop: 10 }}>{plan.guarantee}</p>
             </motion.div>
@@ -259,7 +222,7 @@ export default function Subscribe() {
           {FAQ.map((f, i) => (
             <div key={i} style={{ borderBottom: "1px solid var(--border)" }}>
               <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                style={{ width: "100%", padding: "18px 0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "none", textAlign: "left" }}>
+                style={{ width: "100%", padding: "18px 0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
                 <span style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text)", fontWeight: 500 }}>{f.q}</span>
                 <motion.span animate={{ rotate: openFaq === i ? 180 : 0 }} style={{ color: "var(--muted)", fontSize: 12, flexShrink: 0, marginLeft: 12 }}>▼</motion.span>
               </button>
@@ -278,17 +241,17 @@ export default function Subscribe() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}
           style={{ padding: "40px 32px", textAlign: "center", borderRadius: 16, background: "linear-gradient(135deg,rgba(167,139,250,0.08),rgba(167,139,250,0.03))", border: "1px solid rgba(167,139,250,0.22)" }}>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px,5vw,48px)", color: "var(--text)", letterSpacing: "0.04em", marginBottom: 12 }}>
-            START FOR <span style={{ color: "#a78bfa", textShadow: "0 0 30px rgba(167,139,250,0.4)" }}>FREE.</span>
+            START <span style={{ color: "#a78bfa", textShadow: "0 0 30px rgba(167,139,250,0.4)" }}>TODAY.</span>
           </h2>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px", lineHeight: 1.7 }}>
-            7 days free. No card required. Full access from day one. Cancel in one click if it&apos;s not for you.
+            Unlock your competitive advantage in the next 60 seconds.
           </p>
-          <button onClick={() => handleTrial("pulse")}
-            style={{ display: "inline-block", padding: "16px 48px", borderRadius: 10, background: "#a78bfa", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 13, letterSpacing: "0.15em", border: "none", cursor: "none", boxShadow: "0 0 30px rgba(167,139,250,0.35)" }}>
-            GET STARTED FREE →
+          <button onClick={() => handleCheckout(PLANS[0].checkoutUrl)}
+            style={{ display: "inline-block", padding: "16px 48px", borderRadius: 10, background: "#a78bfa", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 13, letterSpacing: "0.15em", border: "none", cursor: "pointer", boxShadow: "0 0 30px rgba(167,139,250,0.35)" }}>
+            GET INSTANT ACCESS →
           </button>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted2)", marginTop: 12 }}>
-            £49/mo after trial · Cancel anytime · No lock-in
+            $49/mo · Cancel anytime · Secure checkout via Lemon Squeezy
           </p>
         </motion.div>
 
