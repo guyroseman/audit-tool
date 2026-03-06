@@ -110,7 +110,6 @@ function EmailGate({ onSubmit, loading }: { onSubmit: (e: string) => Promise<voi
   );
 }
 
-// ─── Strategic Ad Component ───────────────────────────────────────────────────
 function StrategicAd() {
   return (
     <div style={{ padding: "16px", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", gap: 16, marginTop: 24, cursor: "pointer", transition: "border-color 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--border2)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
@@ -124,12 +123,11 @@ function StrategicAd() {
   );
 }
 
-// ─── Unified SaaS Result Panel ─────────────────────────────────────────────────
-export function UnifiedResultsPanel({ result, url, isBlurred = false }: { result: AuditResult; url: string; isBlurred?: boolean }) {
+// ─── Unified SaaS Result Panel (REMOVED EXPORT TO FIX VERCEL BUILD) ───────────
+function UnifiedResultsPanel({ result, url, isBlurred = false }: { result: AuditResult; url: string; isBlurred?: boolean }) {
   const score = result.metrics.performanceScore;
   const color = scoreColor(score);
   
-  // Emotional translation based on score
   const getEmotionalTranslation = () => {
     if (score < 50) return "Your users are rage-quitting. A load time this slow means mobile users are staring at a blank screen, assuming your site is broken, and immediately leaving for your competitors. You are actively bleeding ad spend.";
     if (score < 80) return "Your site feels sluggish. Users expect instant gratification. While they might wait for it to load, the micro-delays are causing friction, resulting in abandoned carts and lost leads.";
@@ -140,7 +138,6 @@ export function UnifiedResultsPanel({ result, url, isBlurred = false }: { result
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-4xl mx-auto space-y-6 relative text-left">
       <div style={{ filter: isBlurred ? "blur(12px)" : "none", transition: "all 0.8s ease", pointerEvents: isBlurred ? "none" : "auto" }}>
         
-        {/* Metric Header */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, marginBottom: 24 }}>
           <div>
             <div style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 11, color, background: `${color}15`, border: `1px solid ${color}40`, padding: "4px 12px", borderRadius: 4, letterSpacing: "0.15em", marginBottom: 16 }}>STATUS: {scoreLabel(score)}</div>
@@ -161,7 +158,6 @@ export function UnifiedResultsPanel({ result, url, isBlurred = false }: { result
           </div>
         </div>
 
-        {/* Technical breakdown & SaaS Pitch */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
           
           <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
@@ -172,17 +168,14 @@ export function UnifiedResultsPanel({ result, url, isBlurred = false }: { result
               <MetricRow label="Cumulative Layout Shift (CLS)" value={result.metrics.cls} formatted={result.metrics.cls.toFixed(3)} thresholds={[0.1, 0.25]} />
             </div>
 
-            {/* Emotional Translation Box */}
             <div style={{ marginTop: 24, padding: "16px", background: score < 50 ? "rgba(232,52,26,0.05)" : "var(--bg)", borderLeft: `3px solid ${color}`, borderRadius: "0 8px 8px 0" }}>
               <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>The Human Impact</p>
               <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>{getEmotionalTranslation()}</p>
             </div>
 
-            {/* Strategic Ad Placement */}
             <StrategicAd />
           </div>
 
-          {/* The SaaS Edge Pitch */}
           <div style={{ background: "linear-gradient(180deg, rgba(232,52,26,0.05) 0%, rgba(3,7,15,0) 100%)", border: "1px solid rgba(232,52,26,0.3)", borderRadius: 16, padding: 32, position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: 0, right: 0, background: "var(--accent)", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 10, padding: "4px 24px", transform: "rotate(45deg) translate(20px, -15px)", letterSpacing: "0.1em", fontWeight: "bold" }}>PRO</div>
             
