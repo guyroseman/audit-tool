@@ -139,9 +139,10 @@ export async function fetchAudit(rawUrl: string): Promise<AuditResult> {
     return FAKE_AUDIT_RESULT;
   }
 
-  const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(
-    url
-  )}&strategy=mobile&category=performance`;
+  const apiKey = process.env.NEXT_PUBLIC_PAGESPEED_API_KEY ?? "";
+  const keyParam = apiKey ? `&key=${apiKey}` : "";
+  const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=
+  ${encodeURIComponent(url)}&strategy=mobile&category=performance${keyParam}`;
 
   const res = await fetch(apiUrl, { cache: "no-store" });
 
