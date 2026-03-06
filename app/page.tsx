@@ -52,6 +52,7 @@ export default function Home() {
         </div>
         <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <a href="/subscribe" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#a78bfa", letterSpacing: "0.12em", textDecoration: "none", border: "1px solid rgba(167,139,250,0.3)", padding: "6px 14px", borderRadius: 6 }}>NEXUS PULSE £49/MO</a>
+          <a href="/dashboard" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text2)", letterSpacing: "0.12em", textDecoration: "none", border: "1px solid var(--border)", padding: "6px 14px", borderRadius: 6 }}>DASHBOARD</a>
           <a href="/funnel" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", letterSpacing: "0.12em", textDecoration: "none", border: "1px solid rgba(232,52,26,0.3)", padding: "6px 14px", borderRadius: 6 }}>FREE AUDIT →</a>
         </div>
       </nav>
@@ -115,8 +116,10 @@ export default function Home() {
 
         {state === "email-gate" && result && (
           <motion.section key="gate" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "relative", width: "100%", maxWidth: 860 }}>
-            <div className="blur-veil"><ResultsPanel result={result} /></div>
+            style={{ width: "100%", maxWidth: 860 }}>
+            <div className="blur-veil" style={{ pointerEvents:"none", userSelect:"none" }}>
+              <ResultsPanel result={result} />
+            </div>
             <EmailGate onSubmit={submitEmail} loading={emailLoading} />
           </motion.section>
         )}

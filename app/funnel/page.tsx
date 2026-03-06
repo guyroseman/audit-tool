@@ -340,8 +340,10 @@ export default function Funnel() {
     setStep("pitch");
   };
 
+  const isSurveyStep = ["q1","q2","q3","url","loading","phone","booked"].includes(step);
+
   return (
-    <main style={{ minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 16px 32px",position:"relative",zIndex:10 }}>
+    <main style={{ minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:isSurveyStep?"center":"flex-start",padding:isSurveyStep?"40px 16px 32px":"0 16px 32px",position:"relative",zIndex:10 }}>
       <AnimatePresence mode="wait">
 
         {step==="q1" && <motion.div key="q1" initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-16 }} style={{ width:"100%" }}>
@@ -386,9 +388,11 @@ export default function Funnel() {
 
         {step==="email" && result && (
           <motion.div key="email" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            style={{ position:"relative",width:"100%",maxWidth:860 }}>
-            {/* ✅ Same blurred ResultsPanel + EmailGate as homepage */}
-            <div className="blur-veil"><ResultsPanel result={result} /></div>
+            style={{ width:"100%", maxWidth:860, paddingTop:40 }}>
+            {/* Blurred preview sits in normal flow; EmailGate is position:fixed so it covers the full viewport */}
+            <div className="blur-veil" style={{ pointerEvents:"none", userSelect:"none", minHeight:"100vh" }}>
+              <ResultsPanel result={result} />
+            </div>
             <EmailGate onSubmit={submitEmail} loading={emailLoading} />
           </motion.div>
         )}
