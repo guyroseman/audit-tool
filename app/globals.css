@@ -1,35 +1,121 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=JetBrains+Mono:wght@300;400;500;700&display=swap');
 
 :root {
-  --background: #050a12; /* Deep Hacker Slate */
-  --foreground: #e2e8f0; /* Crisp Slate Gray */
-  --accent-blue: #0ea5e9;
-  --danger-red: #ef4444;
+  --font-display: 'DM Serif Display', serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --bg: #03070f;
+  --surface: #080f1c;
+  --border: #0e1e35;
+  --accent: #e8341a;
+  --accent-dim: #3d0e06;
+  --warn: #f59e0b;
+  --ok: #10b981;
+  --text: #c8d8f0;
+  --muted: #3a5070;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Inter', 'Syne', sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 1.6;
   overflow-x: hidden;
-  /* Premium grid background overlay */
-  background-image: 
-    linear-gradient(rgba(14, 165, 233, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(14, 165, 233, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar for a polished feel */
-::-webkit-scrollbar {
-  width: 8px;
+/* Dotted grid background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: radial-gradient(circle, #1a3050 1px, transparent 1px);
+  background-size: 28px 28px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
 }
-::-webkit-scrollbar-track {
-  background: #0f172a;
+
+/* Top scanline */
+body::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(232, 52, 26, 0.6), transparent);
+  animation: scan 4s linear infinite;
+  pointer-events: none;
+  z-index: 1;
 }
-::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+
+@keyframes scan {
+  0% { top: -2px; }
+  100% { top: 100vh; }
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--accent-blue);
+
+/* Selection */
+::selection {
+  background: rgba(232, 52, 26, 0.25);
+  color: #fff;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Utility: glow red */
+.glow-red {
+  box-shadow: 0 0 20px rgba(232, 52, 26, 0.3), 0 0 60px rgba(232, 52, 26, 0.1);
+}
+
+/* Utility: text glow */
+.text-glow {
+  text-shadow: 0 0 20px currentColor;
+}
+
+/* Input reset */
+input:focus { outline: none; }
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface) inset;
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+}
+
+/* Blur overlay for email gate */
+.blur-veil {
+  filter: blur(8px);
+  pointer-events: none;
+  user-select: none;
+  transition: filter 0.5s ease;
+}
+
+/* Animated dashes border */
+@keyframes dash-border {
+  to { stroke-dashoffset: 0; }
+}
+
+/* Gauge SVG animation */
+.gauge-progress {
+  transition: stroke-dashoffset 1.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
