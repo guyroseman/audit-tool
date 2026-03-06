@@ -1,313 +1,427 @@
 "use client";
-
-import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
-import { fetchAudit, fmtMs, scoreColor, metricStatus } from "../lib/audit";
+import { useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { fetchAudit } from "../lib/audit";
 import type { AuditResult } from "../lib/audit";
+import { TerminalLoader, EmailGate, ResultsPanel } from "../components/shared";
 
-// ─── Shared Helpers ───────────────────────────────────────────────────────────
-function scoreLabel(score: number) {
-  if (score >= 80) return "HEALTHY";
-  if (score >= 50) return "WARNING";
-  return "CRITICAL";
-}
+type Step = "q1"|"q2"|"q3"|"url"|"loading"|"email"|"report"|"discover"|"pitch"|"phone"|"booked";
+interface FunnelData { q1?:string; q2?:string; q3?:string; url?:string; email?:string; phone?:string; businessType?:string; goal?:string; }
 
-function AnimatedNumber({ value, suffix = "" }: { value: number; suffix?: string }) {
-  const count = useMotionValue(0);
-  const rounded = useTransform(count, Math.round);
-  const [display, setDisplay] = useState(0);
-  useEffect(() => {
-    const controls = animate(count, value, { duration: 2, ease: [0.16, 1, 0.3, 1] });
-    const unsub = rounded.on("change", v => setDisplay(v));
-    return () => { controls.stop(); unsub(); };
-  }, [value]);
-  return <span>{display.toLocaleString()}{suffix}</span>;
-}
-
-// ─── Unified SaaS Result Panel (Self-Contained) ───────────────────────────────
-function ScoreGauge({ score, animated }: { score: number; animated: boolean }) {
-  const r = 72, circ = 2 * Math.PI * r;
-  const color = scoreColor(score);
-  const [disp, setDisp] = useState(0);
-  useEffect(() => {
-    if (!animated) { setDisp(score); return; }
-    let raf: number; const start = performance.now(); const dur = 2000;
-    function tick(now: number) { const t = Math.min((now - start) / dur, 1); setDisp(Math.round((1 - Math.pow(1 - t, 3)) * score)); if (t < 1) raf = requestAnimationFrame(tick); }
-    raf = requestAnimationFrame(tick); return () => cancelAnimationFrame(raf);
-  }, [score, animated]);
-  return (
-    <div style={{ position: "relative", width: 180, height: 180 }}>
-      <svg width={180} height={180} style={{ transform: "rotate(-90deg)" }} viewBox="0 0 180 180">
-        <circle cx={90} cy={90} r={r} fill="none" stroke="var(--border)" strokeWidth={8} />
-        <circle cx={90} cy={90} r={r} fill="none" stroke={color} strokeWidth={8} strokeLinecap="round" strokeDasharray={circ} strokeDashoffset={animated ? circ - (score / 100) * circ : circ} style={{ filter: `drop-shadow(0 0 10px ${color})`, transition: "stroke-dashoffset 0.1s" }} />
-      </svg>
-      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: "var(--font-display)", fontSize: 52, color, textShadow: `0 0 25px ${color}`, lineHeight: 1 }}>{disp}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.15em", marginTop: 2 }}>SCORE</span>
-      </div>
-    </div>
-  );
-}
-
-function MetricRow({ label, value, formatted, thresholds }: { label: string; value: number; formatted: string; thresholds: [number, number]; }) {
-  const s = metricStatus(value, thresholds); const c = { ok: "#10b981", warn: "#f59e0b", bad: "#e8341a" }[s]; const l = { ok: "PASS", warn: "SLOW", bad: "FAIL" }[s];
-  return (
-    <div style={{ padding: "14px 0", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 12 }}>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>{label}</div>
-        <div style={{ height: 2, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}><motion.div initial={{ width: 0 }} animate={{ width: s === "ok" ? "100%" : s === "warn" ? "60%" : "25%" }} transition={{ duration: 1 }} style={{ height: "100%", background: c, boxShadow: `0 0 8px ${c}` }} /></div>
-      </div>
-      <div style={{ textAlign: "right", minWidth: 100 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--text)", fontWeight: 500 }}>{formatted}</span>
-        <span style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9, color: c, letterSpacing: "0.15em", marginTop: 2 }}>{l}</span>
-      </div>
-    </div>
-  );
-}
-
-function StrategicAd() {
-  return (
-    <div style={{ padding: "16px", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 12, display: "flex", alignItems: "center", gap: 16, marginTop: 24, cursor: "pointer", transition: "border-color 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--border2)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
-       <div style={{ fontSize: 9, color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.15em", writingMode: "vertical-rl", transform: "rotate(180deg)", opacity: 0.6 }}>Sponsored</div>
-       <div style={{ flex: 1 }}>
-         <h4 style={{ color: "var(--text)", fontSize: 14, fontFamily: "var(--font-display)", letterSpacing: "0.02em" }}>Need a faster infrastructure?</h4>
-         <p style={{ color: "var(--text2)", fontSize: 12, marginTop: 4, fontFamily: "var(--font-body)", lineHeight: 1.5 }}>Migrate to premium Next.js hosting. Drop your LCP by an average of 1.2s instantly and recover lost ad spend.</p>
-       </div>
-       <button style={{ padding: "10px 18px", background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 8, color: "var(--text)", fontSize: 11, fontFamily: "var(--font-mono)", whiteSpace: "nowrap" }}>View Offer</button>
-    </div>
-  );
-}
-
-function UnifiedResultsPanel({ result, url, isBlurred = false }: { result: AuditResult; url: string; isBlurred?: boolean }) {
-  const score = result.metrics.performanceScore;
-  const color = scoreColor(score);
-  
-  const getEmotionalTranslation = () => {
-    if (score < 50) return "Your users are rage-quitting. A load time this slow means mobile users are staring at a blank screen, assuming your site is broken, and immediately leaving for your competitors. You are actively bleeding ad spend.";
-    if (score < 80) return "Your site feels sluggish. Users expect instant gratification. While they might wait for it to load, the micro-delays are causing friction, resulting in abandoned carts and lost leads.";
-    return "Your infrastructure is solid. Your site loads fast enough that speed is no longer your primary bottleneck for conversions. Now it's about optimizing the funnel.";
-  };
-  
-  return (
-    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-4xl mx-auto space-y-6 relative text-left">
-      <div style={{ filter: isBlurred ? "blur(12px)" : "none", transition: "all 0.8s ease", pointerEvents: isBlurred ? "none" : "auto" }}>
-        
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 32, marginBottom: 24 }}>
-          <div>
-            <div style={{ display: "inline-block", fontFamily: "var(--font-mono)", fontSize: 11, color, background: `${color}15`, border: `1px solid ${color}40`, padding: "4px 12px", borderRadius: 4, letterSpacing: "0.15em", marginBottom: 16 }}>STATUS: {scoreLabel(score)}</div>
-            <h2 style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--text)", letterSpacing: "0.05em", marginBottom: 24 }}>{url}</h2>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-              <div style={{ background: "rgba(232,52,26,0.05)", border: "1px solid rgba(232,52,26,0.2)", borderRadius: 8, padding: 16 }}>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 32, color: "var(--accent)" }}>{isBlurred ? "0%" : <AnimatedNumber value={result.adLossPercent} suffix="%" />}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", marginTop: 4 }}>EST. AD TRAFFIC LOST</div>
-              </div>
-              <div style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 8, padding: 16 }}>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 32, color: "var(--warn)" }}>{isBlurred ? "0%" : <AnimatedNumber value={result.bounceRateIncrease} suffix="%" />}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", marginTop: 4 }}>BOUNCE RATE INCREASE</div>
-              </div>
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <ScoreGauge score={score} animated={!isBlurred} />
-          </div>
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24 }}>
-          
-          <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 16, padding: 24, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-            <div>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 16 }}>CORE WEB VITALS</p>
-              <MetricRow label="Largest Contentful Paint (LCP)" value={result.metrics.lcp} formatted={fmtMs(result.metrics.lcp)} thresholds={[2500, 4000]} />
-              <MetricRow label="Total Blocking Time (TBT)" value={result.metrics.tbt} formatted={fmtMs(result.metrics.tbt)} thresholds={[200, 600]} />
-              <MetricRow label="Cumulative Layout Shift (CLS)" value={result.metrics.cls} formatted={result.metrics.cls.toFixed(3)} thresholds={[0.1, 0.25]} />
-            </div>
-
-            <div style={{ marginTop: 24, padding: "16px", background: score < 50 ? "rgba(232,52,26,0.05)" : "var(--bg)", borderLeft: `3px solid ${color}`, borderRadius: "0 8px 8px 0" }}>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color, letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 6 }}>The Human Impact</p>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>{getEmotionalTranslation()}</p>
-            </div>
-
-            <StrategicAd />
-          </div>
-
-          <div style={{ background: "linear-gradient(180deg, rgba(232,52,26,0.05) 0%, rgba(3,7,15,0) 100%)", border: "1px solid rgba(232,52,26,0.3)", borderRadius: 16, padding: 32, position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: 0, right: 0, background: "var(--accent)", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 10, padding: "4px 24px", transform: "rotate(45deg) translate(20px, -15px)", letterSpacing: "0.1em", fontWeight: "bold" }}>PRO</div>
-            
-            <h3 style={{ fontFamily: "var(--font-display)", fontSize: 28, color: "var(--text)", letterSpacing: "0.05em", marginBottom: 8 }}>NEXUS PULSE™</h3>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--accent)", marginBottom: 24 }}>Automated Revenue Protection</p>
-            
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 24 }}>
-              Your site is currently bleeding an estimated <strong style={{color:"var(--text)"}}>${Math.round(result.annualRevenueLoss/1000)}k/year</strong>. Put your monitoring on autopilot and never lose to competitors again.
-            </p>
-
-            <ul style={{ listStyle: "none", padding: 0, margin: "0 0 32px 0", gap: 12, display: "flex", flexDirection: "column" }}>
-              {["24/7 Live Core Web Vitals Monitoring", "Track 3 Competitors (SMS alerts if they get faster)", "Weekly AI-Generated Dev Action Plans", "Zero human interaction required"].map(f => (
-                <li key={f} style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted)" }}>
-                  <span style={{ color: "var(--accent)" }}>✓</span> {f}
-                </li>
-              ))}
-            </ul>
-
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 32, color: "var(--text)" }}>$49<span style={{ fontSize: 16, color: "var(--muted)" }}>/mo</span></span>
-            </div>
-
-            <button onClick={() => window.open(`https://buy.stripe.com/YOUR_STRIPE_LINK_HERE?prefilled_email=`, '_blank')} className="btn-primary" style={{ width: "100%", padding: "16px", borderRadius: 8, fontSize: 13, letterSpacing: "0.15em" }}>
-              START 7-DAY FREE TRIAL →
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </motion.div>
-  );
-}
-
-// ─── Survey Types & Helpers ───────────────────────────────────────────────────
-type Step = "q1" | "q2" | "q3" | "url" | "loading" | "email" | "results";
-interface FunnelData { q1?: string; q2?: string; q3?: string; url?: string; email?: string; }
-const SURVEY_STEPS = ["q1", "q2", "q3", "url"];
-
+// ─── Survey progress dots ─────────────────────────────────────────────────────
+const SURVEY_STEPS = ["q1","q2","q3","url"];
 function ProgressDots({ step }: { step: Step }) {
-  const idx = SURVEY_STEPS.indexOf(step); if (idx === -1) return null;
+  const idx = SURVEY_STEPS.indexOf(step);
+  if (idx === -1) return null;
   return (
-    <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 32 }}>
-      {SURVEY_STEPS.map((_, i) => (<motion.div key={i} animate={{ width: i === idx ? 24 : 6, background: i <= idx ? "#e8341a" : "#0e1e35" }} style={{ height: 6, borderRadius: 3 }} transition={{ duration: 0.3 }} />))}
+    <div style={{ display:"flex", gap:6, justifyContent:"center", marginBottom:28 }}>
+      {SURVEY_STEPS.map((_,i) => (
+        <motion.div key={i} animate={{ width:i===idx?24:6, background:i<=idx?"#e8341a":"#0e1e35" }}
+          style={{ height:6, borderRadius:3 }} transition={{ duration:0.3 }} />
+      ))}
     </div>
   );
 }
 
-function Choice({ label, sub, icon, onClick }: { label: string; sub?: string; icon: string; onClick: () => void }) {
+// ─── Auto-advance choice tile ─────────────────────────────────────────────────
+function Choice({ label, sub, icon, onClick }: { label:string; sub?:string; icon:string; onClick:()=>void }) {
   const [flash, setFlash] = useState(false);
+  function handle() { setFlash(true); setTimeout(onClick, 200); }
   return (
-    <motion.button onClick={() => { setFlash(true); setTimeout(onClick, 220); }} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} style={{ width: "100%", textAlign: "left", padding: "16px 20px", marginBottom: 10, borderRadius: 12, background: flash ? "rgba(232,52,26,0.12)" : "var(--surface)", border: `1px solid ${flash ? "#e8341a" : "var(--border)"}`, cursor: "pointer", display: "flex", alignItems: "center", gap: 14 }}>
-      <span style={{ fontSize: 22, flexShrink: 0 }}>{icon}</span>
-      <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: "var(--font-body)", fontWeight: 500, fontSize: 15, color: flash ? "#e8341a" : "var(--text)" }}>{label}</div>
-        {sub && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", marginTop: 2 }}>{sub}</div>}
+    <motion.button onClick={handle} whileHover={{ scale:1.015 }} whileTap={{ scale:0.975 }}
+      style={{ width:"100%", textAlign:"left", padding:"15px 18px", marginBottom:9, borderRadius:12,
+        background: flash?"rgba(232,52,26,0.1)":"var(--surface)",
+        border:`1px solid ${flash?"#e8341a":"var(--border)"}`,
+        boxShadow: flash?"0 0 18px rgba(232,52,26,0.15)":"none",
+        cursor:"none", transition:"all 0.12s", display:"flex", alignItems:"center", gap:12 }}>
+      <span style={{ fontSize:20, lineHeight:1, flexShrink:0 }}>{icon}</span>
+      <div style={{ flex:1 }}>
+        <div style={{ fontFamily:"var(--font-body)", fontWeight:500, fontSize:15, color:flash?"#e8341a":"var(--text)", transition:"color 0.12s" }}>{label}</div>
+        {sub && <div style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"var(--muted)", marginTop:2 }}>{sub}</div>}
       </div>
+      <motion.span animate={{ x:flash?6:0 }} style={{ color:"var(--muted)", fontSize:14, flexShrink:0 }}>→</motion.span>
     </motion.button>
   );
 }
 
-function Question({ question, sub, children }: { question: string; sub?: string; children: React.ReactNode }) {
+// ─── Question wrapper ─────────────────────────────────────────────────────────
+function Q({ q, sub, children }: { q:string; sub?:string; children:React.ReactNode }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} style={{ width: "100%", maxWidth: 520, margin: "0 auto" }}>
-      <div style={{ marginBottom: 28, textAlign: "center" }}>
-        <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px,6vw,44px)", color: "var(--text)", letterSpacing: "0.03em", lineHeight: 1.05, marginBottom: 10 }}>{question}</h2>
-        {sub && <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.5 }}>{sub}</p>}
+    <motion.div initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-16 }}
+      transition={{ duration:0.3,ease:[0.16,1,0.3,1] }} style={{ width:"100%",maxWidth:500,margin:"0 auto" }}>
+      <div style={{ textAlign:"center", marginBottom:24 }}>
+        <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(26px,6vw,40px)", color:"var(--text)", letterSpacing:"0.03em", lineHeight:1.05, marginBottom:sub?10:0 }}>{q}</h2>
+        {sub && <p style={{ fontFamily:"var(--font-body)", fontSize:14, color:"var(--text2)", lineHeight:1.6 }}>{sub}</p>}
       </div>
       {children}
     </motion.div>
   );
 }
 
-// ─── Email Gate for Funnel ────────────────────────────────────────────────────
-function FunnelEmailGate({ onSubmit, loading }: { onSubmit: (e: string) => Promise<void>; loading: boolean }) {
-  const [email, setEmail] = useState(""); const [err, setErr] = useState("");
-  const ref = useRef<HTMLInputElement>(null);
-  useEffect(() => { ref.current?.focus(); }, []);
+// ─── Personalised pitch engine ────────────────────────────────────────────────
+const BUSINESS_TYPES = [
+  { val:"ecom",    icon:"🛒", label:"E-commerce / Online store",       sub:"Selling products or services online" },
+  { val:"service", icon:"💼", label:"Service business / Agency",       sub:"Leads, enquiries, bookings" },
+  { val:"local",   icon:"📍", label:"Local / Brick & mortar business", sub:"Driving foot traffic or local calls" },
+  { val:"saas",    icon:"💻", label:"SaaS / Tech product",             sub:"Free trials, signups, demos" },
+];
+const GOALS = [
+  { val:"leads",    icon:"🎯", label:"Get more leads from existing traffic" },
+  { val:"speed",    icon:"⚡", label:"Make the site faster — it's embarrassing" },
+  { val:"convert",  icon:"💰", label:"Turn more visitors into paying customers" },
+  { val:"automate", icon:"🤖", label:"Stop manually chasing leads — automate it" },
+];
+interface PitchData {
+  headline:string; subline:string;
+  services:{ id:string; icon:string; title:string; hook:string; desc:string; proof:string; price:string; urgency:string; }[];
+}
+function buildPitch(result:AuditResult, fd:FunnelData): PitchData {
+  const score=result.metrics.performanceScore, loss=Math.round(result.annualRevenueLoss/1000), bt=fd.businessType||"service", goal=fd.goal||"leads";
+  const hooks:Record<string,string> = {
+    ecom:`Your store is losing £${loss}k/year in abandoned carts before customers even see your products.`,
+    service:`Potential clients are hitting your site and leaving before they ever pick up the phone.`,
+    local:`People are searching for exactly what you offer — and choosing the competitor with a faster site.`,
+    saas:`Signups are dropping off during your trial flow because the page takes too long to respond.`,
+  };
+  const services = [];
+  if (score < 70) services.push({ id:"speed",icon:"⚡",title:"Site Speed Rebuild",
+    hook:bt==="ecom"?"Faster checkout = more completed purchases":bt==="local"?"Load faster than your local competitors":"Load in under 1.5s — guaranteed",
+    desc:"We rebuild your pages on our performance infrastructure. Target: sub-1.5s load time on mobile. Most clients see a 40–60% bounce rate drop in week one.",
+    proof:"✓ TechFlow: score 24→91, bounce rate down 58%, enquiries 3× in 30 days.",
+    price:"From £1,200 · Fixed price · 5-day turnaround",
+    urgency:score<40?"Your score is CRITICAL — every day costs you money.":"Your score is below Google's recommended threshold.",
+  });
+  if (goal==="leads"||goal==="automate"||bt==="service"||bt==="local") services.push({ id:"ai",icon:"🤖",title:"AI Lead Response Agent",
+    hook:"Respond to every enquiry in under 90 seconds. Even at midnight.",
+    desc:"Your current response time is probably hours. Ours is 90 seconds. The AI qualifies the lead, answers their question, and books a call — before they've had time to check your competitor.",
+    proof:"✓ Patel Plumbing: 6 new bookings in the first week.",
+    price:"From £350/mo · Setup in 48hrs · Cancel anytime",
+    urgency:"The average business takes 47 hours to respond. You're losing to whoever responds first.",
+  });
+  if (goal==="leads"||bt==="local") services.push({ id:"leads",icon:"🎯",title:"Weekly Verified Leads",
+    hook:`${bt==="local"?"Local buyers actively searching for your services":"High-intent prospects in your vertical"} — delivered every Monday.`,
+    desc:"Verified, opted-in prospects in your industry. Not scraped data — real people who've shown intent. Delivered weekly, exclusive to you.",
+    proof:"✓ Craft Brewery: 22 verified local leads in first month. Closed 7 new wholesale accounts.",
+    price:"From £600/mo · 15–40 leads/week · Exclusive",
+    urgency:"We only supply one business per area.",
+  });
+  if (fd.q2==="50-100k"||fd.q2==="100k+") services.push({ id:"subscribe",icon:"📊",title:"Nexus Pulse — Performance Intelligence",
+    hook:"Know before your competitors do. Weekly automated audit + competitor benchmarking.",
+    desc:"Every week: your site re-audited + a benchmarking report showing how you compare to the top 10 sites in your sector. SMS alert if a competitor overtakes you.",
+    proof:"✓ Luxe Interiors: 'We use the benchmarking report in our board meetings.'",
+    price:"£49/mo · 7-day free trial · Cancel anytime",
+    urgency:"Businesses that track their performance regularly are 3× more likely to stay ahead of algorithm changes.",
+  });
+  return {
+    headline:bt==="ecom"?`Your store is leaving £${loss}k on the table.`:`£${loss}k/year is leaking — here's the exact plan.`,
+    subline:hooks[bt]||hooks.service,
+    services:services.slice(0,3),
+  };
+}
 
+// ─── Discover — 2 quick questions after seeing results ───────────────────────
+function Discover({ onDone }: { onDone:(bt:string,goal:string)=>void }) {
+  const [bt, setBt] = useState<string|null>(null);
+  const ref = useRef<HTMLDivElement>(null);
+  if (!bt) return (
+    <motion.div ref={ref} initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} style={{ width:"100%",maxWidth:500,margin:"24px auto 0" }}>
+      <div style={{ textAlign:"center",marginBottom:22 }}>
+        <p style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--accent)",letterSpacing:"0.2em",marginBottom:8 }}>ONE MORE THING</p>
+        <h2 style={{ fontFamily:"var(--font-display)",fontSize:"clamp(24px,5vw,36px)",color:"var(--text)",letterSpacing:"0.04em",lineHeight:1.1 }}>What kind of business is this?</h2>
+        <p style={{ fontFamily:"var(--font-body)",fontSize:13,color:"var(--text2)",marginTop:8 }}>Personalises your recommendations — takes 10 seconds.</p>
+      </div>
+      {BUSINESS_TYPES.map(c => <Choice key={c.val} icon={c.icon} label={c.label} sub={c.sub} onClick={() => setBt(c.val)} />)}
+    </motion.div>
+  );
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ position: "absolute", inset: 0, zIndex: 20, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(16px)", background: "rgba(3,7,15,0.9)" }}>
-      <div style={{ width: "100%", maxWidth: 420, background: "var(--surface)", border: "1px solid rgba(232,52,26,0.35)", borderRadius: 16, padding: "40px 32px", textAlign: "center" }}>
-        <h3 style={{ fontFamily: "var(--font-display)", fontSize: 30, color: "var(--text)", letterSpacing: "0.05em", lineHeight: 1.1 }}>REPORT READY</h3>
-        <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", margin: "10px 0 24px" }}>Enter your email to unlock your full diagnostic and automated fix plan.</p>
-        <input ref={ref} type="email" value={email} placeholder="you@company.com" onChange={e => setEmail(e.target.value)} onKeyDown={e => { if(e.key === "Enter") { setErr(""); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setErr("Enter a valid email."); return; } onSubmit(email.trim()); } }} style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "14px 16px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 14, marginBottom: err ? 8 : 12 }} />
-        {err && <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", marginBottom: 10 }}>{err}</p>}
-        <button onClick={() => { setErr(""); if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setErr("Enter a valid email."); return; } onSubmit(email.trim()); }} disabled={loading} className="btn-primary" style={{ width: "100%", padding: "16px", borderRadius: 8, fontSize: 13, letterSpacing: "0.15em" }}>{loading ? "UNLOCKING..." : "UNLOCK MY REPORT →"}</button>
+    <motion.div initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} style={{ width:"100%",maxWidth:500,margin:"24px auto 0" }}>
+      <div style={{ textAlign:"center",marginBottom:22 }}>
+        <h2 style={{ fontFamily:"var(--font-display)",fontSize:"clamp(24px,5vw,36px)",color:"var(--text)",letterSpacing:"0.04em",lineHeight:1.1 }}>What matters most right now?</h2>
+        <p style={{ fontFamily:"var(--font-body)",fontSize:13,color:"var(--text2)",marginTop:8 }}>No wrong answer — this shapes your personalised plan.</p>
+      </div>
+      {GOALS.map(c => <Choice key={c.val} icon={c.icon} label={c.label} onClick={() => onDone(bt, c.val)} />)}
+    </motion.div>
+  );
+}
+
+// ─── Personalised pitch section ───────────────────────────────────────────────
+function Pitch({ pitch, onBook }: { pitch:PitchData; onBook:()=>void }) {
+  const [expanded, setExpanded] = useState<string|null>(pitch.services[0]?.id||null);
+  const [claimed, setClaimed] = useState<string[]>([]);
+  const ref = useRef<HTMLDivElement>(null);
+  return (
+    <motion.div ref={ref} initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} style={{ width:"100%",maxWidth:600,margin:"0 auto",paddingBottom:32 }}>
+      <div style={{ textAlign:"center",marginBottom:28 }}>
+        <p style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--accent)",letterSpacing:"0.2em",marginBottom:10 }}>YOUR PERSONALISED PLAN</p>
+        <h2 style={{ fontFamily:"var(--font-display)",fontSize:"clamp(24px,5vw,36px)",color:"var(--text)",letterSpacing:"0.04em",lineHeight:1.1,marginBottom:10 }}>{pitch.headline}</h2>
+        <p style={{ fontFamily:"var(--font-body)",fontSize:14,color:"var(--text2)",lineHeight:1.65 }}>{pitch.subline}</p>
+      </div>
+      {pitch.services.map((svc,i) => {
+        const isOpen=expanded===svc.id, isClaimed=claimed.includes(svc.id);
+        return (
+          <motion.div key={svc.id} initial={{ opacity:0,y:12 }} animate={{ opacity:1,y:0 }} transition={{ delay:i*0.1 }}
+            style={{ borderRadius:12,overflow:"hidden",background:isOpen?"rgba(232,52,26,0.04)":"var(--surface)",border:`1px solid ${isOpen?"rgba(232,52,26,0.28)":"var(--border)"}`,marginBottom:10,transition:"all 0.2s" }}>
+            <button onClick={() => setExpanded(isOpen?null:svc.id)}
+              style={{ width:"100%",padding:"18px 20px",display:"flex",alignItems:"center",gap:14,background:"none",border:"none",cursor:"none",textAlign:"left" }}>
+              <span style={{ fontSize:22,flexShrink:0 }}>{svc.icon}</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:"var(--font-body)",fontWeight:600,fontSize:15,color:"var(--text)",marginBottom:3 }}>{svc.title}</div>
+                <div style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--muted)" }}>{svc.hook}</div>
+              </div>
+              {isClaimed && <span style={{ fontFamily:"var(--font-mono)",fontSize:9,color:"#10b981",letterSpacing:"0.1em",flexShrink:0 }}>✓ INTERESTED</span>}
+              <motion.span animate={{ rotate:isOpen?180:0 }} style={{ color:"var(--muted)",fontSize:12,flexShrink:0 }}>▼</motion.span>
+            </button>
+            <AnimatePresence>
+              {isOpen && (
+                <motion.div initial={{ height:0,opacity:0 }} animate={{ height:"auto",opacity:1 }} exit={{ height:0,opacity:0 }} transition={{ duration:0.28,ease:[0.16,1,0.3,1] }} style={{ overflow:"hidden" }}>
+                  <div style={{ padding:"0 20px 22px" }}>
+                    <div style={{ height:1,background:"var(--border)",marginBottom:16 }} />
+                    <div style={{ padding:"10px 14px",borderRadius:8,background:"rgba(232,52,26,0.06)",border:"1px solid rgba(232,52,26,0.15)",marginBottom:14 }}>
+                      <p style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--accent)",lineHeight:1.6 }}>⚠ {svc.urgency}</p>
+                    </div>
+                    <p style={{ fontFamily:"var(--font-body)",fontSize:14,color:"var(--text2)",lineHeight:1.65,marginBottom:14 }}>{svc.desc}</p>
+                    <div style={{ padding:"12px 14px",borderRadius:8,background:"var(--surface2)",border:"1px solid var(--border2)",marginBottom:16 }}>
+                      <p style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--text2)",lineHeight:1.6,fontStyle:"italic" }}>{svc.proof}</p>
+                    </div>
+                    <div style={{ display:"flex",alignItems:"center",gap:10,flexWrap:"wrap" }}>
+                      <button onClick={() => { setClaimed(p=>[...p,svc.id]); setTimeout(onBook,200); }}
+                        className="btn-primary" style={{ flex:1,padding:"14px",borderRadius:8,fontSize:12,letterSpacing:"0.1em",minWidth:160 }}>
+                        I&apos;M INTERESTED →
+                      </button>
+                      <span style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--muted)",whiteSpace:"nowrap" }}>{svc.price}</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        );
+      })}
+      <div style={{ padding:"24px",borderRadius:12,background:"var(--surface)",border:"1px solid var(--border)",textAlign:"center",marginTop:8 }}>
+        <p style={{ fontFamily:"var(--font-body)",fontSize:14,color:"var(--text2)",lineHeight:1.65,marginBottom:18 }}>
+          Not sure which option fits? Our team will review your results and tell you honestly what&apos;s worth investing in.
+        </p>
+        <button onClick={onBook} className="btn-primary" style={{ padding:"14px 36px",borderRadius:8,fontSize:12,letterSpacing:"0.12em" }}>
+          SPEAK TO AN AGENT →
+        </button>
+        <p style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted2)",marginTop:10 }}>Free · No pitch · 2-hour callback</p>
       </div>
     </motion.div>
   );
 }
 
-// ─── Main Funnel Logic ────────────────────────────────────────────────────────
+// ─── Phone capture ────────────────────────────────────────────────────────────
+function PhoneCapture({ result, fd, onDone }: { result:AuditResult; fd:FunnelData; onDone:(p:string)=>void }) {
+  const [phone, setPhone] = useState(""); const [err, setErr] = useState("");
+  const ref = useRef<HTMLInputElement>(null);
+  const loss = Math.round(result.annualRevenueLoss/1000);
+  const sc = result.metrics.performanceScore;
+  function submit() { const t=phone.replace(/\s/g,""); if(t.length<7){setErr("Enter a valid number.");return;} onDone(phone); }
+  return (
+    <motion.div initial={{ opacity:0,y:24 }} animate={{ opacity:1,y:0 }} style={{ maxWidth:440,margin:"0 auto",textAlign:"center" }}>
+      <motion.div initial={{ scale:0.8,opacity:0 }} animate={{ scale:1,opacity:1 }} transition={{ delay:0.1 }}
+        style={{ display:"inline-flex",alignItems:"center",gap:10,padding:"10px 20px",borderRadius:100,background:"rgba(232,52,26,0.08)",border:"1px solid rgba(232,52,26,0.25)",marginBottom:22 }}>
+        <span style={{ fontFamily:"var(--font-display)",fontSize:26,color:"var(--accent)",lineHeight:1 }}>{sc}</span>
+        <div style={{ textAlign:"left" }}>
+          <div style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--accent)",letterSpacing:"0.12em" }}>YOUR SCORE</div>
+          <div style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted)" }}>{sc<50?"CRITICAL":sc<80?"NEEDS WORK":"GOOD"}</div>
+        </div>
+      </motion.div>
+      <h2 style={{ fontFamily:"var(--font-display)",fontSize:"clamp(26px,5vw,38px)",color:"var(--text)",letterSpacing:"0.03em",lineHeight:1.1,marginBottom:12 }}>
+        {loss>0?`Let's stop that £${loss}k leak together.`:"Let's build you a plan."}
+      </h2>
+      <p style={{ fontFamily:"var(--font-body)",fontSize:14,color:"var(--text2)",lineHeight:1.65,marginBottom:26 }}>
+        Drop your number. One of our team calls within <strong style={{ color:"var(--text)" }}>2 hours</strong>. No script, no pressure — just a straight conversation about what&apos;s worth fixing first.
+      </p>
+      <div style={{ display:"flex",justifyContent:"center",gap:20,marginBottom:24 }}>
+        {[["🔒","Private"],["⏱","2hr call"],["🆓","No charge"]].map(([i,l]) => (
+          <div key={l} style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--muted)",display:"flex",alignItems:"center",gap:5 }}><span>{i}</span><span>{l}</span></div>
+        ))}
+      </div>
+      <input ref={ref} type="tel" value={phone} placeholder="+44 7700 000000"
+        onChange={e => setPhone(e.target.value)} onKeyDown={e => e.key==="Enter"&&submit()}
+        style={{ width:"100%",background:"var(--surface)",border:"1px solid var(--border2)",borderRadius:10,padding:"16px 18px",color:"var(--text)",fontFamily:"var(--font-mono)",fontSize:16,marginBottom:err?8:12,textAlign:"center",letterSpacing:"0.04em" }} />
+      {err && <p style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--accent)",marginBottom:10 }}>{err}</p>}
+      <button onClick={submit} className="btn-primary" style={{ width:"100%",padding:"16px",borderRadius:10,fontSize:13,letterSpacing:"0.12em",marginBottom:14 }}>
+        GET MY FREE CALLBACK →
+      </button>
+      <p style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted2)" }}>
+        Not ready? <button onClick={() => onDone("")} style={{ background:"none",border:"none",color:"var(--muted)",textDecoration:"underline",cursor:"none",fontFamily:"var(--font-mono)",fontSize:10 }}>Skip for now</button>
+      </p>
+    </motion.div>
+  );
+}
+
+// ─── Booked ───────────────────────────────────────────────────────────────────
+function Booked({ phone }: { phone:string }) {
+  return (
+    <motion.div initial={{ opacity:0,scale:0.95 }} animate={{ opacity:1,scale:1 }} style={{ maxWidth:420,margin:"0 auto",textAlign:"center" }}>
+      <motion.div initial={{ scale:0 }} animate={{ scale:1 }} transition={{ delay:0.1,type:"spring",stiffness:180 }}
+        style={{ width:70,height:70,borderRadius:"50%",background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.3)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 22px",fontSize:30 }}>✓</motion.div>
+      <h2 style={{ fontFamily:"var(--font-display)",fontSize:"clamp(28px,5vw,40px)",color:"var(--text)",letterSpacing:"0.04em",marginBottom:12 }}>YOU&apos;RE ALL SET</h2>
+      <p style={{ fontFamily:"var(--font-body)",fontSize:14,color:"var(--text2)",lineHeight:1.65,marginBottom:22 }}>
+        {phone?`We'll call ${phone} within 2 hours.`:"We'll be in touch shortly."} Expect a real conversation — not a sales call.
+      </p>
+      <div style={{ padding:"16px",borderRadius:10,background:"var(--surface)",border:"1px solid var(--border)",marginBottom:22 }}>
+        <div style={{ display:"flex",justifyContent:"center",gap:28 }}>
+          {[["⏱","2hr callback"],["📋","Personalised plan"],["🆓","No charge"]].map(([i,l]) => (
+            <div key={l} style={{ textAlign:"center" }}><div style={{ fontSize:20,marginBottom:3 }}>{i}</div><div style={{ fontFamily:"var(--font-mono)",fontSize:9,color:"var(--muted)" }}>{l}</div></div>
+          ))}
+        </div>
+      </div>
+      <button onClick={() => window.location.reload()} style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted)",background:"none",border:"none",textDecoration:"underline",cursor:"none" }}>Audit another site</button>
+    </motion.div>
+  );
+}
+
+// ─── URL step ─────────────────────────────────────────────────────────────────
+function UrlStep({ onAudit, error, q1 }: { onAudit:(u:string)=>void; error:string; q1?:string }) {
+  const [url, setUrl] = useState("");
+  const msg:Record<string,string> = { competitors:"We'll show you exactly where they're beating you.", conversions:"We'll pinpoint every bottleneck costing you sales.", speed:"We'll measure every millisecond of friction.", all:"We'll give you the full picture." };
+  return (
+    <Q q="Drop your URL. See the truth in 60 seconds." sub={q1?msg[q1]:"Let's see what's really going on."}>
+      <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12 }}>
+        {[["60s","To complete"],["Free","No card"],["Real","Google data"]].map(([v,l]) => (
+          <div key={l} style={{ textAlign:"center",padding:"10px 6px",borderRadius:8,background:"var(--surface)",border:"1px solid var(--border)" }}>
+            <div style={{ fontFamily:"var(--font-display)",fontSize:20,color:"var(--accent)",letterSpacing:"0.04em" }}>{v}</div>
+            <div style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted)",marginTop:1 }}>{l}</div>
+          </div>
+        ))}
+      </div>
+      <input type="text" value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key==="Enter"&&url.trim()&&onAudit(url)}
+        placeholder="https://yourwebsite.com" autoFocus
+        style={{ width:"100%",background:"var(--surface)",border:"1px solid var(--border2)",borderRadius:10,padding:"16px 18px",color:"var(--text)",fontFamily:"var(--font-mono)",fontSize:14,marginBottom:error?8:10 }} />
+      {error && <p style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--accent)",marginBottom:10 }}>⚠ {error}</p>}
+      <button onClick={() => url.trim()&&onAudit(url)} disabled={!url.trim()} className="btn-primary" style={{ width:"100%",padding:"16px",borderRadius:10,fontSize:13,letterSpacing:"0.12em" }}>
+        SCAN MY SITE NOW →
+      </button>
+      <p style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted2)",textAlign:"center",marginTop:10 }}>Powered by Google PageSpeed · No account needed</p>
+    </Q>
+  );
+}
+
+// ─── Main funnel ──────────────────────────────────────────────────────────────
 export default function Funnel() {
   const [step, setStep] = useState<Step>("q1");
-  const [data, setData] = useState<FunnelData>({});
-  const [result, setResult] = useState<AuditResult | null>(null);
+  const [fd, setFd] = useState<FunnelData>({});
+  const [result, setResult] = useState<AuditResult|null>(null);
+  const [pitch, setPitch] = useState<PitchData|null>(null);
   const [emailLoading, setEmailLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const go = (update: Partial<FunnelData>, next: Step) => { setData(p => ({ ...p, ...update })); setStep(next); };
+  const go = (update:Partial<FunnelData>, next:Step) => { setFd(p=>({...p,...update})); setStep(next); };
 
-  const runAudit = useCallback(async (url: string) => {
-    setData(p => ({ ...p, url })); setStep("loading"); setError("");
-    try { const r = await fetchAudit(url); setResult(r); setStep("email"); } 
-    catch (e) { setError("Failed to audit URL."); setStep("url"); }
+  const runAudit = useCallback(async (url:string) => {
+    setFd(p=>({...p,url})); setStep("loading"); setError("");
+    try { const r=await fetchAudit(url); setResult(r); setStep("email"); }
+    catch(e) { setError(e instanceof Error?e.message:"Could not reach PageSpeed API."); setStep("url"); }
   }, []);
 
-  // 🐛 FIXED: Now properly sends the survey answers (q1, q2, q3) directly into your Google Sheet!
-  const submitEmail = useCallback(async (email: string) => {
-    if (!result) return; setEmailLoading(true);
-    try { await fetch("/api/capture", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, url: result.url, score: result.metrics.performanceScore, source: "funnel", q1: data.q1, q2: data.q2, q3: data.q3 }) }); } 
-    catch {} finally { setEmailLoading(false); setStep("results"); }
-  }, [result, data]);
+  const submitEmail = useCallback(async (email:string) => {
+    if(!result) return;
+    setEmailLoading(true);
+    try { await fetch("/api/capture",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,url:result.url,score:result.metrics.performanceScore,adLossPercent:result.adLossPercent,bounceRateIncrease:result.bounceRateIncrease,annualRevenueLoss:result.annualRevenueLoss,severity:result.severity,timestamp:result.timestamp,...fd,source:"funnel"})}); }
+    catch { /* swallow */ }
+    finally { setEmailLoading(false); setFd(p=>({...p,email})); setStep("report"); }
+  }, [result, fd]);
+
+  const submitPhone = useCallback(async (phone:string) => {
+    if(phone) { setFd(p=>({...p,phone}));
+      try { await fetch("/api/capture",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:fd.email,url:result?.url,score:result?.metrics.performanceScore,phone,...fd,source:"funnel-phone"})}); }
+      catch { /* swallow */ }
+    }
+    setStep("booked");
+  }, [fd, result]);
+
+  const handleDiscover = (bt:string, goal:string) => {
+    const updated = {...fd, businessType:bt, goal};
+    setFd(updated);
+    if(result) setPitch(buildPitch(result, updated));
+    setStep("pitch");
+  };
 
   return (
-    <main style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 16px" }}>
-      <nav style={{ position: "absolute", top: 0, width: "100%", maxWidth: 860, display: "flex", justifyContent: "space-between", padding: "40px 16px" }}>
-        <a href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--text)", letterSpacing: "0.1em" }}>NEXUS</span></a>
-      </nav>
-
+    <main style={{ minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"40px 16px 32px",position:"relative",zIndex:10 }}>
       <AnimatePresence mode="wait">
-        
-        {step === "q1" && (
-          <motion.div key="q1" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} style={{ width: "100%" }}>
-            <ProgressDots step="q1" />
-            <Question question="What happens when a new lead lands on your site today?" sub="Be honest. Most sites are leaking traffic before a human ever gets to interact.">
-              <Choice icon="📉" label="They look around, but bounce before converting." onClick={() => go({ q1: "bounce" }, "q2")} />
-              <Choice icon="😤" label="They rage-quit because things feel broken or slow." onClick={() => go({ q1: "slow" }, "q2")} />
-              <Choice icon="💸" label="They leave and buy from my competitor instead." onClick={() => go({ q1: "competitor" }, "q2")} />
-            </Question>
+
+        {step==="q1" && <motion.div key="q1" initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-16 }} style={{ width:"100%" }}>
+          <ProgressDots step="q1"/>
+          <Q q="What's your biggest website frustration right now?">
+            <Choice icon="⚔️" label="Losing customers to competitors with better sites" onClick={()=>go({q1:"competitors"},"q2")}/>
+            <Choice icon="📉" label="Traffic's there — people just don't convert" sub="Visitors leave without taking action" onClick={()=>go({q1:"conversions"},"q2")}/>
+            <Choice icon="🐌" label="Site feels slow, especially on mobile" onClick={()=>go({q1:"speed"},"q2")}/>
+            <Choice icon="🔥" label="All of the above, honestly" onClick={()=>go({q1:"all"},"q2")}/>
+          </Q>
+        </motion.div>}
+
+        {step==="q2" && <motion.div key="q2" initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-16 }} style={{ width:"100%" }}>
+          <ProgressDots step="q2"/>
+          <Q q="How much annual revenue flows through your site?" sub="This helps us calculate your actual money at risk.">
+            <Choice icon="🌱" label="Under £10,000" sub="Early growth stage" onClick={()=>go({q2:"sub10k"},"q3")}/>
+            <Choice icon="📈" label="£10k – £50k" onClick={()=>go({q2:"10-50k"},"q3")}/>
+            <Choice icon="💼" label="£50k – £100k" sub="Main revenue channel" onClick={()=>go({q2:"50-100k"},"q3")}/>
+            <Choice icon="🏆" label="£100k+" sub="Every % point matters" onClick={()=>go({q2:"100k+"},"q3")}/>
+          </Q>
+        </motion.div>}
+
+        {step==="q3" && <motion.div key="q3" initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-16 }} style={{ width:"100%" }}>
+          <ProgressDots step="q3"/>
+          <Q q="When did you last run a proper performance check?" sub="Most sites quietly degrade every 90 days.">
+            <Choice icon="🙈" label="Never — I've been flying blind" onClick={()=>go({q3:"never"},"url")}/>
+            <Choice icon="📅" label="Over a year ago" onClick={()=>go({q3:"year+"},"url")}/>
+            <Choice icon="🔧" label="6 months ago" sub="But nothing was fixed" onClick={()=>go({q3:"6months"},"url")}/>
+            <Choice icon="✅" label="Recently — just want a second opinion" onClick={()=>go({q3:"recent"},"url")}/>
+          </Q>
+        </motion.div>}
+
+        {step==="url" && <motion.div key="url" initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-16 }} style={{ width:"100%" }}>
+          <ProgressDots step="url"/>
+          <UrlStep onAudit={runAudit} error={error} q1={fd.q1}/>
+        </motion.div>}
+
+        {step==="loading" && <motion.div key="loading" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} style={{ width:"100%" }}>
+          {/* ✅ Same TerminalLoader as homepage */}
+          <TerminalLoader url={fd.url??""} />
+        </motion.div>}
+
+        {step==="email" && result && (
+          <motion.div key="email" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
+            style={{ position:"relative",width:"100%",maxWidth:860 }}>
+            {/* ✅ Same blurred ResultsPanel + EmailGate as homepage */}
+            <div className="blur-veil"><ResultsPanel result={result} /></div>
+            <EmailGate onSubmit={submitEmail} loading={emailLoading} />
           </motion.div>
         )}
 
-        {step === "q2" && (
-          <motion.div key="q2" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} style={{ width: "100%" }}>
-            <ProgressDots step="q2" />
-            <Question question="If we fixed that today, how much is that worth to you annually?" sub="Quantify the pain. How much money is walking out the back door?">
-              <Choice icon="🌱" label="Under £10,000" onClick={() => go({ q2: "sub10k" }, "q3")} />
-              <Choice icon="📈" label="£10k – £100k" onClick={() => go({ q2: "mid" }, "q3")} />
-              <Choice icon="🏆" label="£100k+ (It's a massive leak)" onClick={() => go({ q2: "high" }, "q3")} />
-            </Question>
+        {step==="report" && result && (
+          <motion.div key="report" initial={{ opacity:0 }} animate={{ opacity:1 }} style={{ width:"100%" }}>
+            {/* ✅ Same ResultsPanel as homepage — onDiscover triggers the personalised plan flow */}
+            <ResultsPanel result={result} onDiscover={() => setStep("discover")} />
           </motion.div>
         )}
 
-        {step === "q3" && (
-          <motion.div key="q3" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} style={{ width: "100%" }}>
-            <ProgressDots step="q3" />
-            <Question question="How confident are you in your site's mobile performance right now?" sub="Google penalizes sites with poor Core Web Vitals.">
-              <Choice icon="😎" label="Very confident. It's perfectly optimized." onClick={() => go({ q3: "confident" }, "url")} />
-              <Choice icon="🤷" label="I know it's bad, but I don't know how to fix it." onClick={() => go({ q3: "stuck" }, "url")} />
-              <Choice icon="🙈" label="I have no idea. I am flying completely blind." onClick={() => go({ q3: "blind" }, "url")} />
-            </Question>
+        {step==="discover" && (
+          <motion.div key="discover" initial={{ opacity:0 }} animate={{ opacity:1 }} style={{ width:"100%" }}>
+            {result && <ResultsPanel result={result} />}
+            <Discover onDone={handleDiscover} />
           </motion.div>
         )}
 
-        {step === "url" && (
-          <motion.div key="url" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} style={{ width: "100%" }}>
-            <ProgressDots step="url" />
-            <Question question="Drop your URL. See the truth in 60 seconds." sub="We'll measure every millisecond of friction causing your users to bounce.">
-              <input type="text" placeholder="https://yourwebsite.com" onKeyDown={e => e.key === "Enter" && runAudit(e.currentTarget.value)} style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 10, padding: "16px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 14 }} />
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", marginTop: 8 }}>{error}</p>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", textAlign: "center", marginTop: 12 }}>Press Enter to scan</p>
-            </Question>
+        {step==="pitch" && pitch && (
+          <motion.div key="pitch" initial={{ opacity:0 }} animate={{ opacity:1 }} style={{ width:"100%" }}>
+            <Pitch pitch={pitch} onBook={() => setStep("phone")} />
           </motion.div>
         )}
 
-        {step === "loading" && <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ color: "var(--accent)", fontFamily: "var(--font-mono)", letterSpacing: "0.2em" }}>SCANNING ENGINE ACTIVE...</motion.div>}
-
-        {step === "email" && result && (
-          <motion.div key="email" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ position: "relative", width: "100%", maxWidth: 900 }}>
-            <div className="blur-veil" style={{ pointerEvents: "none" }}><UnifiedResultsPanel result={result} url={data.url || ""} isBlurred={true} /></div>
-            <FunnelEmailGate onSubmit={submitEmail} loading={emailLoading} />
+        {step==="phone" && result && (
+          <motion.div key="phone" initial={{ opacity:0,y:24 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-16 }} style={{ width:"100%" }}>
+            <PhoneCapture result={result} fd={fd} onDone={submitPhone} />
           </motion.div>
         )}
 
-        {step === "results" && result && (
-          <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ width: "100%" }}>
-            <UnifiedResultsPanel result={result} url={data.url || ""} isBlurred={false} />
+        {step==="booked" && (
+          <motion.div key="booked" initial={{ opacity:0 }} animate={{ opacity:1 }} style={{ width:"100%" }}>
+            <Booked phone={fd.phone??""} />
           </motion.div>
         )}
 
