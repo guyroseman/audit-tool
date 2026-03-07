@@ -4,8 +4,28 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const PLANS = [
   {
+    id: "starter",
+    name: "STARTER",
+    price: 29,
+    period: "mo",
+    badge: "ENTRY",
+    badgeColor: "#6b7280",
+    accent: "rgba(107,114,128,",
+    features: [
+      ["📡", "Manual site audits only"],
+      ["🔍", "Track 0 competitors"],
+      ["📊", "Basic Core Web Vitals"],
+      ["🔔", "No alerts or webhooks"],
+    ],
+    cta: "SELECT STARTER",
+    ctaBg: "#374151",
+    ctaShadow: "rgba(0,0,0,0)",
+    guarantee: "Cancel anytime · No lock-in",
+    checkoutUrl: "#" // Replace when you have a $29 product
+  },
+  {
     id: "pulse",
-    name: "NEXUS PULSE",
+    name: "NEXUS PULSE PRO",
     price: 49,
     period: "mo",
     badge: "MOST POPULAR",
@@ -13,43 +33,37 @@ const PLANS = [
     accent: "rgba(167,139,250,",
     features: [
       ["📡", "Weekly automated audit of your site"],
-      ["🔍", "Track 3 competitor URLs side-by-side"],
-      ["📱", "SMS alert when a competitor overtakes your score"],
-      ["📈", "Monthly PDF performance report"],
-      ["📊", "Core Web Vitals trend charts"],
-      ["🔔", "Email alerts for score drops > 10 points"],
+      ["🔍", "Track up to 3 competitor URLs"],
+      ["📱", "SMS & Email alerts for score drops"],
+      ["📈", "AI Developer Action Plans"],
+      ["🔔", "Make.com & Slack Webhooks"],
     ],
     cta: "ACTIVATE PRO DASHBOARD",
     ctaBg: "#a78bfa",
     ctaShadow: "rgba(167,139,250,0.4)",
     guarantee: "Cancel anytime · Secure checkout via Lemon Squeezy",
-    // YOUR LIVE LEMON SQUEEZY LINK:
-    checkoutUrl: "https://nexus-diagnostics.lemonsqueezy.com/checkout/buy/a537b230-59dc-4950-8b58-58af49e3301a"
+    checkoutUrl: "https://nexus-diagnostics.lemonsqueezy.com/checkout/buy/a537b230-59dc-4950-8b58-58af49e3301a" 
   },
   {
-    id: "pulse-pro",
-    name: "NEXUS PULSE PRO",
+    id: "agency",
+    name: "AGENCY",
     price: 149,
     period: "mo",
-    badge: "BEST FOR AGENCIES",
+    badge: "FOR TEAMS",
     badgeColor: "#e8341a",
     accent: "rgba(232,52,26,",
     features: [
-      ["📡", "Daily automated audit of your site"],
-      ["🔍", "Track 10 competitor URLs side-by-side"],
-      ["📱", "Instant SMS + WhatsApp alerts"],
-      ["📈", "Weekly PDF white-label report (your branding)"],
-      ["📊", "Full Core Web Vitals + Lighthouse history"],
-      ["🔔", "Slack & webhook integrations"],
+      ["📡", "Daily automated site audits"],
+      ["🔍", "Track up to 10 competitor URLs"],
+      ["📈", "Weekly PDF white-label reports"],
       ["👥", "3 team seats included"],
-      ["🎯", "Priority email support"],
+      ["🎯", "Priority technical support"],
     ],
-    cta: "ACTIVATE AGENCY DASHBOARD",
+    cta: "ACTIVATE AGENCY",
     ctaBg: "#e8341a",
     ctaShadow: "rgba(232,52,26,0.4)",
     guarantee: "Cancel anytime · White-label ready from day 1",
-    // FOR NOW, redirecting to the same link. Create a $149 product in Lemon Squeezy later and put that link here!
-    checkoutUrl: "https://nexus-diagnostics.lemonsqueezy.com/checkout/buy/a537b230-59dc-4950-8b58-58af49e3301a"
+    checkoutUrl: "#" // Replace when you have a $149 product
   },
 ];
 
@@ -72,6 +86,10 @@ export default function Subscribe() {
   const [openFaq, setOpenFaq] = useState<number|null>(null);
 
   function handleCheckout(url: string) {
+    if (url === "#") {
+      alert("This plan is coming soon. Please select Nexus Pulse PRO.");
+      return;
+    }
     window.location.href = url;
   }
 
@@ -81,7 +99,7 @@ export default function Subscribe() {
     <main style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", fontFamily: "var(--font-body)", position: "relative", zIndex: 10 }}>
 
       {/* Nav */}
-      <nav style={{ width: "100%", maxWidth: 900, margin: "0 auto", padding: "28px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <nav style={{ width: "100%", maxWidth: 1000, margin: "0 auto", padding: "28px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <a href="/" style={{ display: "flex", alignItems: "center", gap: 10, textDecoration: "none" }}>
           <svg width={24} height={24} viewBox="0 0 28 28" fill="none">
             <path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)" />
@@ -92,7 +110,7 @@ export default function Subscribe() {
         <a href="/funnel" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", textDecoration: "none" }}>← Back to free audit</a>
       </nav>
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px 80px" }}>
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 16px 80px" }}>
 
         {/* Hero */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -124,7 +142,7 @@ export default function Subscribe() {
         </motion.div>
 
         {/* Plan cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))", gap: 16, marginBottom: 60 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16, marginBottom: 60 }}>
           {PLANS.map((plan, i) => (
             <motion.div key={plan.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
               style={{ borderRadius: 16, border: `1px solid ${plan.accent}0.3)`, background: `linear-gradient(135deg,${plan.accent}0.06),${plan.accent}0.02))`, padding: "28px 24px", position: "relative", overflow: "hidden" }}>
@@ -246,7 +264,7 @@ export default function Subscribe() {
           <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px", lineHeight: 1.7 }}>
             Unlock your competitive advantage in the next 60 seconds.
           </p>
-          <button onClick={() => handleCheckout(PLANS[0].checkoutUrl)}
+          <button onClick={() => handleCheckout(PLANS[1].checkoutUrl)}
             style={{ display: "inline-block", padding: "16px 48px", borderRadius: 10, background: "#a78bfa", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 13, letterSpacing: "0.15em", border: "none", cursor: "pointer", boxShadow: "0 0 30px rgba(167,139,250,0.35)" }}>
             GET INSTANT ACCESS →
           </button>

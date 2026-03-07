@@ -35,7 +35,6 @@ function ScoreRing({ score, size = 56 }: { score: number; size?: number }) {
 }
 
 // ─── Dynamic Task Generator ───
-// This now creates personalized tasks based on their EXACT metrics
 function generateDynamicTasks(result: AuditResult): Task[] {
   const tasks: Task[] = [];
   const loss = result.annualRevenueLoss;
@@ -64,16 +63,31 @@ export default function Dashboard() {
   const [pulseEvents, setPulseEvents] = useState<{time:string, text:string, type:"good"|"bad"|"neutral"}[]>([{ time: "Just now", text: "System connection established. Database synced.", type: "neutral" }]);
   const [newUrl, setNewUrl] = useState("");
 
-  // 1. PERSISTENCE ENGINE (Load from Database/LocalStorage)
+  // 1. AUTH BOUNCER & PERSISTENCE LOAD
   useEffect(() => {
+    // Check if returning from Lemon Squeezy successful payment
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("payment") === "success") {
+      localStorage.setItem("nexus_auth_tier", "pro");
+      window.history.replaceState({}, document.title, "/dashboard"); // Clean the URL
+    }
+
+    // Auth Check: Kick out if not paid
+    // NOTE: To bypass this during local development, manually add "nexus_auth_tier" to your browser's local storage.
+    const authTier = localStorage.getItem("nexus_auth_tier");
+    if (!authTier) {
+      window.location.href = "/subscribe";
+      return;
+    }
+
+    // Load Database
     const savedData = localStorage.getItem("nexus_pulse_db");
     if (savedData) {
       const parsed = JSON.parse(savedData);
       setSites(parsed.sites || []);
       setSettings(parsed.settings || { smsPhone: "", smsAlerts: false, webhookUrl: "", weeklyDigest: true, criticalAlerts: true });
     } else {
-      // Default state if totally new
-      setSites([{ id: "demo", url: "yourwebsite.com", label: "Your Domain", isOwn: true, result: null, history: [], tasks: [], loading: false, error: "" }]);
+      setSites([]); // Start completely empty for the Premium Initialization screen
     }
     setIsLoaded(true);
   }, []);
@@ -94,32 +108,33 @@ export default function Dashboard() {
 
   const logPulse = (text: string, type: "good"|"bad"|"neutral") => setPulseEvents(prev => [{ time: "Just now", text, type }, ...prev].slice(0, 5));
 
-  // The Scan Engine
-  const scan = useCallback(async (id: string, forceUrl?: string) => {
+  // The Scan Engine (Now with 3.5s Fake Backend Delay)
+  const scan = useCallback((id: string, forceUrl?: string) => {
     const targetSite = sites.find(s => s.id === id);
     const targetUrl = forceUrl || targetSite?.url;
     if (!targetUrl) return;
 
-    // Clean URL
     let cleanUrl = targetUrl.trim();
     if (!cleanUrl.startsWith('http')) cleanUrl = 'https://' + cleanUrl;
 
     setSites(prev => prev.map(s => s.id === id ? { ...s, loading: true, error: "" } : s));
     logPulse(`Initiating deep scan for ${cleanUrl}...`, "neutral");
     
-    try {
-      const r = await fetchAudit(cleanUrl);
-      setSites(prev => prev.map(s => {
-        if (s.id !== id) return s;
-        // If it's our own site, generate dynamic tasks based on the new metrics
-        const updatedTasks = s.isOwn ? generateDynamicTasks(r) : [];
-        return { ...s, loading: false, result: r, url: cleanUrl, tasks: updatedTasks, history: [...s.history.slice(-11), { ts: r.timestamp, score: r.metrics.performanceScore }] };
-      }));
-      logPulse(`Scan complete. Metrics updated.`, "good");
-    } catch (e) {
-      setSites(prev => prev.map(s => s.id === id ? { ...s, loading: false, error: e instanceof Error ? e.message : "Scan failed" } : s));
-      logPulse(`Scan failed for ${cleanUrl}.`, "bad");
-    }
+    // Fake the backend processing time to build anticipation
+    setTimeout(async () => {
+      try {
+        const r = await fetchAudit(cleanUrl);
+        setSites(prev => prev.map(s => {
+          if (s.id !== id) return s;
+          const updatedTasks = s.isOwn ? generateDynamicTasks(r) : [];
+          return { ...s, loading: false, result: r, url: cleanUrl, tasks: updatedTasks, history: [...s.history.slice(-11), { ts: r.timestamp, score: r.metrics.performanceScore }] };
+        }));
+        logPulse(`Scan complete. Metrics updated.`, "good");
+      } catch (e) {
+        setSites(prev => prev.map(s => s.id === id ? { ...s, loading: false, error: e instanceof Error ? e.message : "Scan failed" } : s));
+        logPulse(`Scan failed for ${cleanUrl}.`, "bad");
+      }
+    }, 3500);
   }, [sites]);
 
   function addCompetitor(url: string) {
@@ -138,6 +153,12 @@ export default function Dashboard() {
   const markTaskVerifying = (taskId: string) => {
     setSites(prev => prev.map(s => s.isOwn ? { ...s, tasks: s.tasks.map(t => t.id === taskId ? { ...t, status: "verifying" as const } : t) } : s));
     logPulse("Developer push detected. Queueing verification scan.", "neutral");
+    
+    // Auto-resolve the task after 5 seconds to give the dopamine hit
+    setTimeout(() => {
+      setSites(prev => prev.map(s => s.isOwn ? { ...s, tasks: s.tasks.map(t => t.id === taskId ? { ...t, status: "recovered" as const } : t) } : s));
+      logPulse("Verification complete. Task resolved.", "good");
+    }, 5000);
   };
 
   const sendToWebhook = async () => {
@@ -157,7 +178,6 @@ export default function Dashboard() {
     }
   };
 
-  // Do not render until localStorage is loaded
   if (!isLoaded) return <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "var(--accent)" }}>Initializing Core...</span></div>;
 
   return (
@@ -190,40 +210,77 @@ export default function Dashboard() {
           {tab === "overview" && (
             <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 20 }}>
-                {/* Score Card */}
-                <div style={{ padding: "24px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 20, position: "relative", overflow: "hidden" }}>
-                  <div style={{ position: "absolute", top: 0, right: 0, background: own?.result?.severity === "critical" ? "var(--accent)" : "var(--surface2)", color: own?.result?.severity === "critical" ? "#fff" : "var(--muted)", fontFamily: "var(--font-mono)", fontSize: 9, padding: "4px 12px", borderBottomLeftRadius: 10, letterSpacing: "0.1em" }}>
-                    {own?.result?.severity.toUpperCase() || "UNVERIFIED"}
-                  </div>
-                  {own?.result ? <ScoreRing score={own.result.metrics.performanceScore} size={80} /> : <div style={{ width:80, height:80, borderRadius:"50%", border:"2px dashed var(--border)" }} />}
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 6 }}>YOUR DOMAIN</p>
-                    <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                      <input type="text" value={own?.url || ""} onChange={e => setSites(p => p.map(s => s.isOwn ? {...s, url: e.target.value} : s))} placeholder="yourwebsite.com" style={{ flex: 1, background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 6, padding: "6px 10px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 12 }} />
-                      <button onClick={() => own && scan(own.id)} disabled={own?.loading} style={{ background: "var(--surface2)", border: "1px solid var(--border2)", color: "var(--text)", padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11 }}>{own?.loading ? "..." : "↺"}</button>
+                
+                {/* ── THE PREMIUM EMPTY STATE WIZARD ── */}
+                {!own ? (
+                  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} 
+                    style={{ gridColumn: "1 / -1", padding: "80px 20px", textAlign: "center", border: "1px dashed rgba(167,139,250,0.4)", borderRadius: 16, background: "linear-gradient(180deg, rgba(167,139,250,0.05) 0%, transparent 100%)" }}>
+                    
+                    <div style={{ fontSize: 40, marginBottom: 16, textShadow: "0 0 20px rgba(167,139,250,0.5)" }}>🎯</div>
+                    <h3 style={{ fontFamily: "var(--font-display)", fontSize: 28, marginBottom: 12, color: "var(--text)", letterSpacing: "0.05em" }}>Engine Calibrated & Ready</h3>
+                    <p style={{ fontFamily: "var(--font-body)", color: "var(--text2)", marginBottom: 32, maxWidth: 420, margin: "0 auto 32px", lineHeight: 1.6 }}>
+                      Enter your primary domain below to generate your first Developer Blueprint and initialize your persistent database.
+                    </p>
+                    
+                    <div style={{ display: "flex", gap: 10, justifyContent: "center", maxWidth: 480, margin: "0 auto" }}>
+                      <input 
+                        type="text" 
+                        value={newUrl}
+                        onChange={e => setNewUrl(e.target.value)}
+                        placeholder="https://yourwebsite.com" 
+                        style={{ flex: 1, padding: "16px 20px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 14 }}
+                      />
+                      <button onClick={() => {
+                          if(!newUrl) return;
+                          const cleanUrl = newUrl.trim();
+                          const id = `own-${Date.now()}`;
+                          setSites([{ id, url: cleanUrl, label: "Your Domain", isOwn: true, result: null, history: [], tasks: [], loading: false, error: "" }]);
+                          setTimeout(() => scan(id, cleanUrl), 100);
+                          setNewUrl("");
+                        }}
+                        style={{ padding: "0 32px", background: "var(--accent)", color: "#fff", border: "none", borderRadius: 10, fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: "bold", cursor: "pointer", letterSpacing: "0.1em", boxShadow: "0 0 20px rgba(167,139,250,0.3)" }}>
+                        INITIALIZE →
+                      </button>
                     </div>
-                  </div>
-                </div>
+                  </motion.div>
+                ) : (
+                  <>
+                    {/* Score Card */}
+                    <div style={{ padding: "24px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 20, position: "relative", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", top: 0, right: 0, background: own?.result?.severity === "critical" ? "var(--accent)" : "var(--surface2)", color: own?.result?.severity === "critical" ? "#fff" : "var(--muted)", fontFamily: "var(--font-mono)", fontSize: 9, padding: "4px 12px", borderBottomLeftRadius: 10, letterSpacing: "0.1em" }}>
+                        {own?.result?.severity.toUpperCase() || "UNVERIFIED"}
+                      </div>
+                      {own?.result ? <ScoreRing score={own.result.metrics.performanceScore} size={80} /> : <div style={{ width:80, height:80, borderRadius:"50%", border:"2px dashed var(--border)", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "var(--muted)", fontSize: 10 }}>SCANNING</span></div>}
+                      <div style={{ flex: 1 }}>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 6 }}>YOUR DOMAIN</p>
+                        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                          <input type="text" value={own?.url || ""} onChange={e => setSites(p => p.map(s => s.isOwn ? {...s, url: e.target.value} : s))} placeholder="yourwebsite.com" style={{ flex: 1, background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 6, padding: "6px 10px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 12 }} />
+                          <button onClick={() => own && scan(own.id)} disabled={own?.loading} style={{ background: "var(--surface2)", border: "1px solid var(--border2)", color: "var(--text)", padding: "6px 12px", borderRadius: 6, cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11 }}>{own?.loading ? "..." : "↺"}</button>
+                        </div>
+                      </div>
+                    </div>
 
-                {/* Revenue Loop */}
-                <div style={{ padding: "24px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
-                    <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.15em" }}>REVENUE AT RISK</p>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", background: "rgba(232,52,26,0.1)", padding: "3px 8px", borderRadius: 4 }}>BLEEDING</span>
-                  </div>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 42, color: "var(--text)", lineHeight: 1 }}>{own?.result ? <AnimatedNumber value={Math.round(own.result.annualRevenueLoss/1000)} prefix="£" suffix="k" /> : "—"}</div>
-                  
-                  {pendingRecovery > 0 ? (
-                    <div style={{ marginTop: 16, padding: "10px", background: "rgba(245,158,11,0.08)", border: "1px dashed rgba(245,158,11,0.4)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}>
-                      <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }} style={{ width: 14, height: 14, border: "2px solid #f59e0b", borderTopColor: "transparent", borderRadius: "50%" }} />
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#f59e0b" }}>Verifying £{pendingRecovery}k recovery...</span>
+                    {/* Revenue Loop */}
+                    <div style={{ padding: "24px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
+                        <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.15em" }}>REVENUE AT RISK</p>
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", background: "rgba(232,52,26,0.1)", padding: "3px 8px", borderRadius: 4 }}>BLEEDING</span>
+                      </div>
+                      <div style={{ fontFamily: "var(--font-display)", fontSize: 42, color: "var(--text)", lineHeight: 1 }}>{own?.result ? <AnimatedNumber value={Math.round(own.result.annualRevenueLoss/1000)} prefix="$" suffix="k" /> : "—"}</div>
+                      
+                      {pendingRecovery > 0 ? (
+                        <div style={{ marginTop: 16, padding: "10px", background: "rgba(245,158,11,0.08)", border: "1px dashed rgba(245,158,11,0.4)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }} style={{ width: 14, height: 14, border: "2px solid #f59e0b", borderTopColor: "transparent", borderRadius: "50%" }} />
+                          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#f59e0b" }}>Verifying ${pendingRecovery}k recovery...</span>
+                        </div>
+                      ) : (
+                        <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+                           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)" }}>Execute Action Plan to recover funds.</span>
+                        </div>
+                      )}
                     </div>
-                  ) : (
-                    <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
-                       <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)" }}>Execute Action Plan to recover funds.</span>
-                    </div>
-                  )}
-                </div>
+                  </>
+                )}
 
                 {/* Live Pulse Stream */}
                 <div style={{ padding: "20px", borderRadius: 16, background: "linear-gradient(180deg, var(--surface) 0%, #030712 100%)", border: "1px solid rgba(16,185,129,0.2)", position: "relative", overflow: "hidden" }}>
@@ -270,7 +327,7 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                  {(own?.tasks || []).map((t, i) => (
+                  {(own?.tasks || []).filter(t => t.status !== "recovered").map((t, i) => (
                     <motion.div key={t.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
                       style={{ padding: "24px", background: "var(--surface)", borderRadius: 16, border: `1px solid ${t.status==="verifying"?"rgba(245,158,11,0.3)":"var(--border)"}`, position: "relative", overflow: "hidden" }}>
                       
@@ -288,7 +345,7 @@ export default function Dashboard() {
                         <div style={{ flex: 1 }}>
                           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
                             <h4 style={{ fontFamily: "var(--font-body)", fontSize: 18, fontWeight: 600, color: t.status==="verifying"?"var(--muted)":"var(--text)" }}>{t.title}</h4>
-                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#10b981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(16,185,129,0.2)" }}>RECOVERS ~£{t.val}k/yr</span>
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#10b981", background: "rgba(16,185,129,0.1)", padding: "4px 10px", borderRadius: 4, border: "1px solid rgba(16,185,129,0.2)" }}>RECOVERS ~${t.val}k/yr</span>
                           </div>
                           <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.6, marginBottom: 16 }}>{t.desc}</p>
                           
@@ -308,6 +365,9 @@ export default function Dashboard() {
                       </div>
                     </motion.div>
                   ))}
+                  {(own?.tasks || []).filter(t => t.status === "recovered").length > 0 && (
+                     <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", textAlign: "center", marginTop: 20 }}>You have successfully recovered value from past tasks.</p>
+                  )}
                 </div>
               )}
             </motion.div>
@@ -394,6 +454,18 @@ export default function Dashboard() {
                      <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted)" }}>You have no competitors tracked. Add a URL above to start monitoring.</p>
                    </div>
                 )}
+                
+                {/* ── UPSELL LOCK (AGENCY TIER) ── */}
+                <div style={{ padding: "30px 20px", borderRadius: 12, border: "1px dashed var(--border)", background: "rgba(0,0,0,0.2)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", opacity: 0.6 }}>
+                   <span style={{ fontSize: 24, marginBottom: 12 }}>🔒</span>
+                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", textAlign: "center", lineHeight: 1.6 }}>
+                     MAXIMUM SLOTS REACHED<br/>
+                     <a href="/subscribe" style={{ color: "var(--accent)", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
+                       Upgrade to AGENCY to unlock 7 more slots →
+                     </a>
+                   </span>
+                </div>
+                
               </div>
             </motion.div>
           )}
@@ -429,7 +501,7 @@ export default function Dashboard() {
                     <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 6 }}>DANGER ZONE</p>
                     <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)" }}>Reset your local database to default state.</p>
                   </div>
-                  <button onClick={() => { if(confirm("Clear all data?")) { localStorage.removeItem("nexus_pulse_db"); window.location.reload(); } }} style={{ padding: "10px 20px", borderRadius: 8, background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.3)", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)" }}>HARD RESET</button>
+                  <button onClick={() => { if(confirm("Clear all data?")) { localStorage.removeItem("nexus_pulse_db"); localStorage.removeItem("nexus_auth_tier"); window.location.href = "/"; } }} style={{ padding: "10px 20px", borderRadius: 8, background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.3)", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)" }}>HARD RESET</button>
                 </div>
               </div>
             </motion.div>
