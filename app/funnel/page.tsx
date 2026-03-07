@@ -33,7 +33,7 @@ function Choice({ label, sub, icon, onClick }: { label:string; sub?:string; icon
         background: flash?"rgba(232,52,26,0.1)":"var(--surface)",
         border:`1px solid ${flash?"#e8341a":"var(--border)"}`,
         boxShadow: flash?"0 0 18px rgba(232,52,26,0.15)":"none",
-        cursor:"none", transition:"all 0.12s", display:"flex", alignItems:"center", gap:12 }}>
+        cursor:"pointer", transition:"all 0.12s", display:"flex", alignItems:"center", gap:12 }}>
       <span style={{ fontSize:20, lineHeight:1, flexShrink:0 }}>{icon}</span>
       <div style={{ flex:1 }}>
         <div style={{ fontFamily:"var(--font-body)", fontWeight:500, fontSize:15, color:flash?"#e8341a":"var(--text)", transition:"color 0.12s" }}>{label}</div>
@@ -73,7 +73,7 @@ const GOALS = [
 ];
 interface PitchData {
   headline:string; subline:string;
-  services:{ id:string; icon:string; title:string; hook:string; desc:string; proof:string; price:string; urgency:string; }[];
+  services:{ id:string; icon:string; title:string; hook:string; desc:string; proof:string; price:string; urgency:string; actionType: "book" | "subscribe" }[];
 }
 function buildPitch(result:AuditResult, fd:FunnelData): PitchData {
   const score=result.metrics.performanceScore, loss=Math.round(result.annualRevenueLoss/1000), bt=fd.businessType||"service", goal=fd.goal||"leads";
@@ -83,39 +83,40 @@ function buildPitch(result:AuditResult, fd:FunnelData): PitchData {
     local:`People are searching for exactly what you offer — and choosing the competitor with a faster site.`,
     saas:`Signups are dropping off during your trial flow because the page takes too long to respond.`,
   };
-  const services = [];
+  const services: PitchData["services"] = [];
+  
   if (score < 70) services.push({ id:"speed",icon:"⚡",title:"Site Speed Rebuild",
     hook:bt==="ecom"?"Faster checkout = more completed purchases":bt==="local"?"Load faster than your local competitors":"Load in under 1.5s — guaranteed",
     desc:"We rebuild your pages on our performance infrastructure. Target: sub-1.5s load time on mobile. Most clients see a 40–60% bounce rate drop in week one.",
     proof:"✓ TechFlow: score 24→91, bounce rate down 58%, enquiries 3× in 30 days.",
     price:"From £1,200 · Fixed price · 5-day turnaround",
     urgency:score<40?"Your score is CRITICAL — every day costs you money.":"Your score is below Google's recommended threshold.",
+    actionType: "book"
   });
+  
   if (goal==="leads"||goal==="automate"||bt==="service"||bt==="local") services.push({ id:"ai",icon:"🤖",title:"AI Lead Response Agent",
     hook:"Respond to every enquiry in under 90 seconds. Even at midnight.",
     desc:"Your current response time is probably hours. Ours is 90 seconds. The AI qualifies the lead, answers their question, and books a call — before they've had time to check your competitor.",
     proof:"✓ Patel Plumbing: 6 new bookings in the first week.",
     price:"From £350/mo · Setup in 48hrs · Cancel anytime",
     urgency:"The average business takes 47 hours to respond. You're losing to whoever responds first.",
+    actionType: "book"
   });
-  if (goal==="leads"||bt==="local") services.push({ id:"leads",icon:"🎯",title:"Weekly Verified Leads",
-    hook:`${bt==="local"?"Local buyers actively searching for your services":"High-intent prospects in your vertical"} — delivered every Monday.`,
-    desc:"Verified, opted-in prospects in your industry. Not scraped data — real people who've shown intent. Delivered weekly, exclusive to you.",
-    proof:"✓ Craft Brewery: 22 verified local leads in first month. Closed 7 new wholesale accounts.",
-    price:"From £600/mo · 15–40 leads/week · Exclusive",
-    urgency:"We only supply one business per area.",
-  });
-  if (fd.q2==="50-100k"||fd.q2==="100k+") services.push({ id:"subscribe",icon:"📊",title:"Nexus Pulse — Performance Intelligence",
+  
+  // The SaaS Upsell
+  services.push({ id:"subscribe",icon:"📊",title:"Nexus Pulse — Performance Intelligence",
     hook:"Know before your competitors do. Weekly automated audit + competitor benchmarking.",
     desc:"Every week: your site re-audited + a benchmarking report showing how you compare to the top 10 sites in your sector. SMS alert if a competitor overtakes you.",
     proof:"✓ Luxe Interiors: 'We use the benchmarking report in our board meetings.'",
-    price:"£49/mo · 7-day free trial · Cancel anytime",
+    price:"$49/mo · 7-day free trial · Cancel anytime",
     urgency:"Businesses that track their performance regularly are 3× more likely to stay ahead of algorithm changes.",
+    actionType: "subscribe"
   });
+
   return {
     headline:bt==="ecom"?`Your store is leaving £${loss}k on the table.`:`£${loss}k/year is leaking — here's the exact plan.`,
     subline:hooks[bt]||hooks.service,
-    services:services.slice(0,3),
+    services:services.slice(0,3), // Keep max 3 options
   };
 }
 
@@ -123,6 +124,7 @@ function buildPitch(result:AuditResult, fd:FunnelData): PitchData {
 function Discover({ onDone }: { onDone:(bt:string,goal:string)=>void }) {
   const [bt, setBt] = useState<string|null>(null);
   const ref = useRef<HTMLDivElement>(null);
+  
   if (!bt) return (
     <motion.div ref={ref} initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} style={{ width:"100%",maxWidth:500,margin:"24px auto 0" }}>
       <div style={{ textAlign:"center",marginBottom:22 }}>
@@ -133,6 +135,7 @@ function Discover({ onDone }: { onDone:(bt:string,goal:string)=>void }) {
       {BUSINESS_TYPES.map(c => <Choice key={c.val} icon={c.icon} label={c.label} sub={c.sub} onClick={() => setBt(c.val)} />)}
     </motion.div>
   );
+  
   return (
     <motion.div initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} style={{ width:"100%",maxWidth:500,margin:"24px auto 0" }}>
       <div style={{ textAlign:"center",marginBottom:22 }}>
@@ -147,8 +150,8 @@ function Discover({ onDone }: { onDone:(bt:string,goal:string)=>void }) {
 // ─── Personalised pitch section ───────────────────────────────────────────────
 function Pitch({ pitch, onBook }: { pitch:PitchData; onBook:()=>void }) {
   const [expanded, setExpanded] = useState<string|null>(pitch.services[0]?.id||null);
-  const [claimed, setClaimed] = useState<string[]>([]);
   const ref = useRef<HTMLDivElement>(null);
+  
   return (
     <motion.div ref={ref} initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} style={{ width:"100%",maxWidth:600,margin:"0 auto",paddingBottom:32 }}>
       <div style={{ textAlign:"center",marginBottom:28 }}>
@@ -157,18 +160,17 @@ function Pitch({ pitch, onBook }: { pitch:PitchData; onBook:()=>void }) {
         <p style={{ fontFamily:"var(--font-body)",fontSize:14,color:"var(--text2)",lineHeight:1.65 }}>{pitch.subline}</p>
       </div>
       {pitch.services.map((svc,i) => {
-        const isOpen=expanded===svc.id, isClaimed=claimed.includes(svc.id);
+        const isOpen=expanded===svc.id;
         return (
           <motion.div key={svc.id} initial={{ opacity:0,y:12 }} animate={{ opacity:1,y:0 }} transition={{ delay:i*0.1 }}
             style={{ borderRadius:12,overflow:"hidden",background:isOpen?"rgba(232,52,26,0.04)":"var(--surface)",border:`1px solid ${isOpen?"rgba(232,52,26,0.28)":"var(--border)"}`,marginBottom:10,transition:"all 0.2s" }}>
             <button onClick={() => setExpanded(isOpen?null:svc.id)}
-              style={{ width:"100%",padding:"18px 20px",display:"flex",alignItems:"center",gap:14,background:"none",border:"none",cursor:"none",textAlign:"left" }}>
+              style={{ width:"100%",padding:"18px 20px",display:"flex",alignItems:"center",gap:14,background:"none",border:"none",cursor:"pointer",textAlign:"left" }}>
               <span style={{ fontSize:22,flexShrink:0 }}>{svc.icon}</span>
               <div style={{ flex:1 }}>
                 <div style={{ fontFamily:"var(--font-body)",fontWeight:600,fontSize:15,color:"var(--text)",marginBottom:3 }}>{svc.title}</div>
                 <div style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--muted)" }}>{svc.hook}</div>
               </div>
-              {isClaimed && <span style={{ fontFamily:"var(--font-mono)",fontSize:9,color:"#10b981",letterSpacing:"0.1em",flexShrink:0 }}>✓ INTERESTED</span>}
               <motion.span animate={{ rotate:isOpen?180:0 }} style={{ color:"var(--muted)",fontSize:12,flexShrink:0 }}>▼</motion.span>
             </button>
             <AnimatePresence>
@@ -184,10 +186,19 @@ function Pitch({ pitch, onBook }: { pitch:PitchData; onBook:()=>void }) {
                       <p style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--text2)",lineHeight:1.6,fontStyle:"italic" }}>{svc.proof}</p>
                     </div>
                     <div style={{ display:"flex",alignItems:"center",gap:10,flexWrap:"wrap" }}>
-                      <button onClick={() => { setClaimed(p=>[...p,svc.id]); setTimeout(onBook,200); }}
+                      
+                      {/* 🚀 THE SMART ROUTER BUTTON */}
+                      <button onClick={() => {
+                          if (svc.actionType === "subscribe") {
+                            window.location.href = "/subscribe"; // Send straight to checkout!
+                          } else {
+                            onBook(); // Send to Agency Phone Capture
+                          }
+                        }}
                         className="btn-primary" style={{ flex:1,padding:"14px",borderRadius:8,fontSize:12,letterSpacing:"0.1em",minWidth:160 }}>
-                        I&apos;M INTERESTED →
+                        {svc.actionType === "subscribe" ? "ACTIVATE SOFTWARE →" : "REQUEST CALLBACK →"}
                       </button>
+
                       <span style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--muted)",whiteSpace:"nowrap" }}>{svc.price}</span>
                     </div>
                   </div>
@@ -197,15 +208,6 @@ function Pitch({ pitch, onBook }: { pitch:PitchData; onBook:()=>void }) {
           </motion.div>
         );
       })}
-      <div style={{ padding:"24px",borderRadius:12,background:"var(--surface)",border:"1px solid var(--border)",textAlign:"center",marginTop:8 }}>
-        <p style={{ fontFamily:"var(--font-body)",fontSize:14,color:"var(--text2)",lineHeight:1.65,marginBottom:18 }}>
-          Not sure which option fits? Our team will review your results and tell you honestly what&apos;s worth investing in.
-        </p>
-        <button onClick={onBook} className="btn-primary" style={{ padding:"14px 36px",borderRadius:8,fontSize:12,letterSpacing:"0.12em" }}>
-          SPEAK TO AN AGENT →
-        </button>
-        <p style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted2)",marginTop:10 }}>Free · No pitch · 2-hour callback</p>
-      </div>
     </motion.div>
   );
 }
@@ -233,11 +235,6 @@ function PhoneCapture({ result, fd, onDone }: { result:AuditResult; fd:FunnelDat
       <p style={{ fontFamily:"var(--font-body)",fontSize:14,color:"var(--text2)",lineHeight:1.65,marginBottom:26 }}>
         Drop your number. One of our team calls within <strong style={{ color:"var(--text)" }}>2 hours</strong>. No script, no pressure — just a straight conversation about what&apos;s worth fixing first.
       </p>
-      <div style={{ display:"flex",justifyContent:"center",gap:20,marginBottom:24 }}>
-        {[["🔒","Private"],["⏱","2hr call"],["🆓","No charge"]].map(([i,l]) => (
-          <div key={l} style={{ fontFamily:"var(--font-mono)",fontSize:11,color:"var(--muted)",display:"flex",alignItems:"center",gap:5 }}><span>{i}</span><span>{l}</span></div>
-        ))}
-      </div>
       <input ref={ref} type="tel" value={phone} placeholder="+44 7700 000000"
         onChange={e => setPhone(e.target.value)} onKeyDown={e => e.key==="Enter"&&submit()}
         style={{ width:"100%",background:"var(--surface)",border:"1px solid var(--border2)",borderRadius:10,padding:"16px 18px",color:"var(--text)",fontFamily:"var(--font-mono)",fontSize:16,marginBottom:err?8:12,textAlign:"center",letterSpacing:"0.04em" }} />
@@ -245,9 +242,6 @@ function PhoneCapture({ result, fd, onDone }: { result:AuditResult; fd:FunnelDat
       <button onClick={submit} className="btn-primary" style={{ width:"100%",padding:"16px",borderRadius:10,fontSize:13,letterSpacing:"0.12em",marginBottom:14 }}>
         GET MY FREE CALLBACK →
       </button>
-      <p style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted2)" }}>
-        Not ready? <button onClick={() => onDone("")} style={{ background:"none",border:"none",color:"var(--muted)",textDecoration:"underline",cursor:"none",fontFamily:"var(--font-mono)",fontSize:10 }}>Skip for now</button>
-      </p>
     </motion.div>
   );
 }
@@ -260,16 +254,8 @@ function Booked({ phone }: { phone:string }) {
         style={{ width:70,height:70,borderRadius:"50%",background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.3)",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 22px",fontSize:30 }}>✓</motion.div>
       <h2 style={{ fontFamily:"var(--font-display)",fontSize:"clamp(28px,5vw,40px)",color:"var(--text)",letterSpacing:"0.04em",marginBottom:12 }}>YOU&apos;RE ALL SET</h2>
       <p style={{ fontFamily:"var(--font-body)",fontSize:14,color:"var(--text2)",lineHeight:1.65,marginBottom:22 }}>
-        {phone?`We'll call ${phone} within 2 hours.`:"We'll be in touch shortly."} Expect a real conversation — not a sales call.
+        {phone?`We'll call ${phone} within 2 hours.`:"We'll be in touch shortly."}
       </p>
-      <div style={{ padding:"16px",borderRadius:10,background:"var(--surface)",border:"1px solid var(--border)",marginBottom:22 }}>
-        <div style={{ display:"flex",justifyContent:"center",gap:28 }}>
-          {[["⏱","2hr callback"],["📋","Personalised plan"],["🆓","No charge"]].map(([i,l]) => (
-            <div key={l} style={{ textAlign:"center" }}><div style={{ fontSize:20,marginBottom:3 }}>{i}</div><div style={{ fontFamily:"var(--font-mono)",fontSize:9,color:"var(--muted)" }}>{l}</div></div>
-          ))}
-        </div>
-      </div>
-      <button onClick={() => window.location.reload()} style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted)",background:"none",border:"none",textDecoration:"underline",cursor:"none" }}>Audit another site</button>
     </motion.div>
   );
 }
@@ -280,14 +266,6 @@ function UrlStep({ onAudit, error, q1 }: { onAudit:(u:string)=>void; error:strin
   const msg:Record<string,string> = { competitors:"We'll show you exactly where they're beating you.", conversions:"We'll pinpoint every bottleneck costing you sales.", speed:"We'll measure every millisecond of friction.", all:"We'll give you the full picture." };
   return (
     <Q q="Drop your URL. See the truth in 60 seconds." sub={q1?msg[q1]:"Let's see what's really going on."}>
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:12 }}>
-        {[["60s","To complete"],["Free","No card"],["Real","Google data"]].map(([v,l]) => (
-          <div key={l} style={{ textAlign:"center",padding:"10px 6px",borderRadius:8,background:"var(--surface)",border:"1px solid var(--border)" }}>
-            <div style={{ fontFamily:"var(--font-display)",fontSize:20,color:"var(--accent)",letterSpacing:"0.04em" }}>{v}</div>
-            <div style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted)",marginTop:1 }}>{l}</div>
-          </div>
-        ))}
-      </div>
       <input type="text" value={url} onChange={e => setUrl(e.target.value)} onKeyDown={e => e.key==="Enter"&&url.trim()&&onAudit(url)}
         placeholder="https://yourwebsite.com" autoFocus
         style={{ width:"100%",background:"var(--surface)",border:"1px solid var(--border2)",borderRadius:10,padding:"16px 18px",color:"var(--text)",fontFamily:"var(--font-mono)",fontSize:14,marginBottom:error?8:10 }} />
@@ -295,7 +273,6 @@ function UrlStep({ onAudit, error, q1 }: { onAudit:(u:string)=>void; error:strin
       <button onClick={() => url.trim()&&onAudit(url)} disabled={!url.trim()} className="btn-primary" style={{ width:"100%",padding:"16px",borderRadius:10,fontSize:13,letterSpacing:"0.12em" }}>
         SCAN MY SITE NOW →
       </button>
-      <p style={{ fontFamily:"var(--font-mono)",fontSize:10,color:"var(--muted2)",textAlign:"center",marginTop:10 }}>Powered by Google PageSpeed · No account needed</p>
     </Q>
   );
 }
@@ -344,6 +321,12 @@ export default function Funnel() {
 
   return (
     <main style={{ minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:isSurveyStep?"center":"flex-start",padding:isSurveyStep?"40px 16px 32px":"0 16px 32px",position:"relative",zIndex:10 }}>
+      
+      {/* Universal Back to Home Nav */}
+      <nav style={{ position: "absolute", top: 0, left: 0, padding: "24px", width: "100%" }}>
+         <a href="/" style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"var(--muted)", textDecoration:"none" }}>← RETURN HOME</a>
+      </nav>
+
       <AnimatePresence mode="wait">
 
         {step==="q1" && <motion.div key="q1" initial={{ opacity:0,y:20 }} animate={{ opacity:1,y:0 }} exit={{ opacity:0,y:-16 }} style={{ width:"100%" }}>
@@ -382,14 +365,12 @@ export default function Funnel() {
         </motion.div>}
 
         {step==="loading" && <motion.div key="loading" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} style={{ width:"100%" }}>
-          {/* ✅ Same TerminalLoader as homepage */}
           <TerminalLoader url={fd.url??""} />
         </motion.div>}
 
         {step==="email" && result && (
           <motion.div key="email" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
             style={{ width:"100%", maxWidth:860, paddingTop:40 }}>
-            {/* Blurred preview sits in normal flow; EmailGate is position:fixed so it covers the full viewport */}
             <div className="blur-veil" style={{ pointerEvents:"none", userSelect:"none", minHeight:"100vh" }}>
               <ResultsPanel result={result} />
             </div>
@@ -397,16 +378,15 @@ export default function Funnel() {
           </motion.div>
         )}
 
+        {/* Instead of showing the chaotic results panel again during Discover, we isolate the questions for focus */}
         {step==="report" && result && (
           <motion.div key="report" initial={{ opacity:0 }} animate={{ opacity:1 }} style={{ width:"100%" }}>
-            {/* ✅ Same ResultsPanel as homepage — onDiscover triggers the personalised plan flow */}
             <ResultsPanel result={result} onDiscover={() => setStep("discover")} />
           </motion.div>
         )}
 
         {step==="discover" && (
           <motion.div key="discover" initial={{ opacity:0 }} animate={{ opacity:1 }} style={{ width:"100%" }}>
-            {result && <ResultsPanel result={result} />}
             <Discover onDone={handleDiscover} />
           </motion.div>
         )}
