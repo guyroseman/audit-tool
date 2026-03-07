@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 import { fetchAudit, fmtMs, scoreColor, metricStatus } from "../lib/audit";
 import type { AuditResult } from "../lib/audit";
+import { supabase } from "../lib/supabase"; // ☁️ THE CLOUD CONNECTION
 
 // ─── Types & Configuration ────────────────────────────────────────────────────
 interface Task { id: string; title: string; desc: string; impact: "High"|"Medium"|"Low"; effort: "High"|"Medium"|"Low"; val: number; status: "pending"|"verifying"|"recovered"; }
@@ -57,47 +58,57 @@ function generateDynamicTasks(result: AuditResult): Task[] {
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function Dashboard() {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("overview");
   const [sites, setSites] = useState<TrackedSite[]>([]);
   const [settings, setSettings] = useState<UserSettings>({ smsPhone: "", smsAlerts: false, webhookUrl: "", weeklyDigest: true, criticalAlerts: true });
-  const [pulseEvents, setPulseEvents] = useState<{time:string, text:string, type:"good"|"bad"|"neutral"}[]>([{ time: "Just now", text: "System connection established. Database synced.", type: "neutral" }]);
+  const [pulseEvents, setPulseEvents] = useState<{time:string, text:string, type:"good"|"bad"|"neutral"}[]>([{ time: "Just now", text: "Secure connection established. Cloud synced.", type: "neutral" }]);
   const [newUrl, setNewUrl] = useState("");
 
-  // 1. AUTH BOUNCER & PERSISTENCE LOAD
+  // 1. CLOUD AUTH BOUNCER & DATA LOAD
   useEffect(() => {
-    // Check if returning from Lemon Squeezy successful payment
-    const url = new URL(window.location.href);
-    if (url.searchParams.get("payment") === "success") {
-      localStorage.setItem("nexus_auth_tier", "pro");
-      window.history.replaceState({}, document.title, "/dashboard"); // Clean the URL
-    }
+    const init = async () => {
+      // Ask Supabase who is logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      // If no one is logged in, kick them back to login
+      if (!session) {
+        window.location.href = "/login";
+        return;
+      }
+      
+      setUserId(session.user.id);
 
-    // Auth Check: Kick out if not paid
-    // NOTE: To bypass this during local development, manually add "nexus_auth_tier" to your browser's local storage.
-    const authTier = localStorage.getItem("nexus_auth_tier");
-    if (!authTier) {
-      window.location.href = "/subscribe";
-      return;
-    }
+      // Fetch their specific profile from the Supabase database
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('app_data')
+        .eq('id', session.user.id)
+        .single();
 
-    // Load Database
-    const savedData = localStorage.getItem("nexus_pulse_db");
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      setSites(parsed.sites || []);
-      setSettings(parsed.settings || { smsPhone: "", smsAlerts: false, webhookUrl: "", weeklyDigest: true, criticalAlerts: true });
-    } else {
-      setSites([]); // Start completely empty for the Premium Initialization screen
-    }
-    setIsLoaded(true);
+      if (data && data.app_data && Object.keys(data.app_data).length > 0) {
+        setSites(data.app_data.sites || []);
+        setSettings(data.app_data.settings || { smsPhone: "", smsAlerts: false, webhookUrl: "", weeklyDigest: true, criticalAlerts: true });
+      } else {
+        setSites([]); // Start completely empty for the Premium Initialization screen
+      }
+      setIsLoaded(true);
+    };
+    
+    init();
   }, []);
 
-  // 2. PERSISTENCE ENGINE (Save to Database/LocalStorage)
+  // 2. CLOUD SAVE ENGINE (Saves automatically when data changes)
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem("nexus_pulse_db", JSON.stringify({ sites, settings }));
+    if (isLoaded && userId) {
+      supabase.from('profiles')
+        .update({ app_data: { sites, settings } })
+        .eq('id', userId)
+        .then(({error}) => {
+          if (error) console.error("Cloud sync failed:", error);
+        });
     }
-  }, [sites, settings, isLoaded]);
+  }, [sites, settings, isLoaded, userId]);
 
   // Derived state
   const own = sites.find(s => s.isOwn);
@@ -108,7 +119,6 @@ export default function Dashboard() {
 
   const logPulse = (text: string, type: "good"|"bad"|"neutral") => setPulseEvents(prev => [{ time: "Just now", text, type }, ...prev].slice(0, 5));
 
-  // The Scan Engine (Now with 3.5s Fake Backend Delay)
   const scan = useCallback((id: string, forceUrl?: string) => {
     const targetSite = sites.find(s => s.id === id);
     const targetUrl = forceUrl || targetSite?.url;
@@ -120,7 +130,6 @@ export default function Dashboard() {
     setSites(prev => prev.map(s => s.id === id ? { ...s, loading: true, error: "" } : s));
     logPulse(`Initiating deep scan for ${cleanUrl}...`, "neutral");
     
-    // Fake the backend processing time to build anticipation
     setTimeout(async () => {
       try {
         const r = await fetchAudit(cleanUrl);
@@ -153,8 +162,6 @@ export default function Dashboard() {
   const markTaskVerifying = (taskId: string) => {
     setSites(prev => prev.map(s => s.isOwn ? { ...s, tasks: s.tasks.map(t => t.id === taskId ? { ...t, status: "verifying" as const } : t) } : s));
     logPulse("Developer push detected. Queueing verification scan.", "neutral");
-    
-    // Auto-resolve the task after 5 seconds to give the dopamine hit
     setTimeout(() => {
       setSites(prev => prev.map(s => s.isOwn ? { ...s, tasks: s.tasks.map(t => t.id === taskId ? { ...t, status: "recovered" as const } : t) } : s));
       logPulse("Verification complete. Task resolved.", "good");
@@ -164,32 +171,29 @@ export default function Dashboard() {
   const sendToWebhook = async () => {
     if (!settings.webhookUrl) return alert("Please configure a Developer Webhook URL in the Settings tab first.");
     const planText = (own?.tasks || []).filter(t => t.status === "pending").map(t => `[${t.impact} Priority] ${t.title}: ${t.desc}`).join("\n\n");
-    
     try {
-      await fetch(settings.webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: `🚨 *NEXUS ACTION PLAN REQUIRED* 🚨\n\n${planText}` })
-      });
+      await fetch(settings.webhookUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: `🚨 *NEXUS ACTION PLAN REQUIRED* 🚨\n\n${planText}` }) });
       alert("Action Plan successfully dispatched to Webhook!");
       logPulse("Payload dispatched to Developer Webhook.", "good");
-    } catch (e) {
-      alert("Failed to send webhook. Check URL configuration.");
-    }
+    } catch (e) { alert("Failed to send webhook. Check URL configuration."); }
   };
 
-  if (!isLoaded) return <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "var(--accent)" }}>Initializing Core...</span></div>;
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  };
+
+  if (!isLoaded) return <div style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}><span style={{ color: "var(--accent)" }}>Authenticating Secure Connection...</span></div>;
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
-
       {/* ── Nav ── */}
       <nav style={{ borderBottom: "1px solid var(--border)", background: "rgba(8,15,28,0.95)", backdropFilter: "blur(12px)", position: "sticky", top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px", height: 54, display: "flex", alignItems: "center", gap: 16 }}>
           <a href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
             <span style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "var(--text)", letterSpacing: "0.08em" }}>NEXUS</span>
           </a>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", padding: "2px 7px", borderRadius: 3, letterSpacing: "0.1em" }}>● LIVE DB</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", padding: "2px 7px", borderRadius: 3, letterSpacing: "0.1em" }}>● CLOUD SYNCED</span>
 
           <div style={{ display: "flex", gap: 0, marginLeft: 12, overflowX: "auto" }} className="hide-scrollbar">
             {(["overview","action-plan","matrix","settings"] as Tab[]).map(t => (
@@ -219,15 +223,12 @@ export default function Dashboard() {
                     <div style={{ fontSize: 40, marginBottom: 16, textShadow: "0 0 20px rgba(167,139,250,0.5)" }}>🎯</div>
                     <h3 style={{ fontFamily: "var(--font-display)", fontSize: 28, marginBottom: 12, color: "var(--text)", letterSpacing: "0.05em" }}>Engine Calibrated & Ready</h3>
                     <p style={{ fontFamily: "var(--font-body)", color: "var(--text2)", marginBottom: 32, maxWidth: 420, margin: "0 auto 32px", lineHeight: 1.6 }}>
-                      Enter your primary domain below to generate your first Developer Blueprint and initialize your persistent database.
+                      Enter your primary domain below to generate your first Developer Blueprint and initialize your cloud database.
                     </p>
                     
                     <div style={{ display: "flex", gap: 10, justifyContent: "center", maxWidth: 480, margin: "0 auto" }}>
                       <input 
-                        type="text" 
-                        value={newUrl}
-                        onChange={e => setNewUrl(e.target.value)}
-                        placeholder="https://yourwebsite.com" 
+                        type="text" value={newUrl} onChange={e => setNewUrl(e.target.value)} placeholder="https://yourwebsite.com" 
                         style={{ flex: 1, padding: "16px 20px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 14 }}
                       />
                       <button onClick={() => {
@@ -245,7 +246,6 @@ export default function Dashboard() {
                   </motion.div>
                 ) : (
                   <>
-                    {/* Score Card */}
                     <div style={{ padding: "24px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: 20, position: "relative", overflow: "hidden" }}>
                       <div style={{ position: "absolute", top: 0, right: 0, background: own?.result?.severity === "critical" ? "var(--accent)" : "var(--surface2)", color: own?.result?.severity === "critical" ? "#fff" : "var(--muted)", fontFamily: "var(--font-mono)", fontSize: 9, padding: "4px 12px", borderBottomLeftRadius: 10, letterSpacing: "0.1em" }}>
                         {own?.result?.severity.toUpperCase() || "UNVERIFIED"}
@@ -260,7 +260,6 @@ export default function Dashboard() {
                       </div>
                     </div>
 
-                    {/* Revenue Loop */}
                     <div style={{ padding: "24px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", flexDirection: "column", justifyContent: "center" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                         <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.15em" }}>REVENUE AT RISK</p>
@@ -282,7 +281,6 @@ export default function Dashboard() {
                   </>
                 )}
 
-                {/* Live Pulse Stream */}
                 <div style={{ padding: "20px", borderRadius: 16, background: "linear-gradient(180deg, var(--surface) 0%, #030712 100%)", border: "1px solid rgba(16,185,129,0.2)", position: "relative", overflow: "hidden" }}>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#10b981", letterSpacing: "0.15em", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
                     <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} className="animate-pulse" />
@@ -303,7 +301,7 @@ export default function Dashboard() {
             </motion.div>
           )}
 
-          {/* ── ACTION PLAN TAB (Dynamic Data) ── */}
+          {/* ── ACTION PLAN TAB ── */}
           {tab === "action-plan" && (
             <motion.div key="action-plan" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
@@ -373,7 +371,7 @@ export default function Dashboard() {
             </motion.div>
           )}
 
-          {/* ── UNIFIED MARKET MATRIX (Battleground + Sites) ── */}
+          {/* ── MATRIX TAB ── */}
           {tab === "matrix" && (
             <motion.div key="matrix" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
@@ -395,8 +393,6 @@ export default function Dashboard() {
                     <div key={c.id} style={{ padding: "24px", background: "var(--surface)", borderRadius: 16, border: "1px solid var(--border)", position: "relative", overflow: "hidden" }}>
                       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 4, background: isWinning ? "#10b981" : "var(--accent)" }} />
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-                        
-                        {/* URL & Delete Controls */}
                         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                           <div style={{ width: 48, height: 48, borderRadius: 8, background: "var(--bg)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 20, color: "var(--muted)" }}>{i+1}</div>
                           <div>
@@ -428,7 +424,6 @@ export default function Dashboard() {
                         ) : null}
                       </div>
 
-                      {/* Head to Head Table */}
                       {c.result && own?.result && (
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, paddingTop: 16, borderTop: "1px solid var(--border)" }}>
                           {[
@@ -449,41 +444,22 @@ export default function Dashboard() {
                     </div>
                   );
                 })}
-                {competitors.length === 0 && (
-                   <div style={{ padding: "40px", textAlign: "center", border: "1px dashed var(--border)", borderRadius: 16 }}>
-                     <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted)" }}>You have no competitors tracked. Add a URL above to start monitoring.</p>
-                   </div>
-                )}
-                
-                {/* ── UPSELL LOCK (AGENCY TIER) ── */}
-                <div style={{ padding: "30px 20px", borderRadius: 12, border: "1px dashed var(--border)", background: "rgba(0,0,0,0.2)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", opacity: 0.6 }}>
-                   <span style={{ fontSize: 24, marginBottom: 12 }}>🔒</span>
-                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", textAlign: "center", lineHeight: 1.6 }}>
-                     MAXIMUM SLOTS REACHED<br/>
-                     <a href="/subscribe" style={{ color: "var(--accent)", textDecoration: "none", marginTop: 8, display: "inline-block" }}>
-                       Upgrade to AGENCY to unlock 7 more slots →
-                     </a>
-                   </span>
-                </div>
-                
               </div>
             </motion.div>
           )}
 
-          {/* ── SETTINGS TAB (Fully Functional) ── */}
+          {/* ── SETTINGS TAB ── */}
           {tab === "settings" && (
             <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px,3vw,32px)", color: "var(--text)", letterSpacing: "0.05em", marginBottom: 24 }}>ACCOUNT SETTINGS</h2>
 
               <div style={{ display: "grid", gap: 16 }}>
-                {/* Integration Config */}
                 <div style={{ padding: "24px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)" }}>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 20 }}>DEVELOPER INTEGRATIONS</p>
                   <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", marginBottom: 12 }}>Paste your Slack, Make.com, or Zapier Webhook URL to send Action Plans directly to your team.</p>
                   <input type="text" value={settings.webhookUrl} onChange={e => setSettings({...settings, webhookUrl: e.target.value})} placeholder="https://hooks.slack.com/services/..." style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "12px 16px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 12 }} />
                 </div>
 
-                {/* SMS Config */}
                 <div style={{ padding: "24px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
                     <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.15em" }}>SMS ALERTS</p>
@@ -495,13 +471,13 @@ export default function Dashboard() {
                   <input type="tel" disabled={!settings.smsAlerts} value={settings.smsPhone} onChange={e => setSettings({...settings, smsPhone: e.target.value})} placeholder="+44 7700 000000" style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "12px 16px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 12, opacity: settings.smsAlerts ? 1 : 0.5 }} />
                 </div>
 
-                {/* Danger Zone */}
+                {/* ☁️ CLOUD LOG OUT BUTTON ☁️ */}
                 <div style={{ padding: "24px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 6 }}>DANGER ZONE</p>
-                    <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)" }}>Reset your local database to default state.</p>
+                    <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 6 }}>SESSION MANAGEMENT</p>
+                    <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)" }}>Disconnect from the Supabase cloud and log out of this device.</p>
                   </div>
-                  <button onClick={() => { if(confirm("Clear all data?")) { localStorage.removeItem("nexus_pulse_db"); localStorage.removeItem("nexus_auth_tier"); window.location.href = "/"; } }} style={{ padding: "10px 20px", borderRadius: 8, background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.3)", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)" }}>HARD RESET</button>
+                  <button onClick={handleLogout} style={{ padding: "10px 20px", borderRadius: 8, background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.3)", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)" }}>LOG OUT</button>
                 </div>
               </div>
             </motion.div>
