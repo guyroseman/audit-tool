@@ -35,12 +35,14 @@ body {
   font-family: var(--font-body);
   font-size: 14px;
   line-height: 1.6;
-  overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Custom cursor — disabled on touch devices via media query below */
   cursor: none;
 }
+
+/* Prevent horizontal scroll without breaking fixed cursor positioning */
+html { overflow-x: hidden; }
 
 /* ── Mobile: disable custom cursor, restore default ── */
 @media (hover: none) and (pointer: coarse) {

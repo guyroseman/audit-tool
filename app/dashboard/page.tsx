@@ -104,6 +104,7 @@ const PILLAR_META: Record<Task["pillar"], { icon: string; color: string; label: 
 export default function Dashboard() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userPlan, setUserPlan] = useState<"pulse" | "scale">("pulse");
   const [tab, setTab] = useState<Tab>("overview");
   const [sites, setSites] = useState<TrackedSite[]>([]);
   const [settings, setSettings] = useState<UserSettings>({ smsPhone: "", smsAlerts: false, webhookUrl: "", weeklyDigest: true, criticalAlerts: true });
@@ -117,7 +118,8 @@ export default function Dashboard() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { window.location.href = "/login"; return; }
       setUserId(session.user.id);
-      const { data } = await supabase.from("profiles").select("app_data").eq("id", session.user.id).single();
+      const { data } = await supabase.from("profiles").select("app_data, plan").eq("id", session.user.id).single();
+      if (data?.plan) setUserPlan(data.plan as "pulse" | "scale");
       if (data?.app_data && Object.keys(data.app_data).length > 0) {
         const validPillars = new Set(["performance", "seo", "security", "accessibility"]);
         const rawSites: TrackedSite[] = data.app_data.sites || [];
@@ -212,6 +214,9 @@ export default function Dashboard() {
             <span style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "var(--text)", letterSpacing: "0.08em" }}>NEXUS</span>
           </a>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", padding: "2px 7px", borderRadius: 3, letterSpacing: "0.1em" }}>● CLOUD SYNCED</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: userPlan === "scale" ? "#e8341a" : "#a78bfa", background: userPlan === "scale" ? "rgba(232,52,26,0.1)" : "rgba(167,139,250,0.1)", border: `1px solid ${userPlan === "scale" ? "rgba(232,52,26,0.25)" : "rgba(167,139,250,0.25)"}`, padding: "2px 8px", borderRadius: 3, letterSpacing: "0.1em" }}>
+            {userPlan.toUpperCase()} PLAN
+          </span>
           <div style={{ display: "flex", gap: 0, marginLeft: 12, overflowX: "auto" }} className="hide-scrollbar">
             {(["overview", "action-plan", "matrix", "settings"] as Tab[]).map(t => (
               <button key={t} onClick={() => setTab(t)}
@@ -444,6 +449,12 @@ export default function Dashboard() {
           {/* ══════════════ MATRIX TAB ══════════════ */}
           {tab === "matrix" && (
             <motion.div key="matrix" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              {userPlan === "pulse" && (
+                <div style={{ marginBottom: 16, padding: "10px 16px", borderRadius: 8, background: "rgba(232,52,26,0.04)", border: "1px solid rgba(232,52,26,0.18)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em" }}>🔒 SCALE: Track 10 competitors + daily scans + white-label PDF exports</span>
+                  <a href="/subscribe" style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#e8341a", textDecoration: "none", letterSpacing: "0.1em", background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.25)", padding: "4px 10px", borderRadius: 4, whiteSpace: "nowrap" }}>UPGRADE →</a>
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 24 }}>
                 <div>
                   <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(24px,4vw,32px)", color: "var(--text)", letterSpacing: "0.05em", marginBottom: 6 }}>MARKET MATRIX</h2>
