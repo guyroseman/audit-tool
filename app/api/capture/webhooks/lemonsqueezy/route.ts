@@ -33,9 +33,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
+  // Log full payload so we can debug field locations
+  console.log("LS WEBHOOK PAYLOAD:", JSON.stringify(event, null, 2));
+
   const type  = (event.meta as Record<string,string>)?.event_name;
   const attrs = (event.data as Record<string,unknown>)?.attributes as Record<string,unknown>;
-  const email            = attrs?.user_email as string;
+
+  // LemonSqueezy puts email in multiple places depending on event type — try all
+  const email =
+    (attrs?.user_email as string) ||
+    (attrs?.email as string) ||
+    ((attrs?.customer as Record<string,string>)?.email) ||
+    ((event.meta as Record<string,unknown>)?.custom_data as Record<string,string>)?.email ||
+    "";
+
   const lsCustomerId     = String(attrs?.customer_id ?? "");
   const lsSubscriptionId = String((event.data as Record<string,unknown>)?.id ?? "");
   const variantId        = String(attrs?.variant_id ?? "");
@@ -49,54 +60,83 @@ export async function POST(req: NextRequest) {
     return null;
   }
 
-  // Use service role key — this runs server-side only, never exposed to browser
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  console.log(`LemonSqueezy webhook: ${type} | ${email} | variant: ${variantId}`);
+  console.log(`LS event: ${type} | email: "${email}" | variant: ${variantId}`);
 
   if (type === "subscription_created" || type === "subscription_updated") {
     const plan = getPlan(variantId);
-    if (plan && email) {
-      const { error } = await supabase.from("profiles").update({
-        tier: plan,
-        ls_customer_id: lsCustomerId,
-        ls_subscription_id: lsSubscriptionId,
-        ls_variant_id: variantId,
-        subscription_status: "active",
-      }).eq("email", email);
+    console.log(`Resolved plan: ${plan} | pulse variant: ${PULSE_VARIANT_ID} | scale variant: ${SCALE_VARIANT_ID}`);
 
-      if (error) console.error("Supabase update error:", error);
-      else console.log(`Plan updated to '${plan}' for ${email}`);
+    if (plan && email) {
+      // First try update by email
+      const { data, error } = await supabase
+        .from("profiles")
+        .update({
+          tier: plan,
+          ls_customer_id: lsCustomerId,
+          ls_subscription_id: lsSubscriptionId,
+          ls_variant_id: variantId,
+          subscription_status: "active",
+          email: email, // ensure email is always saved
+        })
+        .eq("email", email)
+        .select();
+
+      if (error) {
+        console.error("Supabase update error:", error);
+      } else if (!data || data.length === 0) {
+        // No row matched by email — try matching via auth.users
+        console.warn(`No profile found for email ${email} — trying auth lookup`);
+        const { data: users } = await supabase.auth.admin.listUsers();
+        const user = users?.users?.find(u => u.email === email);
+        if (user) {
+          const { error: err2 } = await supabase
+            .from("profiles")
+            .update({
+              tier: plan,
+              ls_customer_id: lsCustomerId,
+              ls_subscription_id: lsSubscriptionId,
+              ls_variant_id: variantId,
+              subscription_status: "active",
+              email: email,
+            })
+            .eq("id", user.id);
+          if (err2) console.error("Fallback update error:", err2);
+          else console.log(`Plan updated via auth lookup for ${email}`);
+        } else {
+          console.error(`User not found in auth for email: ${email}`);
+        }
+      } else {
+        console.log(`Plan updated to '${plan}' for ${email}`);
+      }
     } else {
-      console.warn(`Unknown variant ${variantId} or missing email`);
+      console.warn(`Missing plan (${plan}) or email (${email}) — cannot update`);
     }
   }
 
   if (type === "subscription_cancelled") {
     if (email) {
-      await supabase.from("profiles").update({
-        tier: "free",
-        subscription_status: "cancelled",
-      }).eq("email", email);
+      await supabase.from("profiles")
+        .update({ tier: "free", subscription_status: "cancelled" })
+        .eq("email", email);
     }
   }
 
   if (type === "subscription_expired") {
     if (email) {
-      await supabase.from("profiles").update({
-        tier: "free",
-        subscription_status: "expired",
-      }).eq("email", email);
+      await supabase.from("profiles")
+        .update({ tier: "free", subscription_status: "expired" })
+        .eq("email", email);
     }
   }
 
   return NextResponse.json({ received: true });
 }
 
-// Reject non-POST requests
 export async function GET() {
   return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }
