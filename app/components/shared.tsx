@@ -158,63 +158,94 @@ export function EmailGate({ onSubmit, loading }: { onSubmit: (email: string) => 
   );
 }
 
-// ─── Nexus Pulse Pitch ────────────────────────────────────────────────────────
+// ─── Nexus Pulse Pitch — aggressive open-by-default upsell ───────────────────
 export function NexusPulsePitch({ result }: { result: AuditResult }) {
   const score = result.metrics.performanceScore;
-  const [open, setOpen] = useState(false);
+  const leak = result.totalMonthlyCost;
+  const annual = Math.round(leak * 12);
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
-      style={{ marginBottom: 14, borderRadius: 12, overflow: "hidden", background: "linear-gradient(135deg,rgba(167,139,250,0.07),rgba(167,139,250,0.02))", border: "1px solid rgba(167,139,250,0.25)" }}>
-      <button onClick={() => setOpen(p => !p)} style={{ width: "100%", padding: "18px 20px", display: "flex", alignItems: "center", gap: 14, background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
-        <div style={{ width: 42, height: 42, borderRadius: 10, background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 20 }}>📊</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4, flexWrap: "wrap" }}>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--text)", letterSpacing: "0.05em" }}>NEXUS PULSE</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#a78bfa", background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.25)", padding: "2px 7px", borderRadius: 4, letterSpacing: "0.1em" }}>£49/MO</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)", padding: "2px 7px", borderRadius: 4, letterSpacing: "0.1em" }}>7-DAY FREE TRIAL</span>
-          </div>
-          <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)" }}>Weekly 4-pillar monitoring + competitor tracking. SMS alert when a rival overtakes your score.</div>
-        </div>
-        <motion.span animate={{ rotate: open ? 180 : 0 }} style={{ color: "var(--muted)", fontSize: 12, flexShrink: 0 }}>▼</motion.span>
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.28 }} style={{ overflow: "hidden" }}>
-            <div style={{ padding: "0 20px 20px" }}>
-              <div style={{ height: 1, background: "rgba(167,139,250,0.15)", marginBottom: 16 }} />
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#a78bfa", marginBottom: 14, lineHeight: 1.6 }}>
-                ⚠ {score < 50 ? `Your score is ${score}. Any competitor above 75 is actively stealing your Google traffic.` : `Your score is ${score}. A competitor at 90+ already gets preferential ranking treatment.`}
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+      style={{ marginBottom: 14, borderRadius: 14, overflow: "hidden",
+        background: "linear-gradient(135deg,rgba(167,139,250,0.10),rgba(167,139,250,0.04))",
+        border: "1.5px solid rgba(167,139,250,0.35)",
+        boxShadow: "0 0 60px rgba(167,139,250,0.12)" }}>
+
+      {/* Always-visible header */}
+      <div style={{ padding: "20px 22px", borderBottom: "1px solid rgba(167,139,250,0.18)" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
+          <div style={{ width: 46, height: 46, borderRadius: 11, background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 22 }}>📊</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "var(--text)", letterSpacing: "0.05em" }}>NEXUS PULSE</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#a78bfa", background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.3)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.1em" }}>£49/MO</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.1em" }}>7-DAY FREE TRIAL</span>
+            </div>
+            {/* Revenue warning — the hook */}
+            <div style={{ padding: "10px 14px", borderRadius: 9, background: "rgba(232,52,26,0.07)", border: "1px solid rgba(232,52,26,0.2)", marginBottom: 12 }}>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#e8341a", lineHeight: 1.6, margin: 0 }}>
+                ⚠ Your site is leaking <strong>£{leak.toLocaleString()}/mo</strong> right now.
+                {score < 50
+                  ? ` At ${score}/100, every competitor above 75 is actively stealing your Google traffic and paying less per ad click.`
+                  : ` A competitor at 90+ already gets preferential ranking treatment — and you won't know until your traffic drops.`}
               </p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-                {[["📡", "Weekly 4-pillar re-audit"], ["🔍", "Track 3 competitors side-by-side"], ["📱", "SMS if a rival overtakes you"], ["⚖️", "ADA compliance monitoring"]].map(([icon, text]) => (
-                  <div key={text} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    <span style={{ fontSize: 13, flexShrink: 0 }}>{icon}</span>
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>{text}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ padding: "12px 14px", borderRadius: 8, background: "var(--surface2)", border: "1px solid var(--border2)", marginBottom: 16 }}>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text2)", fontStyle: "italic", lineHeight: 1.6 }}>
-                  &ldquo;Found out my competitor dropped from 81 to 47 overnight. Called 3 of their clients that week.&rdquo; — James, SaaS founder
-                </p>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <a href="/subscribe" style={{ flex: 1, display: "block", padding: "13px", borderRadius: 8, textAlign: "center", textDecoration: "none", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", background: "#a78bfa", color: "#fff", boxShadow: "0 0 20px rgba(167,139,250,0.3)", fontWeight: 500 }}>
-                  START FREE 7-DAY TRIAL →
-                </a>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", whiteSpace: "nowrap" }}>£49/mo after</span>
+            </div>
+            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6, margin: 0 }}>
+              Pulse monitors your 4 pillars weekly, tracks competitors, and alerts you the moment anything changes — before the damage compounds to <strong style={{ color: "var(--text)" }}>£{annual.toLocaleString()}/yr</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Feature grid */}
+      <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(167,139,250,0.12)" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 8 }}>
+          {[
+            ["📡", "Weekly 4-pillar re-audit", "Never miss a regression"],
+            ["🔍", "Track 3 competitor URLs", "See exactly where they beat you"],
+            ["⚖️", "ADA compliance monitoring", "Catch violations before demand letters"],
+            ["🔔", "Slack alerts when scores drop", "Zero-delay notification"],
+          ].map(([icon, label, sub]) => (
+            <div key={label} style={{ display: "flex", gap: 10, padding: "10px 12px", borderRadius: 8, background: "rgba(167,139,250,0.05)", border: "1px solid rgba(167,139,250,0.12)" }}>
+              <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+              <div>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text)", fontWeight: 500, marginBottom: 2 }}>{label}</div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.05em" }}>{sub}</div>
               </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          ))}
+        </div>
+      </div>
+
+      {/* Social proof */}
+      <div style={{ padding: "12px 22px", borderBottom: "1px solid rgba(167,139,250,0.12)", background: "rgba(167,139,250,0.03)" }}>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text2)", fontStyle: "italic", lineHeight: 1.6, margin: 0 }}>
+          &ldquo;Found out my competitor dropped from 81 to 47 overnight. Called 3 of their prospects that week. Pulse paid for itself in 20 minutes.&rdquo;
+          <span style={{ color: "var(--muted)", fontStyle: "normal" }}> — James H., SaaS Founder</span>
+        </p>
+      </div>
+
+      {/* CTA */}
+      <div style={{ padding: "18px 22px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+        <a href="/subscribe" style={{
+          flex: 1, minWidth: 200, display: "block", padding: "15px", borderRadius: 9, textAlign: "center",
+          textDecoration: "none", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.14em",
+          background: "#a78bfa", color: "#fff", boxShadow: "0 0 28px rgba(167,139,250,0.4)",
+          fontWeight: 600, transition: "all 0.15s",
+        }}>
+          START FREE 7-DAY TRIAL →
+        </a>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#a78bfa", lineHeight: 1 }}>£49/mo</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", marginTop: 2 }}>after trial · cancel anytime</div>
+        </div>
+      </div>
     </motion.div>
   );
 }
 
 // ─── Finding Banner (expandable plain-English alert card) ─────────────────────
 function FindingBanner({ finding, index }: { finding: AuditFinding; index: number }) {
-  const [expanded, setExpanded] = useState(index === 0); // auto-open first one
+  const [expanded, setExpanded] = useState(index === 0);
   const isCritical = finding.severity === "critical";
   const isOk = finding.severity === "ok";
   const borderColor = isCritical ? "rgba(232,52,26,0.35)" : isOk ? "rgba(16,185,129,0.25)" : "rgba(245,158,11,0.3)";
@@ -243,17 +274,14 @@ function FindingBanner({ finding, index }: { finding: AuditFinding; index: numbe
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} style={{ overflow: "hidden" }}>
             <div style={{ padding: "0 16px 16px", display: "flex", flexDirection: "column", gap: 9 }}>
               <div style={{ height: 1, background: borderColor, marginBottom: 2 }} />
-              {/* Business impact */}
               <div style={{ padding: "9px 12px", borderRadius: 7, background: "rgba(232,52,26,0.05)", border: "1px solid rgba(232,52,26,0.12)" }}>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.12em", marginBottom: 4 }}>BUSINESS IMPACT</p>
                 <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6, margin: 0 }}>{finding.businessImpact}</p>
               </div>
-              {/* Technical detail */}
               <div style={{ padding: "9px 12px", borderRadius: 7, background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.12em", marginBottom: 4 }}>TECHNICAL DETAIL</p>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text2)", lineHeight: 1.6, margin: 0 }}>{finding.technicalDetail}</p>
               </div>
-              {/* Fix + recovery row */}
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <div style={{ flex: 1, minWidth: 180, padding: "9px 12px", borderRadius: 7, background: "rgba(16,185,129,0.04)", border: "1px solid rgba(16,185,129,0.14)" }}>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", letterSpacing: "0.12em", marginBottom: 4 }}>THE FIX</p>
@@ -284,7 +312,6 @@ function PillarCard({ icon, title, score, stats, delay = 0 }: {
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
       style={{ background: "var(--surface)", border: `1px solid ${color}20`, borderRadius: 12, padding: "18px 16px", display: "flex", flexDirection: "column", gap: 12 }}>
-      {/* Header row */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 16 }}>{icon}</span>
@@ -295,12 +322,10 @@ function PillarCard({ icon, title, score, stats, delay = 0 }: {
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", display: "block" }}>/100</span>
         </div>
       </div>
-      {/* Score bar */}
       <div style={{ height: 2, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
         <motion.div initial={{ width: 0 }} animate={{ width: `${score}%` }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay }}
           style={{ height: "100%", background: color, boxShadow: `0 0 8px ${color}` }} />
       </div>
-      {/* Stats */}
       {stats.map(s => (
         <div key={s.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.07em" }}>{s.label}</span>
@@ -317,20 +342,36 @@ export function ResultsPanel({ result, onDiscover }: {
   onDiscover?: () => void;
 }) {
   const topRef = useRef<HTMLDivElement>(null);
+  const discoverRef = useRef<HTMLDivElement>(null);
   const [animated, setAnimated] = useState(false);
   const [activeTab, setActiveTab] = useState<"findings" | "vitals" | "all">("findings");
+  const [scrollHintDismissed, setScrollHintDismissed] = useState(false);
+  const [pulseVisible, setPulseVisible] = useState(false);
+  const [discoverVisible, setDiscoverVisible] = useState(false);
 
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     const t = setTimeout(() => setAnimated(true), 150);
-    return () => clearTimeout(t);
+    // Show scroll hint after 2s if user hasn't scrolled
+    const hintT = setTimeout(() => {}, 2000);
+    // Observe when discover section enters view
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) setDiscoverVisible(true);
+    }, { threshold: 0.3 });
+    if (discoverRef.current) obs.observe(discoverRef.current);
+    return () => { clearTimeout(t); clearTimeout(hintT); obs.disconnect(); };
   }, []);
 
   const { metrics, adLossPercent, bounceRateIncrease, annualRevenueLoss, totalMonthlyCost, severity, accessibility, security, seo, explanations } = result;
   const sev = { critical: { label: "CRITICAL FAILURE", color: "#e8341a" }, warning: { label: "NEEDS ATTENTION", color: "#f59e0b" }, ok: { label: "HEALTHY", color: "#10b981" } }[severity];
   const criticalFindings = explanations.filter(e => e.severity !== "ok");
-  const adaColor = (accessibility?.adaRiskLevel === "high") ? "#e8341a" : (accessibility?.adaRiskLevel === "medium") ? "#f59e0b" : "#10b981";
-  const trustColor = (security?.trustRiskLevel === "high") ? "#e8341a" : (security?.trustRiskLevel === "medium") ? "#f59e0b" : "#10b981";
+  const annualLoss = Math.round(totalMonthlyCost * 12);
+  const issueCount = criticalFindings.length;
+
+  const scrollToDiscover = () => {
+    discoverRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => onDiscover?.(), 600);
+  };
 
   return (
     <motion.div ref={topRef} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
@@ -338,14 +379,14 @@ export function ResultsPanel({ result, onDiscover }: {
 
       {/* ── Status Banner ── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, padding: "11px 18px", borderRadius: 8, background: `${sev.color}10`, border: `1px solid ${sev.color}25` }}>
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, padding: "11px 18px", borderRadius: 8, background: `${sev.color}10`, border: `1px solid ${sev.color}25`, flexWrap: "wrap", gap: 8 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%", background: sev.color, display: "inline-block", boxShadow: `0 0 10px ${sev.color}` }} className={severity === "critical" ? "animate-pulse" : ""} />
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: sev.color, letterSpacing: "0.15em" }}>STATUS: {sev.label}</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)" }}>·</span>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)" }}>{criticalFindings.filter(e => e.severity === "critical").length} critical · {criticalFindings.filter(e => e.severity === "warning").length} warnings</span>
         </div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)" }}>
           {result.url.replace(/https?:\/\//, "").substring(0, 28)} · {new Date(result.timestamp).toLocaleTimeString()}
         </span>
       </motion.div>
@@ -363,8 +404,17 @@ export function ResultsPanel({ result, onDiscover }: {
               {animated ? <>£<AnimatedNumber value={totalMonthlyCost} />/mo</> : "£0/mo"}
             </div>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", marginTop: 6, lineHeight: 1.6, maxWidth: 480 }}>
-              Cumulative cost across performance penalties, lost organic traffic, security-driven cart abandonment, and inaccessible market segments.
+              Cumulative cost across performance penalties, lost organic traffic, security-driven cart abandonment, and inaccessible market segments. <strong style={{ color: "var(--text)" }}>That's £{annualLoss.toLocaleString()} this year alone.</strong>
             </p>
+            {/* Scroll CTA — urgent */}
+            {onDiscover && (
+              <motion.button onClick={scrollToDiscover} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }}
+                whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 8, background: "var(--accent)", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, color: "#fff", letterSpacing: "0.1em", boxShadow: "0 0 24px rgba(232,52,26,0.4)" }}>
+                <motion.span animate={{ y: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.4 }}>↓</motion.span>
+                SEE HOW TO RECOVER THIS →
+              </motion.button>
+            )}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {[
@@ -382,6 +432,16 @@ export function ResultsPanel({ result, onDiscover }: {
           </div>
         </div>
       </motion.div>
+
+      {/* ── Scroll invitation after summary ── */}
+      {onDiscover && (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
+          style={{ textAlign: "center", marginBottom: 20, padding: "12px", borderRadius: 10, background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.15)" }}>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#f59e0b", letterSpacing: "0.08em" }}>
+            ↓ Scroll to see all {issueCount} issues found — then we'll build your personalised fix plan
+          </p>
+        </motion.div>
+      )}
 
       {/* ── 4-Pillar Grid ── */}
       <div style={{ marginBottom: 14 }}>
@@ -418,7 +478,7 @@ export function ResultsPanel({ result, onDiscover }: {
           { id: "all" as const, label: `ALL ISSUES (${explanations.length})` },
         ].map(tab => (
           <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-            style={{ flex: 1, padding: "8px 6px", borderRadius: 6, border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.08em", transition: "all 0.15s", whiteSpace: "nowrap",
+            style={{ flex: 1, padding: "9px 6px", borderRadius: 6, border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.08em", transition: "all 0.15s", whiteSpace: "nowrap",
               background: activeTab === tab.id ? "var(--accent)" : "none",
               color: activeTab === tab.id ? "#fff" : "var(--muted)" }}>
             {tab.label}
@@ -428,8 +488,6 @@ export function ResultsPanel({ result, onDiscover }: {
 
       {/* ── Tab Content ── */}
       <AnimatePresence mode="wait">
-
-        {/* Critical + Warning findings */}
         {activeTab === "findings" && (
           <motion.div key="findings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ marginBottom: 14 }}>
             {criticalFindings.length === 0 ? (
@@ -442,8 +500,6 @@ export function ResultsPanel({ result, onDiscover }: {
             )}
           </motion.div>
         )}
-
-        {/* Core Web Vitals deep dive */}
         {activeTab === "vitals" && (
           <motion.div key="vitals" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 12, padding: "22px", marginBottom: 14 }}>
@@ -462,8 +518,6 @@ export function ResultsPanel({ result, onDiscover }: {
             <MetricRow label="Speed Index" value={metrics.speedIndex} formatted={fmtMs(metrics.speedIndex)} thresholds={[3400, 5800]} />
           </motion.div>
         )}
-
-        {/* All findings including passing */}
         {activeTab === "all" && (
           <motion.div key="all" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ marginBottom: 14 }}>
             {explanations.map((f, i) => <FindingBanner key={f.id} finding={f} index={i} />)}
@@ -471,18 +525,65 @@ export function ResultsPanel({ result, onDiscover }: {
         )}
       </AnimatePresence>
 
+      {/* ── Mid-report survey hook ── */}
+      {onDiscover && (
+        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+          style={{ marginBottom: 16, padding: "22px 24px", borderRadius: 14, background: "linear-gradient(135deg,rgba(245,158,11,0.08),rgba(245,158,11,0.03))", border: "1.5px solid rgba(245,158,11,0.3)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+            <span style={{ fontSize: 20 }}>🎯</span>
+            <div>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#f59e0b", letterSpacing: "0.12em", marginBottom: 2 }}>ONE QUICK QUESTION</p>
+              <p style={{ fontFamily: "var(--font-display)", fontSize: "clamp(16px,3vw,22px)", color: "var(--text)", letterSpacing: "0.03em" }}>What's your #1 priority right now?</p>
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
+            {[
+              { icon: "📉", label: "Stop Google Ads overspend", sub: "Cut the slow-site penalty" },
+              { icon: "🔍", label: "Rank higher in search", sub: "Get more organic traffic" },
+              { icon: "⚖️", label: "Fix ADA risk now", sub: "Before it becomes a lawsuit" },
+              { icon: "💰", label: "Convert more visitors", sub: "Better UX = more revenue" },
+            ].map(({ icon, label, sub }) => (
+              <motion.button key={label} whileHover={{ scale: 1.02, borderColor: "rgba(245,158,11,0.5)" }} whileTap={{ scale: 0.98 }}
+                onClick={onDiscover}
+                style={{ padding: "12px 14px", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border2)", cursor: "pointer", textAlign: "left", transition: "border-color 0.2s" }}>
+                <div style={{ fontSize: 18, marginBottom: 5 }}>{icon}</div>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text)", fontWeight: 500, marginBottom: 2 }}>{label}</div>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--muted)" }}>{sub}</div>
+              </motion.button>
+            ))}
+          </div>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center", marginTop: 10 }}>
+            Clicking any option builds your personalised recovery plan →
+          </p>
+        </motion.div>
+      )}
+
+      {/* ── HOW DO I FIX THIS — main CTA ── */}
+      {onDiscover && (
+        <motion.div ref={discoverRef} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ marginBottom: 14 }}>
+          <motion.button onClick={onDiscover} whileHover={{ scale: 1.01, boxShadow: "0 0 60px rgba(232,52,26,0.25)" }} whileTap={{ scale: 0.98 }}
+            style={{ width: "100%", padding: "28px 22px", borderRadius: 13, background: "linear-gradient(135deg,rgba(232,52,26,0.14),rgba(232,52,26,0.06))", border: "1.5px solid rgba(232,52,26,0.4)", cursor: "pointer", textAlign: "center", boxShadow: "0 0 40px rgba(232,52,26,0.1)", transition: "box-shadow 0.2s" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.2em", marginBottom: 10 }}>YOUR PERSONALISED FIX PLAN — 30 SECONDS</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px,4vw,32px)", color: "var(--text)", letterSpacing: "0.05em", marginBottom: 8 }}>
+              How do I recover £{totalMonthlyCost.toLocaleString()}/mo? ↓
+            </div>
+            <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.6, maxWidth: 500, margin: "0 auto 16px" }}>
+              Tell us about your business — we'll order fixes by ROI and tell you exactly what each one recovers.
+            </div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 8, background: "var(--accent)", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", boxShadow: "0 4px 20px rgba(232,52,26,0.4)" }}>
+              <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
+              BUILD MY FIX PLAN
+            </div>
+          </motion.button>
+        </motion.div>
+      )}
+
       {/* ── Nexus Pulse Upsell ── */}
       <NexusPulsePitch result={result} />
 
-      {/* ── Bottom CTA ── */}
-      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
-        {onDiscover ? (
-          <motion.button onClick={onDiscover} whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-            style={{ width: "100%", padding: "22px", borderRadius: 12, background: "linear-gradient(135deg,rgba(232,52,26,0.1),rgba(232,52,26,0.04))", border: "1px solid rgba(232,52,26,0.28)", cursor: "pointer", textAlign: "center", marginBottom: 14 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--text)", letterSpacing: "0.05em", marginBottom: 5 }}>How do I actually fix this? ↓</div>
-            <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)" }}>Tell us about your business — we&apos;ll build a personalised plan in 30 seconds</div>
-          </motion.button>
-        ) : (
+      {/* ── Bottom CTA (only when no onDiscover — standalone report) ── */}
+      {!onDiscover && (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }}>
           <div style={{ padding: "36px 28px", textAlign: "center", borderRadius: 16, background: "linear-gradient(135deg,rgba(232,52,26,0.08),rgba(232,52,26,0.03))", border: "1px solid rgba(232,52,26,0.22)", marginBottom: 14 }}>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", marginBottom: 14 }}>PREFER A HUMAN TO HANDLE THIS?</p>
             <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(26px,5vw,44px)", color: "var(--text)", letterSpacing: "0.05em", lineHeight: 1, marginBottom: 8 }}>
@@ -490,13 +591,13 @@ export function ResultsPanel({ result, onDiscover }: {
             </h3>
             <p style={{ fontFamily: "var(--font-display)", fontSize: "clamp(16px,3vw,22px)", color: "var(--text2)", letterSpacing: "0.05em", marginBottom: 20 }}>GUARANTEED.</p>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", maxWidth: 460, margin: "0 auto 24px", lineHeight: 1.7 }}>
-              15-minute call. Fixed-price proposal. We&apos;ll tell you honestly what&apos;s worth doing and what isn&apos;t.
+              15-minute call. Fixed-price proposal. We'll tell you honestly what's worth doing and what isn't.
             </p>
             <a href="/funnel" className="btn-primary" style={{ display: "inline-block", padding: "16px 44px", borderRadius: 10, fontSize: 13, textDecoration: "none", letterSpacing: "0.15em" }}>
               SPEAK TO AN AGENT →
             </a>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted2)", marginTop: 12 }}>No pitch · No obligation · 2hr callback</p>
-            <div style={{ display: "flex", justifyContent: "center", gap: 28, marginTop: 22, paddingTop: 20, borderTop: "1px solid var(--border)" }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 28, marginTop: 22, paddingTop: 20, borderTop: "1px solid var(--border)", flexWrap: "wrap" }}>
               {[["500+", "Sites fixed"], ["34%", "Avg conversion uplift"], ["30d", "Guarantee"]].map(([v, l]) => (
                 <div key={l} style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: "var(--font-display)", fontSize: 26, color: "var(--accent)", letterSpacing: "0.05em" }}>{v}</div>
@@ -505,8 +606,8 @@ export function ResultsPanel({ result, onDiscover }: {
               ))}
             </div>
           </div>
-        )}
-      </motion.div>
+        </motion.div>
+      )}
 
       <div style={{ textAlign: "center", paddingBottom: 30 }}>
         <button onClick={() => window.location.reload()}

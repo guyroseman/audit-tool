@@ -342,3 +342,34 @@ button {
   .url-input-row { flex-direction: column !important; }
   .url-input-row button { width: 100% !important; }
 }
+/* ─── Dashboard mobile optimization ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Dashboard nav — scrollable tabs */
+  .dash-tabs-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .dash-tabs-scroll::-webkit-scrollbar { display: none; }
+
+  /* Stack stat cards vertically */
+  .dash-stat-grid { grid-template-columns: 1fr !important; }
+
+  /* Competitor matrix — horizontal scroll */
+  .matrix-metric-grid { grid-template-columns: repeat(4, minmax(120px, 1fr)) !important; overflow-x: auto; }
+
+  /* Hero text scaling */
+  .dash-hero-text { font-size: clamp(28px, 6vw, 42px) !important; }
+
+  /* Plan cards stack on mobile */
+  .plan-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 480px) {
+  /* Vitals cards single col on phone */
+  .vitals-grid { grid-template-columns: 1fr !important; }
+  /* 4-pillar rings row wraps */
+  .pillar-rings { grid-template-columns: repeat(2, 1fr) !important; }
+  /* Blueprint task padding reduction */
+  .blueprint-task { padding: 14px 14px !important; }
+}

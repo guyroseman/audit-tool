@@ -223,7 +223,7 @@ function SubscribeInner() {
         </motion.div>
 
         {/* Plan cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px,1fr))", gap: 14, marginBottom: 52, alignItems: "stretch" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px,1fr))", gap: 14, marginBottom: 52, alignItems: "stretch", isolation: "isolate" }}>
           {PLANS.map((plan, i) => (
             <motion.div key={plan.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
               style={{ borderRadius: 16, border: plan.popular ? `1.5px solid ${plan.accentColor}0.5)` : `1px solid ${plan.accentColor}0.2)`, background: plan.popular ? `linear-gradient(135deg,${plan.accentColor}0.1),${plan.accentColor}0.04))` : "var(--surface)", padding: plan.popular ? "28px 24px" : "22px 20px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", transform: plan.popular ? "scale(1.03)" : "none", boxShadow: plan.popular ? `0 0 80px ${plan.accentColor}0.2), 0 24px 60px rgba(0,0,0,0.4)` : "none" }}>
@@ -285,7 +285,7 @@ function SubscribeInner() {
               </div>
 
               <motion.button onClick={() => handleCheckout(plan)} whileTap={{ scale: 0.98 }}
-                style={{ width: "100%", padding: "14px", borderRadius: 10, background: plan.ctaBg, color: plan.ctaColor, fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.1em", border: "none", cursor: "pointer", boxShadow: plan.popular ? `0 0 28px ${plan.accentColor}0.4)` : "none", marginBottom: 10 }}>
+                style={{ width: "100%", padding: "15px", borderRadius: 10, background: plan.ctaBg, color: plan.ctaColor, fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", border: "none", cursor: "pointer", boxShadow: plan.popular ? "0 0 28px rgba(167,139,250,0.4)" : "none", marginBottom: 10, display: "block", position: "relative", zIndex: 1 }}>
                 {plan.cta} →
               </motion.button>
               <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center" }}>{plan.guarantee}</p>

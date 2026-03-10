@@ -483,11 +483,20 @@ function FunnelInner() {
 
   useEffect(() => {
     const fromHome = searchParams.get("url");
+    const fromHomeEmail = searchParams.get("email");
     if (fromHome) {
       setUrlInput(fromHome);
-      setFd(p => ({ ...p, url: fromHome }));
+      if (fromHomeEmail) setEmailInput(fromHomeEmail);
+      setFd(p => ({ ...p, url: fromHome, email: fromHomeEmail || undefined }));
       setApiReady(false);
       setStep("loading");
+      // Capture lead immediately if email provided
+      if (fromHomeEmail) {
+        fetch("/api/capture", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: fromHomeEmail, url: fromHome, source: "landing-prescan" }),
+        }).catch(() => {});
+      }
       fetchAudit(fromHome)
         .then(r => { pendingResult.current = r; setResult(r); setApiReady(true); })
         .catch(e => { setUrlError(e instanceof Error ? e.message : "Could not reach PageSpeed API"); setStep("url"); });
@@ -499,9 +508,12 @@ function FunnelInner() {
   // The ScanLoader itself signals when it's displayed 100% — we use apiReady + a small delay
   useEffect(() => {
     if (apiReady && step === "loading" && result) {
-      // Give the loader 800ms to show 100% completion then advance
       const t = setTimeout(() => {
-        setStep(isAuthed ? "report" : "teaser");
+        if (isAuthed) {
+          setStep("report");
+        } else {
+          setStep("teaser");
+        }
       }, 800);
       return () => clearTimeout(t);
     }
@@ -512,7 +524,16 @@ function FunnelInner() {
 
   const runAudit = useCallback(async (targetUrl: string) => {
     if (!targetUrl.trim()) return;
-    setUrlError(""); setFd(p => ({ ...p, url: targetUrl })); setApiReady(false); setStep("loading");
+    setUrlError(""); setFd(p => ({ ...p, url: targetUrl, email: emailInput || undefined })); setApiReady(false); setStep("loading");
+    // Capture lead immediately if we have email
+    if (emailInput.trim()) {
+      try {
+        await fetch("/api/capture", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailInput, url: targetUrl, source: "funnel-prescan" }),
+        });
+      } catch { /* swallow */ }
+    }
     try {
       const r = await fetchAudit(targetUrl);
       pendingResult.current = r;
@@ -522,7 +543,7 @@ function FunnelInner() {
       setUrlError(e instanceof Error ? e.message : "Could not reach PageSpeed API");
       setStep("url");
     }
-  }, [isAuthed]);
+  }, [isAuthed, emailInput]);
 
   const submitEmail = useCallback(async () => {
     if (!emailInput.trim() || !result) return;
@@ -583,19 +604,25 @@ function FunnelInner() {
           {step === "url" && (
             <motion.div key="url" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} style={{ width: "100%" }}>
               <ProgressDots step="url" />
-              <Q q="Run your free 4-pillar diagnostic." sub="Performance · SEO · Accessibility · Security — real Google data.">
+              <Q q="Run your free 4-pillar diagnostic." sub="Performance · SEO · Accessibility · Security — real Google data, zero cost.">
                 <input type="url" inputMode="url" autoComplete="url"
                   value={urlInput} onChange={e => { setUrlInput(e.target.value); setUrlError(""); }}
-                  onKeyDown={e => e.key === "Enter" && urlInput.trim() && runAudit(urlInput)}
+                  onKeyDown={e => e.key === "Enter" && urlInput.trim() && emailInput.trim() && runAudit(urlInput)}
                   placeholder="https://yourwebsite.com" autoFocus
                   style={{ width: "100%", background: "var(--surface)", border: `1px solid ${urlError ? "rgba(232,52,26,0.6)" : "var(--border2)"}`, borderRadius: 10, padding: "14px 16px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 16, marginBottom: urlError ? 8 : 10 }}
                 />
                 {urlError && <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", marginBottom: 10 }}>⚠ {urlError}</p>}
-                <button onClick={() => urlInput.trim() && runAudit(urlInput)} disabled={!urlInput.trim()} className="btn-primary"
-                  style={{ width: "100%", padding: "16px", borderRadius: 10, fontSize: 13, letterSpacing: "0.12em" }}>
+                <input type="email" inputMode="email" autoComplete="email"
+                  value={emailInput} onChange={e => setEmailInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && urlInput.trim() && emailInput.trim() && runAudit(urlInput)}
+                  placeholder="your@email.com — where we send your report"
+                  style={{ width: "100%", background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 10, padding: "14px 16px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 16, marginBottom: 10 }}
+                />
+                <button onClick={() => urlInput.trim() && emailInput.trim() && runAudit(urlInput)} disabled={!urlInput.trim() || !emailInput.trim()} className="btn-primary"
+                  style={{ width: "100%", padding: "16px", borderRadius: 10, fontSize: 13, letterSpacing: "0.12em", opacity: (!urlInput.trim() || !emailInput.trim()) ? 0.6 : 1 }}>
                   RUN FREE 4-PILLAR AUDIT →
                 </button>
-
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center" }}>No spam · <a href="/legal/privacy" style={{ color: "var(--muted2)", textDecoration: "underline" }}>Privacy Policy</a></p>
               </Q>
             </motion.div>
           )}
@@ -608,7 +635,14 @@ function FunnelInner() {
 
           {step === "teaser" && result && (
             <motion.div key="teaser" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ width: "100%", padding: "20px 0" }}>
-              <ScanTeaser result={result} onContinue={() => setStep("email")} />
+              <ScanTeaser result={result} onContinue={() => {
+              if (emailInput.trim()) {
+                setFd(p => ({ ...p, email: emailInput }));
+                setStep("report");
+              } else {
+                setStep("email");
+              }
+            }} />
             </motion.div>
           )}
 

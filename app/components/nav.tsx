@@ -25,40 +25,75 @@ export function NavBar({ maxWidth = 860, page }: NavBarProps) {
   return (
     <nav style={{
       width: "100%",
-      borderBottom: page === "home" ? "none" : "1px solid var(--border)",
-      background: page === "home" ? "transparent" : "rgba(3,7,15,0.97)",
+      borderBottom: "1px solid var(--border)",
+      background: "rgba(3,7,15,0.97)",
       backdropFilter: "blur(12px)",
-      position: page === "home" ? "relative" : "sticky",
+      position: "sticky",
       top: 0, zIndex: 100,
     }}>
-      <div style={{ maxWidth, margin: "0 auto", padding: "0 20px", height: 52, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ maxWidth, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <a href="/" style={{ textDecoration: "none" }}><NexusLogo size={20} /></a>
+
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <a href="/subscribe" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: page === "subscribe" ? "#a78bfa" : "var(--muted)", letterSpacing: "0.1em", textDecoration: "none", padding: "5px 10px", borderRadius: 5 }}>PRICING</a>
-          {!loading && (
-            <>
-              {user ? (
-                <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span style={{
-                    fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.12em", padding: "3px 8px", borderRadius: 3,
-                    color: plan === "scale" ? "#10b981" : plan === "pulse" ? "#a78bfa" : "var(--muted2)",
-                    background: plan === "scale" ? "rgba(16,185,129,0.08)" : plan === "pulse" ? "rgba(167,139,250,0.08)" : "rgba(42,63,88,0.3)",
-                    border: `1px solid ${plan === "scale" ? "rgba(16,185,129,0.2)" : plan === "pulse" ? "rgba(167,139,250,0.2)" : "var(--border)"}`,
-                  }}>{planConfig.label.toUpperCase()}</span>
-                  <a href="/dashboard" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: page === "dashboard" ? "var(--accent)" : "var(--text2)", textDecoration: "none", border: `1px solid ${page === "dashboard" ? "rgba(232,52,26,0.3)" : "var(--border)"}`, padding: "5px 12px", borderRadius: 5, letterSpacing: "0.1em" }}>DASHBOARD</a>
-                  <button onClick={signOut} style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", background: "none", border: "1px solid var(--border)", padding: "5px 10px", borderRadius: 5, cursor: "pointer", letterSpacing: "0.08em" }}>
-                    {(profile?.email ?? user.email ?? "").split("@")[0].substring(0, 12)} ↗
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: "flex", gap: 8 }}>
-                  <a href="/login" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text2)", textDecoration: "none", border: "1px solid var(--border)", padding: "5px 12px", borderRadius: 5, letterSpacing: "0.1em" }}>SIGN IN</a>
-                  <a href="/funnel" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#fff", textDecoration: "none", background: "var(--accent)", padding: "5px 14px", borderRadius: 5, letterSpacing: "0.1em", boxShadow: "0 0 16px rgba(232,52,26,0.25)" }}>FREE AUDIT →</a>
-                </div>
-              )}
-            </>
+          <a href="/subscribe"
+            style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: page === "subscribe" ? "#a78bfa" : "var(--muted)", letterSpacing: "0.1em", textDecoration: "none", padding: "6px 11px", borderRadius: 5 }}>
+            PRICING
+          </a>
+
+          {loading && (
+            <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5 }}
+              style={{ width: 90, height: 32, background: "var(--border)", borderRadius: 5 }} />
           )}
-          {loading && <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5 }} style={{ width: 80, height: 28, background: "var(--border)", borderRadius: 5 }} />}
+
+          {!loading && user ? (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              {/* Plan badge */}
+              <span style={{
+                fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.12em", padding: "4px 9px", borderRadius: 4,
+                color: plan === "scale" ? "#10b981" : plan === "pulse" ? "#a78bfa" : "var(--muted2)",
+                background: plan === "scale" ? "rgba(16,185,129,0.08)" : plan === "pulse" ? "rgba(167,139,250,0.08)" : "rgba(42,63,88,0.3)",
+                border: `1px solid ${plan === "scale" ? "rgba(16,185,129,0.2)" : plan === "pulse" ? "rgba(167,139,250,0.2)" : "var(--border)"}`,
+              }}>{planConfig?.label?.toUpperCase() ?? "SCOUT"}</span>
+
+              {/* Dashboard button */}
+              <a href="/dashboard" style={{
+                fontFamily: "var(--font-mono)", fontSize: 11, color: page === "dashboard" ? "#fff" : "var(--text)",
+                textDecoration: "none",
+                background: page === "dashboard" ? "var(--accent)" : "var(--surface)",
+                border: `1px solid ${page === "dashboard" ? "rgba(232,52,26,0.5)" : "var(--border2)"}`,
+                padding: "6px 14px", borderRadius: 6, letterSpacing: "0.1em",
+                boxShadow: page === "dashboard" ? "0 0 14px rgba(232,52,26,0.25)" : "none",
+                transition: "all 0.15s",
+              }}>DASHBOARD</a>
+
+              {/* Log out — email prefix + arrow */}
+              <button onClick={signOut} style={{
+                fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", background: "none",
+                border: "1px solid var(--border)", padding: "6px 11px", borderRadius: 6, cursor: "pointer",
+                letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: 5, transition: "all 0.15s",
+              }}>
+                <span style={{ maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {(profile?.email ?? user.email ?? "").split("@")[0].substring(0, 12)}
+                </span>
+                <span style={{ color: "var(--accent)", fontSize: 11 }}>→</span>
+              </button>
+            </div>
+          ) : !loading && (
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <a href="/login" style={{
+                fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text)",
+                textDecoration: "none", border: "1px solid var(--border2)",
+                padding: "7px 14px", borderRadius: 6, letterSpacing: "0.1em",
+                background: "var(--surface)", transition: "all 0.15s",
+              }}>SIGN IN</a>
+              <a href="/funnel" style={{
+                fontFamily: "var(--font-mono)", fontSize: 11, color: "#fff",
+                textDecoration: "none", background: "var(--accent)",
+                padding: "7px 16px", borderRadius: 6, letterSpacing: "0.1em",
+                boxShadow: "0 0 16px rgba(232,52,26,0.3)", transition: "all 0.15s",
+              }}>FREE AUDIT →</a>
+            </div>
+          )}
         </div>
       </div>
     </nav>
