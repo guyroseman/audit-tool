@@ -100,19 +100,16 @@ function SocialProof() {
   );
 }
 
-// ─── URL Input (with email capture) ──────────────────────────────────────────
-function UrlInput({ onScan, size = "lg" }: { onScan: (url: string, email?: string) => void; size?: "lg" | "sm" }) {
+// ─── URL Input (URL only — email is captured AFTER the scan) ─────────────────
+function UrlInput({ onScan, size = "lg" }: { onScan: (url: string) => void; size?: "lg" | "sm" }) {
   const [url, setUrl] = useState("");
-  const [email, setEmail] = useState("");
   const [err, setErr] = useState("");
   const [focused, setFocused] = useState(false);
-  const [focusedEmail, setFocusedEmail] = useState(false);
   const go = useCallback(() => {
     const t = url.trim();
-    if (!t) { setErr("Enter a website URL."); return; }
-    if (!email.trim()) { setErr("Enter your email to receive the report."); return; }
-    setErr(""); onScan(t, email.trim());
-  }, [url, email, onScan]);
+    if (!t) { setErr("Enter a website URL to scan."); return; }
+    setErr(""); onScan(t);
+  }, [url, onScan]);
   const isLg = size === "lg";
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
@@ -130,30 +127,10 @@ function UrlInput({ onScan, size = "lg" }: { onScan: (url: string, email?: strin
           onChange={e => { setUrl(e.target.value); setErr(""); }}
           onKeyDown={e => e.key === "Enter" && go()}
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
-          placeholder="yoursite.com"
+          placeholder="yourwebsite.com"
           style={{ flex: 1, background: "transparent", border: "none", outline: "none",
             padding: isLg ? "18px 12px 18px 4px" : "13px 8px 13px 4px",
             color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: isLg ? 16 : 13, minWidth: 0 }}
-        />
-      </div>
-      <div style={{
-        display: "flex", borderRadius: isLg ? 12 : 8, overflow: "hidden",
-        border: `1px solid ${focusedEmail ? "rgba(232,52,26,0.5)" : "var(--border2)"}`,
-        background: "var(--surface)",
-        boxShadow: focusedEmail ? "0 0 0 3px rgba(232,52,26,0.08)" : "none",
-        transition: "all 0.25s",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", paddingLeft: isLg ? 18 : 12, flexShrink: 0 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: isLg ? 12 : 10, color: "var(--muted)" }}>📧</span>
-        </div>
-        <input type="email" value={email}
-          onChange={e => { setEmail(e.target.value); setErr(""); }}
-          onKeyDown={e => e.key === "Enter" && go()}
-          onFocus={() => setFocusedEmail(true)} onBlur={() => setFocusedEmail(false)}
-          placeholder="your@email.com — where we send your report"
-          style={{ flex: 1, background: "transparent", border: "none", outline: "none",
-            padding: isLg ? "18px 12px 18px 8px" : "13px 8px 13px 6px",
-            color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: isLg ? 14 : 12, minWidth: 0 }}
         />
         <button onClick={go} className="btn-primary"
           style={{ borderRadius: 0, padding: isLg ? "18px 26px" : "13px 18px",
@@ -164,7 +141,7 @@ function UrlInput({ onScan, size = "lg" }: { onScan: (url: string, email?: strin
       </div>
       {err && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
         style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", marginTop: 2, letterSpacing: "0.08em" }}>⚠ {err}</motion.p>}
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", textAlign: "center" }}>No spam · Your data is never sold</p>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", textAlign: "center" }}>Free · No account · 60 seconds · Report sent by email after scan</p>
     </div>
   );
 }
@@ -235,9 +212,8 @@ function Testimonial({ quote, name, role, stat, i }: { quote: string; name: stri
 export default function Home() {
   const router = useRouter();
   const { isAuthed, loading: authLoading } = useAuth();
-  const handleScan = useCallback((url: string, email?: string) => {
+  const handleScan = useCallback((url: string) => {
     const params = new URLSearchParams({ url });
-    if (email) params.set("email", email);
     router.push(`/funnel?${params.toString()}`);
   }, [router]);
 
@@ -357,17 +333,11 @@ export default function Home() {
 
       {/* ── URGENCY STRIP ── */}
       <div style={{ background: "rgba(232,52,26,0.04)", borderTop: "1px solid rgba(232,52,26,0.12)", borderBottom: "1px solid rgba(232,52,26,0.12)", padding: "14px 20px" }}>
-        <div style={{ maxWidth: 1020, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.12em", background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.25)", padding: "3px 8px", borderRadius: 4, flexShrink: 0 }}>⚠ THE BLIND BLEED</span>
-            <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
-              Founders pour money into ads, social, and content — then blame their agency. The real culprit: a technical bottleneck you can&rsquo;t see without scanning.
-            </p>
-          </div>
-          <button onClick={() => handleScan("test.com", "demo@nexus.com")}
-            style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", background: "rgba(232,52,26,0.06)", border: "1px solid rgba(232,52,26,0.3)", padding: "8px 14px", borderRadius: 6, cursor: "pointer", letterSpacing: "0.1em", whiteSpace: "nowrap" }}>
-            SEE DEMO SCAN →
-          </button>
+        <div style={{ maxWidth: 1020, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.12em", background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.25)", padding: "3px 8px", borderRadius: 4, flexShrink: 0 }}>⚠ THE BLIND BLEED</span>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
+            Founders pour money into ads, social, and content — then blame their agency. The real culprit: a technical bottleneck you can&rsquo;t see without scanning.
+          </p>
         </div>
       </div>
 

@@ -4,6 +4,36 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
+// ─── Shared base features (shown on all plans) ────────────────────────────────
+const SCOUT_FEATURES = [
+  { icon: "⚡", text: "1 manual 4-pillar audit per day" },
+  { icon: "📊", text: "Full Performance · SEO · A11y · Security report" },
+  { icon: "💸", text: "Revenue leakage estimate in dollars" },
+  { icon: "🔍", text: "Itemised findings with fix instructions" },
+];
+
+const PULSE_OWN_FEATURES = [
+  { icon: "📡", text: "Weekly automated 4-pillar scans — set and forget" },
+  { icon: "🔍", text: "Track up to 3 competitor URLs side-by-side" },
+  { icon: "📱", text: "SMS + Slack alerts the moment any score drops" },
+  { icon: "⚖️", text: "ADA compliance change monitoring — lawsuit prevention" },
+  { icon: "🔒", text: "Vulnerable JS library security alerts" },
+  { icon: "🤖", text: "AI Developer Blueprint — prioritised fix list by ROI" },
+  { icon: "📊", text: "Historical score trend charts" },
+  { icon: "🔔", text: "Make.com & Zapier webhooks" },
+];
+
+const SCALE_OWN_FEATURES = [
+  { icon: "📡", text: "Daily automated 4-pillar scans (vs weekly on Pulse)" },
+  { icon: "🔍", text: "Track up to 10 competitor URLs (vs 3 on Pulse)" },
+  { icon: "📄", text: "Weekly white-label PDF reports — send to clients" },
+  { icon: "👥", text: "3 team seats included" },
+  { icon: "⚖️", text: "Full WCAG audit trail & compliance certificates" },
+  { icon: "🔒", text: "Priority security vulnerability alerts" },
+  { icon: "🎯", text: "Dedicated technical support" },
+  { icon: "🏷️", text: "Agency resell licence" },
+];
+
 // ─── Plan config ──────────────────────────────────────────────────────────────
 const PLANS = [
   {
@@ -14,12 +44,9 @@ const PLANS = [
     badge: "FREE FOREVER",
     badgeColor: "#4a6080",
     accentColor: "rgba(74,96,128,",
-    features: [
-      { icon: "⚡", text: "1 manual 4-pillar audit per day" },
-      { icon: "📊", text: "Full Performance · SEO · A11y · Security report" },
-      { icon: "💸", text: "Revenue leakage estimate in dollars" },
-      { icon: "🔍", text: "Itemised findings with fix instructions" },
-    ],
+    features: SCOUT_FEATURES,
+    inheritedLabel: null,
+    ownLabel: null,
     locked: [
       "Automated weekly scans",
       "Competitor tracking (0 URLs)",
@@ -42,15 +69,13 @@ const PLANS = [
     badge: "★ BEST VALUE — MOST POPULAR",
     badgeColor: "#a78bfa",
     accentColor: "rgba(167,139,250,",
+    inheritedLabel: "EVERYTHING IN SCOUT, PLUS:",
+    ownLabel: null,
     features: [
-      { icon: "📡", text: "Weekly automated 4-pillar scans — set and forget" },
-      { icon: "🔍", text: "Track up to 3 competitor URLs side-by-side" },
-      { icon: "📱", text: "SMS + Slack alerts the moment any score drops" },
-      { icon: "⚖️", text: "ADA compliance change monitoring — lawsuit prevention" },
-      { icon: "🔒", text: "Vulnerable JS library security alerts" },
-      { icon: "🤖", text: "AI Developer Blueprint — prioritised fix list by ROI" },
-      { icon: "📊", text: "Historical score trend charts" },
-      { icon: "🔔", text: "Make.com & Zapier webhooks" },
+      // Show Scout features first as inherited
+      ...SCOUT_FEATURES.map(f => ({ ...f, inherited: true })),
+      // Then Pulse's own additions
+      ...PULSE_OWN_FEATURES.map(f => ({ ...f, inherited: false })),
     ],
     locked: [],
     cta: "ACTIVATE PULSE",
@@ -68,15 +93,14 @@ const PLANS = [
     badge: "FOR AGENCIES",
     badgeColor: "#e8341a",
     accentColor: "rgba(232,52,26,",
+    inheritedLabel: "EVERYTHING IN PULSE, PLUS:",
+    ownLabel: null,
     features: [
-      { icon: "📡", text: "Daily automated 4-pillar scans" },
-      { icon: "🔍", text: "Track up to 10 competitor URLs" },
-      { icon: "📄", text: "Weekly white-label PDF reports" },
-      { icon: "👥", text: "3 team seats included" },
-      { icon: "⚖️", text: "Full WCAG audit trail & compliance certs" },
-      { icon: "🔒", text: "Priority security vulnerability alerts" },
-      { icon: "🎯", text: "Dedicated technical support" },
-      { icon: "🏷️", text: "Agency resell licence" },
+      // Show Scout + Pulse features as inherited
+      ...SCOUT_FEATURES.map(f => ({ ...f, inherited: true })),
+      ...PULSE_OWN_FEATURES.map(f => ({ ...f, inherited: true })),
+      // Then Scale's own additions
+      ...SCALE_OWN_FEATURES.map(f => ({ ...f, inherited: false })),
     ],
     locked: [],
     cta: "ACTIVATE SCALE",
@@ -269,19 +293,63 @@ function SubscribeInner() {
 
               <div style={{ height: 1, background: `${plan.accentColor}0.15)`, marginBottom: 16 }} />
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 9, flex: 1, marginBottom: 18 }}>
-                {plan.features.map(({ icon, text }) => (
-                  <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start" }}>
-                    <span style={{ fontSize: 13, flexShrink: 0 }}>{icon}</span>
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.45 }}>{text}</span>
-                  </div>
-                ))}
-                {plan.locked.map(text => (
-                  <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start", opacity: 0.35 }}>
-                    <span style={{ fontSize: 13, flexShrink: 0 }}>🔒</span>
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--muted)", lineHeight: 1.45, textDecoration: "line-through" }}>{text}</span>
-                  </div>
-                ))}
+              {/* Feature list — inherited features shown lighter, new features highlighted */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 0, flex: 1, marginBottom: 18 }}>
+
+                {/* For PULSE and SCALE: show "Everything in X, plus:" divider */}
+                {plan.inheritedLabel && (() => {
+                  const inherited = (plan.features as Array<{icon:string;text:string;inherited?:boolean}>).filter(f => f.inherited);
+                  const own = (plan.features as Array<{icon:string;text:string;inherited?:boolean}>).filter(f => !f.inherited);
+                  return (
+                    <>
+                      {/* Inherited features */}
+                      {inherited.map(({ icon, text }) => (
+                        <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "6px 0", opacity: 0.6 }}>
+                          <span style={{ fontSize: 12, flexShrink: 0 }}>✓</span>
+                          <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--muted)", lineHeight: 1.4 }}>{text}</span>
+                        </div>
+                      ))}
+                      {/* Divider */}
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 8px" }}>
+                        <div style={{ flex: 1, height: 1, background: `${plan.accentColor}0.25)` }} />
+                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: plan.badgeColor, letterSpacing: "0.12em", whiteSpace: "nowrap" }}>
+                          {plan.inheritedLabel}
+                        </span>
+                        <div style={{ flex: 1, height: 1, background: `${plan.accentColor}0.25)` }} />
+                      </div>
+                      {/* Own (new) features */}
+                      {own.map(({ icon, text }) => (
+                        <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "7px 0" }}>
+                          <span style={{ fontSize: 13, flexShrink: 0 }}>{icon}</span>
+                          <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.45 }}>{text}</span>
+                        </div>
+                      ))}
+                    </>
+                  );
+                })()}
+
+                {/* For SCOUT: plain features + locked items */}
+                {!plan.inheritedLabel && (
+                  <>
+                    {(plan.features as Array<{icon:string;text:string}>).map(({ icon, text }) => (
+                      <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "7px 0" }}>
+                        <span style={{ fontSize: 13, flexShrink: 0 }}>{icon}</span>
+                        <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.45 }}>{text}</span>
+                      </div>
+                    ))}
+                    {plan.locked && plan.locked.length > 0 && (
+                      <>
+                        <div style={{ height: 1, background: "rgba(74,96,128,0.2)", margin: "8px 0" }} />
+                        {plan.locked.map(text => (
+                          <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "6px 0", opacity: 0.32 }}>
+                            <span style={{ fontSize: 12, flexShrink: 0 }}>🔒</span>
+                            <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--muted)", lineHeight: 1.4, textDecoration: "line-through" }}>{text}</span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </>
+                )}
               </div>
 
               <motion.button onClick={() => handleCheckout(plan)} whileTap={{ scale: 0.98 }}

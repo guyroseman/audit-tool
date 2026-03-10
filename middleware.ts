@@ -16,9 +16,6 @@ function isPaid(plan: string | null): boolean {
 }
 
 export async function middleware(request: NextRequest) {
-  // ⚠️ DEV BYPASS — remove before going live
-  return NextResponse.next();
-
   const { pathname } = request.nextUrl;
 
   // Always allow public routes & static assets
@@ -62,7 +59,6 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  /*
   // Logged in — check plan for dashboard
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
     const { data: profile } = await supabase
@@ -77,7 +73,7 @@ export async function middleware(request: NextRequest) {
       subscribeUrl.searchParams.set("reason", "upgrade");
       return NextResponse.redirect(subscribeUrl);
     }
-  }*/
+  }
 
   return response;
 }

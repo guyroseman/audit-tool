@@ -342,7 +342,7 @@ export function ResultsPanel({ result, onDiscover }: {
   onDiscover?: () => void;
 }) {
   const topRef = useRef<HTMLDivElement>(null);
-  const discoverRef = useRef<HTMLDivElement>(null);
+  const fixPlanRef = useRef<HTMLDivElement>(null);
   const [animated, setAnimated] = useState(false);
   const [activeTab, setActiveTab] = useState<"findings" | "vitals" | "all">("findings");
   const [scrollHintDismissed, setScrollHintDismissed] = useState(false);
@@ -352,13 +352,11 @@ export function ResultsPanel({ result, onDiscover }: {
   useEffect(() => {
     topRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     const t = setTimeout(() => setAnimated(true), 150);
-    // Show scroll hint after 2s if user hasn't scrolled
     const hintT = setTimeout(() => {}, 2000);
-    // Observe when discover section enters view
     const obs = new IntersectionObserver(([e]) => {
       if (e.isIntersecting) setDiscoverVisible(true);
     }, { threshold: 0.3 });
-    if (discoverRef.current) obs.observe(discoverRef.current);
+    if (fixPlanRef.current) obs.observe(fixPlanRef.current);
     return () => { clearTimeout(t); clearTimeout(hintT); obs.disconnect(); };
   }, []);
 
@@ -368,9 +366,9 @@ export function ResultsPanel({ result, onDiscover }: {
   const annualLoss = Math.round(totalMonthlyCost * 12);
   const issueCount = criticalFindings.length;
 
-  const scrollToDiscover = () => {
-    discoverRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-    setTimeout(() => onDiscover?.(), 600);
+  // Scroll to the fix plan section — reveal it first, let user click
+  const scrollToFixPlan = () => {
+    fixPlanRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   return (
@@ -408,11 +406,11 @@ export function ResultsPanel({ result, onDiscover }: {
             </p>
             {/* Scroll CTA — urgent */}
             {onDiscover && (
-              <motion.button onClick={scrollToDiscover} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }}
+              <motion.button onClick={scrollToFixPlan} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }}
                 whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                 style={{ marginTop: 14, display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 8, background: "var(--accent)", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, color: "#fff", letterSpacing: "0.1em", boxShadow: "0 0 24px rgba(232,52,26,0.4)" }}>
                 <motion.span animate={{ y: [0, 4, 0] }} transition={{ repeat: Infinity, duration: 1.4 }}>↓</motion.span>
-                SEE HOW TO RECOVER THIS →
+                SEE HOW TO FIX THIS →
               </motion.button>
             )}
           </div>
@@ -438,7 +436,7 @@ export function ResultsPanel({ result, onDiscover }: {
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
           style={{ textAlign: "center", marginBottom: 20, padding: "12px", borderRadius: 10, background: "rgba(245,158,11,0.04)", border: "1px solid rgba(245,158,11,0.15)" }}>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#f59e0b", letterSpacing: "0.08em" }}>
-            ↓ Scroll to see all {issueCount} issues found — then we'll build your personalised fix plan
+            ↓ Scroll to see all {issueCount} issues found — then we&apos;ll build your personalised fix plan
           </p>
         </motion.div>
       )}
@@ -469,6 +467,26 @@ export function ResultsPanel({ result, onDiscover }: {
             ]} />
         </div>
       </div>
+
+      {/* ── HOW DO I FIX THIS — main CTA (high up, right after pillar cards) ── */}
+      {onDiscover && (
+        <motion.div ref={fixPlanRef} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} style={{ marginBottom: 14 }}>
+          <motion.button onClick={onDiscover} whileHover={{ scale: 1.01, boxShadow: "0 0 60px rgba(232,52,26,0.25)" }} whileTap={{ scale: 0.98 }}
+            style={{ width: "100%", padding: "28px 22px", borderRadius: 13, background: "linear-gradient(135deg,rgba(232,52,26,0.14),rgba(232,52,26,0.06))", border: "1.5px solid rgba(232,52,26,0.4)", cursor: "pointer", textAlign: "center", boxShadow: "0 0 40px rgba(232,52,26,0.1)", transition: "box-shadow 0.2s" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.2em", marginBottom: 10 }}>YOUR PERSONALISED FIX PLAN — 30 SECONDS</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px,4vw,32px)", color: "var(--text)", letterSpacing: "0.05em", marginBottom: 8 }}>
+              How do I recover £{totalMonthlyCost.toLocaleString()}/mo?
+            </div>
+            <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.6, maxWidth: 500, margin: "0 auto 16px" }}>
+              Tell us about your business — we&apos;ll order fixes by ROI and tell you exactly what each one recovers.
+            </div>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 8, background: "var(--accent)", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", boxShadow: "0 4px 20px rgba(232,52,26,0.4)" }}>
+              <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
+              BUILD MY FIX PLAN
+            </div>
+          </motion.button>
+        </motion.div>
+      )}
 
       {/* ── Tab Bar ── */}
       <div style={{ display: "flex", gap: 2, marginBottom: 12, background: "var(--surface)", borderRadius: 8, padding: 3, border: "1px solid var(--border)" }}>
@@ -524,59 +542,6 @@ export function ResultsPanel({ result, onDiscover }: {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* ── Mid-report survey hook ── */}
-      {onDiscover && (
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
-          style={{ marginBottom: 16, padding: "22px 24px", borderRadius: 14, background: "linear-gradient(135deg,rgba(245,158,11,0.08),rgba(245,158,11,0.03))", border: "1.5px solid rgba(245,158,11,0.3)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-            <span style={{ fontSize: 20 }}>🎯</span>
-            <div>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#f59e0b", letterSpacing: "0.12em", marginBottom: 2 }}>ONE QUICK QUESTION</p>
-              <p style={{ fontFamily: "var(--font-display)", fontSize: "clamp(16px,3vw,22px)", color: "var(--text)", letterSpacing: "0.03em" }}>What's your #1 priority right now?</p>
-            </div>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }}>
-            {[
-              { icon: "📉", label: "Stop Google Ads overspend", sub: "Cut the slow-site penalty" },
-              { icon: "🔍", label: "Rank higher in search", sub: "Get more organic traffic" },
-              { icon: "⚖️", label: "Fix ADA risk now", sub: "Before it becomes a lawsuit" },
-              { icon: "💰", label: "Convert more visitors", sub: "Better UX = more revenue" },
-            ].map(({ icon, label, sub }) => (
-              <motion.button key={label} whileHover={{ scale: 1.02, borderColor: "rgba(245,158,11,0.5)" }} whileTap={{ scale: 0.98 }}
-                onClick={onDiscover}
-                style={{ padding: "12px 14px", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border2)", cursor: "pointer", textAlign: "left", transition: "border-color 0.2s" }}>
-                <div style={{ fontSize: 18, marginBottom: 5 }}>{icon}</div>
-                <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text)", fontWeight: 500, marginBottom: 2 }}>{label}</div>
-                <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--muted)" }}>{sub}</div>
-              </motion.button>
-            ))}
-          </div>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center", marginTop: 10 }}>
-            Clicking any option builds your personalised recovery plan →
-          </p>
-        </motion.div>
-      )}
-
-      {/* ── HOW DO I FIX THIS — main CTA ── */}
-      {onDiscover && (
-        <motion.div ref={discoverRef} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} style={{ marginBottom: 14 }}>
-          <motion.button onClick={onDiscover} whileHover={{ scale: 1.01, boxShadow: "0 0 60px rgba(232,52,26,0.25)" }} whileTap={{ scale: 0.98 }}
-            style={{ width: "100%", padding: "28px 22px", borderRadius: 13, background: "linear-gradient(135deg,rgba(232,52,26,0.14),rgba(232,52,26,0.06))", border: "1.5px solid rgba(232,52,26,0.4)", cursor: "pointer", textAlign: "center", boxShadow: "0 0 40px rgba(232,52,26,0.1)", transition: "box-shadow 0.2s" }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.2em", marginBottom: 10 }}>YOUR PERSONALISED FIX PLAN — 30 SECONDS</div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px,4vw,32px)", color: "var(--text)", letterSpacing: "0.05em", marginBottom: 8 }}>
-              How do I recover £{totalMonthlyCost.toLocaleString()}/mo? ↓
-            </div>
-            <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.6, maxWidth: 500, margin: "0 auto 16px" }}>
-              Tell us about your business — we'll order fixes by ROI and tell you exactly what each one recovers.
-            </div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "12px 28px", borderRadius: 8, background: "var(--accent)", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", boxShadow: "0 4px 20px rgba(232,52,26,0.4)" }}>
-              <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
-              BUILD MY FIX PLAN
-            </div>
-          </motion.button>
-        </motion.div>
-      )}
 
       {/* ── Nexus Pulse Upsell ── */}
       <NexusPulsePitch result={result} />
