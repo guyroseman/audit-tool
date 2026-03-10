@@ -15,7 +15,7 @@ const NexusLogo = ({ size = 22 }: { size?: number }) => (
 
 interface NavBarProps {
   maxWidth?: number;
-  page?: "home" | "funnel" | "subscribe" | "dashboard" | "login";
+  page?: "home" | "funnel" | "subscribe" | "dashboard" | "login" | "account";
 }
 
 export function NavBar({ maxWidth = 860, page }: NavBarProps) {
@@ -66,17 +66,18 @@ export function NavBar({ maxWidth = 860, page }: NavBarProps) {
                 transition: "all 0.15s",
               }}>DASHBOARD</a>
 
-              {/* Log out — email prefix + arrow */}
-              <button onClick={signOut} style={{
+              {/* Account link — shows email prefix, links to /account */}
+              <a href="/account" style={{
                 fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", background: "none",
-                border: "1px solid var(--border)", padding: "6px 11px", borderRadius: 6, cursor: "pointer",
-                letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: 5, transition: "all 0.15s",
+                border: "1px solid var(--border)", padding: "6px 11px", borderRadius: 6,
+                letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: 5,
+                textDecoration: "none", transition: "all 0.15s",
               }}>
                 <span style={{ maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {(profile?.email ?? user.email ?? "").split("@")[0].substring(0, 12)}
                 </span>
-                <span style={{ color: "var(--accent)", fontSize: 11 }}>→</span>
-              </button>
+                <span style={{ color: "var(--accent)", fontSize: 11 }}>↗</span>
+              </a>
             </div>
           ) : !loading && (
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

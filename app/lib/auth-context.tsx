@@ -63,7 +63,7 @@ export function AuthProvider({ children }: { children?: React.ReactNode }) {
     await loadProfile(user);
   }, [user, loadProfile]);
 
-  const plan: SubscriptionPlan = profile?.plan ?? "free";
+  const plan: SubscriptionPlan = profile?.tier ?? "free";
 
   return (
     <AuthContext.Provider value={{ user, profile, plan, isAuthed: !!user, loading, signOut, refreshProfile }}>

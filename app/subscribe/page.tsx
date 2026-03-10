@@ -1,8 +1,10 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { NavBar } from "../components/nav";
+import { useAuth } from "../lib/auth-context";
 
 // ─── Shared base features (shown on all plans) ────────────────────────────────
 const SCOUT_FEATURES = [
@@ -174,33 +176,76 @@ function SubscribeInner() {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [showTable, setShowTable] = useState(false);
   const discount = billing === "annual" ? 0.17 : 0;
+  const { user, plan: currentPlan, loading: authLoading } = useAuth();
 
-  function handleCheckout(plan: typeof PLANS[0]) {
-    if (plan.id === "free") { window.location.href = plan.href; return; }
-    const url = plan.href;
-    if (!url || url === "/login") { window.location.href = "/login"; return; }
-    window.location.href = url;
+  function handleCheckout(p: typeof PLANS[0]) {
+    if (p.id === "free") { window.location.href = p.href; return; }
+
+    const lsUrl = p.href;
+    const hasCheckoutUrl = lsUrl && lsUrl !== "/login";
+
+    if (!hasCheckoutUrl) {
+      // LemonSqueezy not configured yet — payment coming soon
+      alert("Payment processing is being finalised. Please contact us directly to subscribe.");
+      return;
+    }
+
+    if (!user) {
+      // Not logged in — send to login, return here after
+      window.location.href = `/login?redirect=/subscribe`;
+      return;
+    }
+
+    // Logged in + checkout URL exists → go pay, pre-fill email
+    try {
+      const url = new URL(lsUrl);
+      if (user.email) url.searchParams.set("checkout[email]", user.email);
+      window.location.href = url.toString();
+    } catch {
+      window.location.href = lsUrl;
+    }
   }
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", fontFamily: "var(--font-body)", position: "relative" }}>
 
-      {/* Nav */}
-      <nav style={{ maxWidth: 1000, margin: "0 auto", padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
-          <svg width={19} height={19} viewBox="0 0 28 28" fill="none">
-            <path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)" />
-            <path d="M14 7L20.93 11V19L14 23L7.07 19V11L14 7Z" fill="#e8341a" opacity="0.7" />
-          </svg>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--text)", letterSpacing: "0.1em" }}>NEXUS</span>
-        </a>
-        <a href="/funnel" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", textDecoration: "none", letterSpacing: "0.08em" }}>← Free audit</a>
-      </nav>
+      {/* Shared nav — shows SIGN IN / DASHBOARD / plan badge automatically */}
+      <NavBar page="subscribe" maxWidth={1000} />
 
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 20px 80px" }}>
 
-        {/* Upgrade banner */}
+        {/* Redirected from dashboard without paid plan */}
         {reason === "upgrade" && <UpgradeBanner />}
+
+        {/* Already on a paid plan — show account status, no reason to scroll through pricing */}
+        {!authLoading && user && (currentPlan === "pulse" || currentPlan === "scale") && (
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+            style={{ margin: "20px 0 28px", padding: "18px 22px", borderRadius: 12, background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.25)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span style={{ fontSize: 22 }}>✅</span>
+              <div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#10b981", letterSpacing: "0.12em", marginBottom: 3 }}>ACTIVE SUBSCRIPTION</div>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text)" }}>
+                  You&rsquo;re on <strong style={{ color: currentPlan === "scale" ? "#10b981" : "#a78bfa" }}>NEXUS {currentPlan.toUpperCase()}</strong>. Your dashboard is live.
+                </div>
+              </div>
+            </div>
+            <a href="/dashboard" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#fff", background: "#10b981", padding: "9px 20px", borderRadius: 8, textDecoration: "none", letterSpacing: "0.1em", boxShadow: "0 0 20px rgba(16,185,129,0.3)", whiteSpace: "nowrap" }}>
+              GO TO DASHBOARD →
+            </a>
+          </motion.div>
+        )}
+
+        {/* Not logged in — gentle nudge to sign in */}
+        {!authLoading && !user && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+            style={{ textAlign: "center", padding: "10px 0 4px" }}>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.06em" }}>
+              Already have an account?{" "}
+              <a href="/login?redirect=/subscribe" style={{ color: "#a78bfa", textDecoration: "none" }}>Sign in to manage your plan →</a>
+            </p>
+          </motion.div>
+        )}
 
         {/* Hero */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: "center", marginBottom: 44 }}>

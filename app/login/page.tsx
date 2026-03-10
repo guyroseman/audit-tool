@@ -1,106 +1,142 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabase";
 
-export default function Login() {
+function LoginInner() {
+  const searchParams = useSearchParams();
+  // After auth, go back to wherever the user came from (default: /dashboard)
+  const redirectTo = searchParams?.get("redirect") ?? "/dashboard";
+
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState("");
+  const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState("");
+  const [notice, setNotice]     = useState("");
+
+  // If already logged in, skip straight to redirect destination
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) window.location.href = redirectTo;
+    });
+  }, [redirectTo]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
-
+    setNotice("");
     try {
       if (isSignUp) {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        window.location.href = "/dashboard";
+        // Supabase may require email confirmation — tell the user instead of silently redirecting
+        setNotice("Account created! Check your inbox to confirm your email, then sign in.");
+        setIsSignUp(false);
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        window.location.href = "/dashboard";
+        window.location.href = redirectTo;
       }
-    } catch (err: any) {
-      setError(err.message || "An error occurred during authentication.");
+    } catch (err: unknown) {
+      setError((err as { message?: string }).message ?? "Authentication failed.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, position: "relative" }}>
-      
-      <nav style={{ position: "absolute", top: 0, left: 0, padding: "24px", width: "100%" }}>
-         <a href="/" style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"var(--muted)", textDecoration:"none" }}>← RETURN HOME</a>
+    <main style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+
+      {/* Minimal nav */}
+      <nav style={{ position: "fixed", top: 0, left: 0, right: 0, height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 24px", borderBottom: "1px solid var(--border)", background: "rgba(3,7,15,0.97)", backdropFilter: "blur(12px)", zIndex: 100 }}>
+        <a href="/" style={{ display: "flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
+          <svg width={20} height={20} viewBox="0 0 28 28" fill="none">
+            <path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)" />
+            <path d="M14 7L20.93 11V19L14 23L7.07 19V11L14 7Z" fill="#e8341a" opacity="0.7" />
+          </svg>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--text)", letterSpacing: "0.1em" }}>NEXUS</span>
+        </a>
+        <a href="/subscribe" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", textDecoration: "none", letterSpacing: "0.08em" }}>PRICING →</a>
       </nav>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} 
-        style={{ width: "100%", maxWidth: 400, padding: "40px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "0 20px 40px rgba(0,0,0,0.4)" }}>
-        
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        style={{ width: "100%", maxWidth: 400, padding: "40px 36px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)", marginTop: 56 }}>
+
         <div style={{ textAlign: "center", marginBottom: 32 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
-            <svg width={24} height={24} viewBox="0 0 28 28" fill="none">
-              <path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)" />
-              <path d="M14 7L20.93 11V19L14 23L7.07 19V11L14 7Z" fill="#e8341a" opacity="0.7" />
-            </svg>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "var(--text)", letterSpacing: "0.1em" }}>NEXUS</span>
-          </div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--text)", letterSpacing: "0.05em" }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, color: "var(--text)", letterSpacing: "0.06em", lineHeight: 1, marginBottom: 8 }}>
             {isSignUp ? "CREATE ACCOUNT" : "WELCOME BACK"}
           </h1>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", marginTop: 8 }}>
-            {isSignUp ? "Enter your details to initialize your dashboard." : "Log in to access your performance intelligence."}
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>
+            {isSignUp
+              ? "Free account to save your audit history."
+              : "Sign in to access your performance dashboard."}
           </p>
         </div>
 
-        <form onSubmit={handleAuth} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        <form onSubmit={handleAuth} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           <div>
-            <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", marginBottom: 6, letterSpacing: "0.1em" }}>WORK EMAIL</label>
-            <input 
-              type="email" 
-              value={email} 
-              onChange={e => setEmail(e.target.value)} 
-              required
-              placeholder="founder@company.com"
-              style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "12px 16px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13 }}
+            <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", marginBottom: 6, letterSpacing: "0.12em" }}>EMAIL</label>
+            <input
+              type="email" value={email} onChange={e => setEmail(e.target.value)} required
+              placeholder="founder@company.com" autoFocus
+              style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "13px 14px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 14, boxSizing: "border-box" }}
             />
           </div>
           <div>
-            <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", marginBottom: 6, letterSpacing: "0.1em" }}>PASSWORD</label>
-            <input 
-              type="password" 
-              value={password} 
-              onChange={e => setPassword(e.target.value)} 
-              required
+            <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", marginBottom: 6, letterSpacing: "0.12em" }}>PASSWORD</label>
+            <input
+              type="password" value={password} onChange={e => setPassword(e.target.value)} required
               placeholder="••••••••"
-              style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "12px 16px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13 }}
+              style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "13px 14px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 14, boxSizing: "border-box" }}
             />
           </div>
 
           {error && (
-            <div style={{ padding: "10px", borderRadius: 6, background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.2)" }}>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", textAlign: "center" }}>⚠ {error}</p>
+            <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.25)" }}>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", margin: 0 }}>⚠ {error}</p>
+            </div>
+          )}
+          {notice && (
+            <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)" }}>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#10b981", margin: 0 }}>✓ {notice}</p>
             </div>
           )}
 
-          <button type="submit" disabled={loading} style={{ width: "100%", padding: "14px", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.1em", marginTop: 8, cursor: loading ? "not-allowed" : "pointer" }}>
-            {loading ? "AUTHENTICATING..." : (isSignUp ? "SECURE MY ACCOUNT →" : "ACCESS DASHBOARD →")}
+          <button type="submit" disabled={loading}
+            style={{ width: "100%", padding: "15px", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", marginTop: 4, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.7 : 1, boxShadow: "0 0 20px rgba(232,52,26,0.3)" }}>
+            {loading ? "..." : (isSignUp ? "CREATE ACCOUNT →" : "SIGN IN →")}
           </button>
         </form>
 
-        <div style={{ textAlign: "center", marginTop: 24 }}>
-          <button onClick={() => setIsSignUp(!isSignUp)} type="button"
-            style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
-            {isSignUp ? "Already have an account? Log in." : "Need an account? Sign up."}
+        <div style={{ textAlign: "center", marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
+          <button onClick={() => { setIsSignUp(v => !v); setError(""); setNotice(""); }} type="button"
+            style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+            {isSignUp ? "Already have an account? Sign in →" : "No account yet? Sign up free →"}
           </button>
         </div>
 
+        {!isSignUp && (
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center", marginTop: 10 }}>
+            Don&rsquo;t have a paid plan?{" "}
+            <a href="/subscribe" style={{ color: "#a78bfa", textDecoration: "none" }}>See pricing →</a>
+          </p>
+        )}
       </motion.div>
     </main>
+  );
+}
+
+export default function Login() {
+  return (
+    <Suspense fallback={
+      <main style={{ minHeight: "100vh", background: "var(--bg)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--muted)" }}>LOADING...</span>
+      </main>
+    }>
+      <LoginInner />
+    </Suspense>
   );
 }

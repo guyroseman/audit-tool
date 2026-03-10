@@ -5,7 +5,7 @@ export type SubscriptionPlan = "free" | "pulse" | "scale";
 export interface UserProfile {
   id: string;
   email: string;
-  plan: SubscriptionPlan;
+  tier: SubscriptionPlan;  // DB column is 'tier' not 'plan'
   ls_subscription_id?: string;
   ls_customer_id?: string;
   ls_variant_id?: string;

@@ -1,47 +1,54 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-// 1. Import CookieOptions here
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
-// Public  — anyone can access
-// Auth    — must be logged in (free tier ok)
-// Paid    — must have plan = 'pulse' or 'scale'
+// ─── Route groups ─────────────────────────────────────────────────────────────
+// PUBLIC  — anyone, no auth needed
+// LOGIN   — auth page itself (must be public to avoid loop)
+// AUTH    — must be logged in (any plan, including free)
+// PAID    — must be logged in AND have pulse or scale plan
 
-const PUBLIC_ROUTES = ["/", "/funnel", "/subscribe", "/login", "/legal"];
-const AUTH_ROUTES   = ["/dashboard", "/call-center"];
+const PUBLIC_PREFIXES = ["/", "/funnel", "/subscribe", "/legal", "/api"];
+const LOGIN_PATH      = "/login";
+const AUTH_PATHS      = ["/dashboard", "/call-center"];
 
-function isPaid(plan: string | null): boolean {
+function isPaid(plan: string | null | undefined): boolean {
   return plan === "pulse" || plan === "scale";
 }
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Always allow public routes & static assets
+  // Always pass through static assets
   if (
-    PUBLIC_ROUTES.some(r => pathname === r || pathname.startsWith(r + "/")) ||
     pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    pathname.includes(".")
+    pathname.includes(".") ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    pathname === "/favicon.ico"
   ) {
     return NextResponse.next();
   }
 
-  // Build supabase client that reads cookies from the request
-  const response = NextResponse.next({ request: { headers: request.headers } });
+  // Always pass through public routes
+  if (
+    pathname === "/" ||
+    PUBLIC_PREFIXES.some(p => p !== "/" && pathname.startsWith(p)) ||
+    pathname === LOGIN_PATH
+  ) {
+    return NextResponse.next();
+  }
 
+  // Build supabase SSR client
+  const res = NextResponse.next({ request: { headers: request.headers } });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() { return request.cookies.getAll(); },
-        // 2. Add the explicit type here
         setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => res.cookies.set(name, value, options));
         },
       },
     }
@@ -49,43 +56,35 @@ export async function middleware(request: NextRequest) {
 
   const { data: { session } } = await supabase.auth.getSession();
 
-  // Not logged in → send to login for any auth/paid route
+  // Not logged in → send to login with return path
   if (!session) {
-    if (AUTH_ROUTES.some(r => pathname === r || pathname.startsWith(r + "/"))) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
+    if (AUTH_PATHS.some(p => pathname === p || pathname.startsWith(p + "/"))) {
+      const url = new URL(LOGIN_PATH, request.url);
+      url.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(url);
     }
-    return response;
+    return res;
   }
 
-  // Logged in — check plan for dashboard
+  // Logged in — check plan for dashboard access
   if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plan")
+      .select("tier")
       .eq("id", session.user.id)
       .single();
 
-    if (!profile || !isPaid(profile.plan)) {
-      // Redirect to subscribe with a message
-      const subscribeUrl = new URL("/subscribe", request.url);
-      subscribeUrl.searchParams.set("reason", "upgrade");
-      return NextResponse.redirect(subscribeUrl);
+    if (!isPaid(profile?.tier)) {
+      // Has account but no paid plan → pricing page with context
+      const url = new URL("/subscribe", request.url);
+      url.searchParams.set("reason", "upgrade");
+      return NextResponse.redirect(url);
     }
   }
 
-  return response;
+  return res;
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization)
-     * - favicon.ico, robots.txt, sitemap.xml
-     */
-    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)"],
 };
