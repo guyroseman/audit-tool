@@ -498,36 +498,8 @@ export default function Dashboard() {
     { id:"settings", label:"SETTINGS" },
   ];
 
-  // Nav height = 58px; corners sit right below
-  const CORNER_TOP = 58;
-
   return (
     <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text)" }}>
-
-      {/* ── Red Corner Decorations — below nav ── */}
-      <div style={{ position:"fixed", top:CORNER_TOP, left:0, width:60, height:60, zIndex:90, pointerEvents:"none" }}>
-        <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-          <path d="M0 0 L22 0 L22 2 L2 2 L2 22 L0 22 Z" fill="#e8341a" opacity="0.7"/>
-          <path d="M0 0 L12 0 L12 1 L1 1 L1 12 L0 12 Z" fill="#e8341a"/>
-        </svg>
-      </div>
-      <div style={{ position:"fixed", top:CORNER_TOP, right:0, width:60, height:60, zIndex:90, pointerEvents:"none" }}>
-        <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-          <path d="M60 0 L38 0 L38 2 L58 2 L58 22 L60 22 Z" fill="#e8341a" opacity="0.7"/>
-          <path d="M60 0 L48 0 L48 1 L59 1 L59 12 L60 12 Z" fill="#e8341a"/>
-        </svg>
-      </div>
-      {/* Bottom corners */}
-      <div style={{ position:"fixed", bottom:0, left:0, width:60, height:60, zIndex:90, pointerEvents:"none" }}>
-        <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-          <path d="M0 60 L22 60 L22 58 L2 58 L2 38 L0 38 Z" fill="#e8341a" opacity="0.4"/>
-        </svg>
-      </div>
-      <div style={{ position:"fixed", bottom:0, right:0, width:60, height:60, zIndex:90, pointerEvents:"none" }}>
-        <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
-          <path d="M60 60 L38 60 L38 58 L58 58 L58 38 L60 38 Z" fill="#e8341a" opacity="0.4"/>
-        </svg>
-      </div>
 
       {/* ── Top Nav ── */}
       <nav style={{ borderBottom:"1px solid var(--border)", background:"rgba(8,15,28,0.97)", backdropFilter:"blur(12px)", position:"sticky", top:0, zIndex:100 }}>

@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./lib/auth-context";
+import { NavBar } from "./components/nav";
 
 // ─── Live scan ticker ─────────────────────────────────────────────────────────
 const TICKER = [
@@ -211,7 +212,7 @@ function Testimonial({ quote, name, role, stat, i }: { quote: string; name: stri
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Home() {
   const router = useRouter();
-  const { isAuthed, loading: authLoading } = useAuth();
+  const { loading: authLoading, isAuthed } = useAuth();
   const handleScan = useCallback((url: string) => {
     const params = new URLSearchParams({ url });
     router.push(`/funnel?${params.toString()}`);
@@ -226,28 +227,7 @@ export default function Home() {
       `}</style>
 
       {/* ── STICKY NAV ── */}
-      <nav style={{ position: "sticky", top: 0, zIndex: 100, background: "rgba(3,7,15,0.95)", backdropFilter: "blur(16px)", borderBottom: "1px solid var(--border)" }}>
-        <div style={{ maxWidth: 1020, margin: "0 auto", padding: "0 20px", height: 54, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <a href="/" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: 9 }}>
-            <svg width={19} height={19} viewBox="0 0 28 28" fill="none">
-              <path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)" />
-              <path d="M14 7L20.93 11V19L14 23L7.07 19V11L14 7Z" fill="#e8341a" opacity="0.7" />
-            </svg>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 19, color: "var(--text)", letterSpacing: "0.1em" }}>NEXUS</span>
-          </a>
-          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-            <a href="/subscribe" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.1em", textDecoration: "none", padding: "6px 10px", borderRadius: 5 }}>PRICING</a>
-            {!authLoading && (
-              isAuthed
-                ? <a href="/dashboard" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.1em", textDecoration: "none", background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.3)", padding: "6px 12px", borderRadius: 5 }}>DASHBOARD →</a>
-                : <>
-                    <a href="/login" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text2)", letterSpacing: "0.1em", textDecoration: "none", border: "1px solid var(--border)", padding: "6px 10px", borderRadius: 5 }}>SIGN IN</a>
-                    <a href="/funnel" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#fff", letterSpacing: "0.1em", textDecoration: "none", background: "var(--accent)", padding: "6px 12px", borderRadius: 5, boxShadow: "0 0 14px rgba(232,52,26,0.3)" }}>FREE AUDIT →</a>
-                  </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <NavBar page="home" maxWidth={1020} />
 
       {/* ── HERO ── */}
       <section style={{ maxWidth: 1020, margin: "0 auto", padding: "clamp(60px,10vw,100px) 20px clamp(50px,7vw,80px)" }}>
