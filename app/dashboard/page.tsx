@@ -403,8 +403,8 @@ export default function Dashboard() {
       const { data:{ session } } = await supabase.auth.getSession();
       if (!session) { window.location.href="/login"; return; }
       setUserId(session.user.id);
-      const { data } = await supabase.from("profiles").select("app_data,plan").eq("id",session.user.id).single();
-      if (data?.plan) setPlan(data.plan as "pulse"|"scale");
+      const { data } = await supabase.from("profiles").select("app_data,tier").eq("id",session.user.id).single();
+      if (data?.tier) setPlan(data.tier as "pulse"|"scale");
       if (data?.app_data && Object.keys(data.app_data).length>0) {
         const validP = new Set(["performance","seo","security","accessibility"]);
         const raw: TrackedSite[] = data.app_data.sites||[];
