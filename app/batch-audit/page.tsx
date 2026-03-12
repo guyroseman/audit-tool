@@ -248,6 +248,34 @@ export default function BatchAudit() {
   const [rows, setRows] = useState<BatchRow[]>([]);
   const [running, setRunning] = useState(false);
 
+  // ── Run batch — must be declared before any conditional return ──
+  const runBatch = useCallback(async () => {
+    const urls = input.split("\n").map(l => l.trim()).filter(Boolean);
+    if (!urls.length) return;
+    setRunning(true);
+
+    const initial: BatchRow[] = urls.map((url, i) => ({
+      id: `row-${i}-${Date.now()}`,
+      url,
+      status: "pending",
+      result: null,
+      error: "",
+    }));
+    setRows(initial);
+
+    for (let i = 0; i < initial.length; i++) {
+      setRows(prev => prev.map((r, idx) => idx === i ? { ...r, status: "scanning" } : r));
+      try {
+        const result = await fetchAudit(normaliseUrl(initial[i].url));
+        setRows(prev => prev.map((r, idx) => idx === i ? { ...r, status: "done", result } : r));
+      } catch (e) {
+        setRows(prev => prev.map((r, idx) => idx === i ? { ...r, status: "error", error: e instanceof Error ? e.message : "Failed" } : r));
+      }
+      if (i < initial.length - 1) await new Promise(res => setTimeout(res, 1200));
+    }
+    setRunning(false);
+  }, [input]);
+
   // ── Auth ──
   if (!authed) {
     return (
@@ -273,36 +301,6 @@ export default function BatchAudit() {
       </main>
     );
   }
-
-  // ── Run batch ──
-  const runBatch = useCallback(async () => {
-    const urls = input.split("\n").map(l => l.trim()).filter(Boolean);
-    if (!urls.length) return;
-    setRunning(true);
-
-    const initial: BatchRow[] = urls.map((url, i) => ({
-      id: `row-${i}-${Date.now()}`,
-      url,
-      status: "pending",
-      result: null,
-      error: "",
-    }));
-    setRows(initial);
-
-    // Run sequentially to avoid hammering the PSI API rate limit
-    for (let i = 0; i < initial.length; i++) {
-      setRows(prev => prev.map((r, idx) => idx === i ? { ...r, status: "scanning" } : r));
-      try {
-        const result = await fetchAudit(normaliseUrl(initial[i].url));
-        setRows(prev => prev.map((r, idx) => idx === i ? { ...r, status: "done", result } : r));
-      } catch (e) {
-        setRows(prev => prev.map((r, idx) => idx === i ? { ...r, status: "error", error: e instanceof Error ? e.message : "Failed" } : r));
-      }
-      // Small delay between requests to be kind to the API
-      if (i < initial.length - 1) await new Promise(res => setTimeout(res, 1200));
-    }
-    setRunning(false);
-  }, [input]);
 
   const done = rows.filter(r => r.status === "done");
   const criticalCount = done.filter(r => r.result?.severity === "critical").length;
