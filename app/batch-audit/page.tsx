@@ -31,7 +31,9 @@ function domain(url: string): string {
 }
 
 function funnelLink(url: string): string {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://usenexus.io";
+  const base = (typeof window !== "undefined" ? window.location.origin : null)
+    ?? process.env.NEXT_PUBLIC_SITE_URL
+    ?? "https://usenexus.io";
   return `${base}/funnel?url=${encodeURIComponent(normaliseUrl(url))}`;
 }
 
@@ -48,36 +50,119 @@ function riskBadge(level: string) {
 
 function buildColdEmail(row: BatchRow): string {
   if (!row.result) return "";
+
+  const r = row.result;
   const d = domain(row.url);
-  const score = row.result.metrics.performanceScore;
-  const leak = row.result.totalMonthlyCost;
-  const adLoss = row.result.adLossPercent;
   const link = funnelLink(row.url);
-  const adaRisk = row.result.accessibility?.adaRiskLevel ?? "low";
 
-  const hook = adaRisk === "high"
-    ? `your site currently has HIGH ADA compliance risk — lawsuit exposure most business owners don't know about until they receive a demand letter`
-    : `Google is currently applying a speed penalty to ${d}, inflating your ad costs by ~${adLoss}%`;
+  const perf = r.metrics.performanceScore;
+  const seoScore = r.seo?.estimatedSeoScore ?? 0;
+  const a11y = r.accessibility?.estimatedA11yScore ?? 0;
+  const sec = r.security?.estimatedBestPracticesScore ?? 0;
+  const adLoss = r.adLossPercent;
+  const seoLoss = r.seo?.seoReachLossPercent ?? 0;
+  const leak = r.totalMonthlyCost;
+  const annualLoss = Math.round(leak * 12);
+  const adaRisk = r.accessibility?.adaRiskLevel ?? "low";
+  const vulnLibs = r.security?.vulnerableLibraryCount ?? 0;
+  const missingAlt = r.accessibility?.missingAltText;
+  const noOG = !r.seo?.hasOGTags;
+  const noStructured = !r.seo?.hasStructuredData;
+  const unusedJS = r.tech?.unusedJavascript;
+  const noCache = r.tech?.noBrowserCache;
+  const noCompression = r.tech?.noCompression;
+  const renderBlocking = r.tech?.renderBlockingResources;
 
-  return `Subject: ${d} audit — £${leak.toLocaleString()}/mo leaking
+  // ── Subject line: pick the most urgent angle ──
+  let subject = "";
+  if (perf < 50 && adLoss > 30) {
+    subject = `Quick note about ${d}'s Google ad spend`;
+  } else if (adaRisk === "high") {
+    subject = `Accessibility issue flagged on ${d}`;
+  } else if (seoLoss > 40) {
+    subject = `${d} — organic traffic finding`;
+  } else if (vulnLibs > 0) {
+    subject = `Security flag on ${d}`;
+  } else {
+    subject = `${d} — site diagnostic results`;
+  }
 
-Hey,
+  // ── Performance section ──
+  let perfSection = "";
+  if (perf >= 80) {
+    perfSection = `Performance (${perf}/100) — solid. Your site loads quickly, which means Google isn't penalising your ad campaigns and visitors aren't bouncing before the page loads. Good foundation to build on.`;
+  } else if (perf >= 60) {
+    perfSection = `Performance (${perf}/100) — room to improve. Your site is functional but slower than Google's preferred threshold. This is likely adding ~${adLoss}% to your cost-per-click on paid campaigns, because Google charges more to advertise slow sites.${renderBlocking ? " Render-blocking resources are the likely culprit — these are scripts that force the browser to pause before displaying anything." : ""}${unusedJS ? " There's also unused JavaScript loading on every page visit that isn't needed." : ""}`;
+  } else {
+    perfSection = `Performance (${perf}/100) — this is the main issue. At this score, Google classifies your site as slow and applies a direct penalty to your ad campaigns — inflating your cost-per-click by approximately ${adLoss}%. That's an estimated £${r.monthlyAdOverspend.toLocaleString()}/month in ad overspend.${renderBlocking ? " Render-blocking scripts are preventing the page from loading." : ""}${unusedJS ? " Unused JavaScript is adding unnecessary weight to every page load." : ""}${noCache ? " Browser caching isn't configured, so returning visitors re-download the full site every time." : ""}${noCompression ? " Files aren't being compressed before being sent to the browser." : ""}`;
+  }
 
-I ran a free 4-pillar diagnostic on ${d} and wanted to send you the results directly.
+  // ── SEO section ──
+  let seoSection = "";
+  if (seoScore >= 80) {
+    seoSection = `SEO (${seoScore}/100) — well structured. Your meta tags, headings, and crawlability look good. Google can read and index the site without issues.`;
+  } else if (seoScore >= 60) {
+    seoSection = `SEO (${seoScore}/100) — a few gaps. Technical SEO issues are suppressing an estimated ${seoLoss}% of potential organic reach.${noOG ? " Open Graph tags are missing, which affects how the site appears when shared on LinkedIn or social media." : ""}${noStructured ? " Structured data isn't present, which means you're missing out on rich snippets in Google results." : ""}`;
+  } else {
+    seoSection = `SEO (${seoScore}/100) — significant issues. Google is suppressing an estimated ${seoLoss}% of potential organic traffic due to technical gaps.${noOG ? " Open Graph tags are missing." : ""}${noStructured ? " No structured data — Google can't generate rich results for your pages." : ""} This is traffic you're currently having to pay for through ads that should be coming organically.`;
+  }
 
-${hook}.
+  // ── Accessibility section ──
+  let a11ySection = "";
+  if (a11y >= 80 && adaRisk === "low") {
+    a11ySection = `Accessibility (${a11y}/100) — good. Your site is accessible to the majority of users, including those using screen readers or assistive technology. Low legal risk.`;
+  } else if (adaRisk === "high") {
+    a11ySection = `Accessibility (${a11y}/100) — high risk flagged. ADA web accessibility lawsuits have increased significantly year over year. Businesses receive demand letters with no prior warning.${missingAlt ? " Images on the site are missing alt text, which is one of the most commonly cited issues in ADA claims." : ""} This is worth reviewing with a developer regardless of other priorities.`;
+  } else {
+    a11ySection = `Accessibility (${a11y}/100) — some issues present. An estimated ${r.accessibility?.estimatedMarketLockout ?? 0}% of potential visitors may struggle to use the site properly.${missingAlt ? " Missing image alt text affects both accessibility and SEO." : ""}`;
+  }
 
-Performance score: ${score}/100
-Estimated monthly revenue leak: £${leak.toLocaleString()}
-Ad overspend: £${row.result.monthlyAdOverspend}/mo
-SEO reach lost: ${row.result.seo?.seoReachLossPercent ?? 0}%
+  // ── Security section ──
+  let secSection = "";
+  if (sec >= 80 && vulnLibs === 0) {
+    secSection = `Security (${sec}/100) — clean. No vulnerable libraries detected and HTTPS is properly configured. Visitor trust signals are intact.`;
+  } else if (vulnLibs > 0) {
+    secSection = `Security (${sec}/100) — ${vulnLibs} vulnerable JavaScript ${vulnLibs === 1 ? "library" : "libraries"} detected. Outdated libraries are one of the most common entry points for site compromises. This also affects how Google scores the site's trustworthiness, which has a small but measurable impact on rankings.`;
+  } else {
+    secSection = `Security (${sec}/100) — a few best practice gaps. Nothing critical, but worth tidying up to maintain visitor trust and Google's trust signals.`;
+  }
 
-I generated a free developer blueprint with the exact fixes. Here's the link to your private report:
+  // ── Closing CTA based on severity ──
+  let cta = "";
+  if (r.severity === "critical") {
+    cta = `The full report includes a prioritised developer blueprint — the fixes are ranked by revenue impact so your team knows exactly where to start. I'd suggest at least having someone take a look at the performance issues first, as those are directly inflating your ad spend right now.`;
+  } else {
+    cta = `The full report includes a prioritised fix list your developer can work through. Some of these are quick wins that can be resolved in an afternoon.`;
+  }
+
+  return `Subject: ${subject}
+
+Hi,
+
+I put together a free diagnostic report for ${d} and wanted to share the findings — figured it's more useful than keeping them to myself.
+
+Here's a plain-English breakdown across the four areas we check:
+
+---
+
+${perfSection}
+
+${seoSection}
+
+${a11ySection}
+
+${secSection}
+
+---
+
+Overall, the site is estimated to be losing around £${leak.toLocaleString()}/month (£${annualLoss.toLocaleString()}/year) in recoverable revenue from these combined issues.
+
+${cta}
+
+Your full report is here — no account needed:
 ${link}
 
-No sign-up needed to view it.
-
-Worth a look — even if you just send it to your dev team.
+Happy to answer any questions if anything's unclear.
 
 Best,
 [Your name]`;
