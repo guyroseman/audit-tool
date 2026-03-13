@@ -607,7 +607,7 @@ function FunnelInner() {
 
           {step === "loading" && (
             <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ width: "100%" }}>
-              <ScanLoader url={urlInput || fd.url || ""} apiReady={apiReady} />
+              <ScanLoader url={urlInput || fd.url || searchParams.get("url") || ""} apiReady={apiReady} />
             </motion.div>
           )}
 
