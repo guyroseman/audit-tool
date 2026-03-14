@@ -482,6 +482,21 @@ function FunnelInner() {
   const { isAuthed } = useAuth();
 
   useEffect(() => {
+    // Mode 1: pre-computed result in ?data= — instant report, no scan
+    const preData = searchParams.get("data");
+    if (preData) {
+      try {
+        const r = JSON.parse(atob(preData));
+        const siteUrl = r.url || searchParams.get("url") || "";
+        setUrlInput(siteUrl);
+        setFd(p => ({ ...p, url: siteUrl }));
+        pendingResult.current = r;
+        setResult(r);
+        setStep("teaser");
+        return;
+      } catch { /* fall through */ }
+    }
+    // Mode 2: URL only — run scan
     const fromHome = searchParams.get("url");
     if (fromHome) {
       setUrlInput(fromHome);
