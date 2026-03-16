@@ -22,7 +22,13 @@ export async function POST(req: NextRequest) {
   }
 
   if (!verifySignature(rawBody, sig, secret)) {
-    console.warn("Invalid webhook signature");
+    console.error("WEBHOOK SIGNATURE FAILED", {
+      sigReceived: sig,
+      sigLength: sig.length,
+      secretLength: secret.length,
+      bodyLength: rawBody.length,
+      expectedHmac: crypto.createHmac("sha256", secret).update(rawBody).digest("hex"),
+    });
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 

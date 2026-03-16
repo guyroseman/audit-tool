@@ -87,7 +87,7 @@ export default function Account() {
           {/* Actions */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {isPaid && (
-              <a href="https://app.lemonsqueezy.com/my-orders" target="_blank" rel="noopener"
+              <a href="https://nexus-diagnostics.lemonsqueezy.com/billing" target="_blank" rel="noopener"
                 style={{ display: "block", padding: "14px 20px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text2)", textDecoration: "none", letterSpacing: "0.08em", textAlign: "center" }}>
                 MANAGE BILLING (LEMON SQUEEZY) ↗
               </a>
@@ -95,7 +95,7 @@ export default function Account() {
             {!isPaid && (
               <a href="/subscribe"
                 style={{ display: "block", padding: "14px 20px", borderRadius: 10, background: "#a78bfa", fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", textDecoration: "none", letterSpacing: "0.1em", textAlign: "center", boxShadow: "0 0 24px rgba(167,139,250,0.35)" }}>
-                UPGRADE TO PULSE — $49/MO →
+                UPGRADE TO PULSE — £49/MO →
               </a>
             )}
             <button onClick={signOut}
