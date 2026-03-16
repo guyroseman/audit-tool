@@ -30,12 +30,19 @@ export function createClient() {
   );
 }
 
-// Legacy named export — keeps dashboard/page.tsx and other files working
-// without requiring them to call createClient() themselves.
-export const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Legacy named export — lazy singleton to avoid build-time instantiation
+let _supabase: ReturnType<typeof createBrowserClient> | null = null;
+export const supabase = new Proxy({} as ReturnType<typeof createBrowserClient>, {
+  get(_target, prop) {
+    if (!_supabase) {
+      _supabase = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+    }
+    return (_supabase as any)[prop];
+  }
+});
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function getProfile(supabase: any): Promise<UserProfile | null> {

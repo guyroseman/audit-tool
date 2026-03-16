@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Disable static prerendering — app uses runtime env vars (Supabase)
+  output: undefined,
+  experimental: {},
+  // Mark all pages as dynamic to prevent build-time prerender errors
+  staticPageGenerationTimeout: 0,
   reactStrictMode: true,
   poweredByHeader: false,
 
