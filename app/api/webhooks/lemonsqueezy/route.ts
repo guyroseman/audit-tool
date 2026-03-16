@@ -22,13 +22,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (!verifySignature(rawBody, sig, secret)) {
-    console.error("WEBHOOK SIGNATURE FAILED", {
-      sigReceived: sig,
-      sigLength: sig.length,
-      secretLength: secret.length,
-      bodyLength: rawBody.length,
-      expectedHmac: crypto.createHmac("sha256", secret).update(rawBody).digest("hex"),
-    });
+    console.warn("Invalid webhook signature");
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
   }
 
@@ -74,10 +68,14 @@ export async function POST(req: NextRequest) {
   console.log(`LS event: ${type} | email: "${email}" | variant: ${variantId}`);
 
   if (type === "subscription_created" || type === "subscription_updated") {
+    const status = String(attrs?.status ?? "");
+    // Accept active AND on_trial as valid paid states
+    const isActive = ["active", "on_trial", "paid"].includes(status);
     const plan = getPlan(variantId);
+    console.log(`Status: ${status} | isActive: ${isActive}`);
     console.log(`Resolved plan: ${plan} | pulse variant: ${PULSE_VARIANT_ID} | scale variant: ${SCALE_VARIANT_ID}`);
 
-    if (plan && email) {
+    if (plan && email && isActive) {
       // First try update by email
       const { data, error } = await supabase
         .from("profiles")
