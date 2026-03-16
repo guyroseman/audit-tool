@@ -17,7 +17,7 @@ const SCOUT_FEATURES = [
 const PULSE_OWN_FEATURES = [
   { icon: "📡", text: "Weekly automated 4-pillar scans — set and forget" },
   { icon: "🔍", text: "Track up to 3 competitor URLs side-by-side" },
-  { icon: "📱", text: "SMS + Slack alerts the moment any score drops" },
+  { icon: "📱", text: "Slack alerts the moment any score drops (SMS coming soon)" },
   { icon: "⚖️", text: "ADA compliance change monitoring — lawsuit prevention" },
   { icon: "🔒", text: "Vulnerable JS library security alerts" },
   { icon: "🤖", text: "AI Developer Blueprint — prioritised fix list by ROI" },
@@ -28,7 +28,7 @@ const PULSE_OWN_FEATURES = [
 const SCALE_OWN_FEATURES = [
   { icon: "📡", text: "Daily automated 4-pillar scans (vs weekly on Pulse)" },
   { icon: "🔍", text: "Track up to 10 competitor URLs (vs 3 on Pulse)" },
-  { icon: "📄", text: "Weekly white-label PDF reports — send to clients" },
+  { icon: "📄", text: "White-label PDF reports — send to clients (coming soon)" },
   { icon: "👥", text: "3 team seats included" },
   { icon: "⚖️", text: "Full WCAG audit trail & compliance certificates" },
   { icon: "🔒", text: "Priority security vulnerability alerts" },
@@ -132,8 +132,8 @@ const COMPARISON = [
 
 const TESTIMONIALS = [
   { name: "James H.", role: "SaaS Founder · Manchester", stat: "£2,400/mo recovered", quote: "Found out my competitor dropped from 81 to 47 overnight. Called 3 of their prospects that week. Pulse paid for itself in 20 minutes." },
-  { name: "Asha P.", role: "E-commerce Director · Sydney", stat: "£12k recovered", quote: "Weekly scan caught a third-party script that added 3.2s to every load. Fixed in a day." },
-  { name: "Marcus T.", role: "Law Firm Partner · Chicago", stat: "£50k lawsuit avoided", quote: "Nexus flagged HIGH ADA risk before a law firm letter did. Fixed in a week, compliance cert on file." },
+  { name: "Asha P.", role: "E-commerce Director · Sydney", stat: "$12k recovered", quote: "Weekly scan caught a third-party script that added 3.2s to every load. Fixed in a day." },
+  { name: "Marcus T.", role: "Law Firm Partner · Chicago", stat: "$50k lawsuit avoided", quote: "Nexus flagged HIGH ADA risk before a law firm letter did. Fixed in a week, compliance cert on file." },
   { name: "Tom W.", role: "Agency Owner · London", stat: "12 clients on Scale", quote: "White-label PDF goes straight to clients. It's a recurring revenue stream that runs itself." },
 ];
 
@@ -279,7 +279,7 @@ function SubscribeInner() {
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
           style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px,1fr))", gap: 8, marginBottom: 28, padding: "16px 20px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)" }}>
           {[
-            { n: "£1,700", label: "avg monthly leak recovered", color: "#e8341a" },
+            { n: "$2,100", label: "avg monthly leak recovered", color: "#e8341a" },
             { n: "19 hrs", label: "to break even on Pulse plan", color: "#10b981" },
             { n: "300%", label: "ADA lawsuits up since 2020", color: "#a78bfa" },
             { n: "43%", label: "SEO reach lost to tech gaps", color: "#f59e0b" },
@@ -331,7 +331,7 @@ function SubscribeInner() {
               {plan.id === "pulse" && (
                 <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(16,185,129,0.07)", border: "1px solid rgba(16,185,129,0.2)", marginBottom: 14 }}>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", letterSpacing: "0.1em" }}>
-                    💡 AVG USER RECOVERS £1,700/MO — PAYS FOR ITSELF IN 19 HOURS
+                    💡 AVG USER RECOVERS $2,100/MO — PAYS FOR ITSELF IN 19 HOURS
                   </span>
                 </div>
               )}
@@ -515,7 +515,7 @@ function SubscribeInner() {
             style={{ padding: "15px 44px", borderRadius: 10, background: "#a78bfa", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 13, letterSpacing: "0.14em", border: "none", cursor: "pointer", boxShadow: "0 0 30px rgba(167,139,250,0.4)" }}>
             GET INSTANT ACCESS →
           </button>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", marginTop: 12 }}>£49/mo · 7-day money-back guarantee · Cancel anytime</p>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", marginTop: 12 }}>$49/mo · 7-day money-back guarantee · Cancel anytime</p>
           <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 18, flexWrap: "wrap" }}>
             <a href="/legal/privacy" style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textDecoration: "underline" }}>Privacy Policy</a>
             <a href="/legal/terms" style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textDecoration: "underline" }}>Terms of Service</a>

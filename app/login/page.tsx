@@ -10,11 +10,29 @@ function LoginInner() {
   const redirectTo = searchParams?.get("redirect") ?? "/dashboard";
 
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgot, setIsForgot] = useState(false);
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState("");
   const [notice, setNotice]     = useState("");
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true); setError("");
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login`,
+      });
+      if (error) throw error;
+      setNotice("Password reset email sent — check your inbox.");
+      setIsForgot(false);
+    } catch (err: unknown) {
+      setError((err as { message?: string }).message ?? "Failed to send reset email.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // If already logged in, skip straight to redirect destination
   useEffect(() => {
@@ -30,11 +48,17 @@ function LoginInner() {
     setNotice("");
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        // Supabase may require email confirmation — tell the user instead of silently redirecting
-        setNotice("Account created! Check your inbox to confirm your email, then sign in.");
-        setIsSignUp(false);
+        // Auto sign in after signup - no email verification required
+        if (data.session) {
+          window.location.href = redirectTo;
+        } else {
+          // Fallback: sign them in directly
+          const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+          if (signInError) throw signInError;
+          window.location.href = redirectTo;
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -111,14 +135,36 @@ function LoginInner() {
           </button>
         </form>
 
-        <div style={{ textAlign: "center", marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--border)" }}>
-          <button onClick={() => { setIsSignUp(v => !v); setError(""); setNotice(""); }} type="button"
+        <div style={{ textAlign: "center", marginTop: 20, paddingTop: 18, borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: 8 }}>
+          <button onClick={() => { setIsSignUp(v => !v); setIsForgot(false); setError(""); setNotice(""); }} type="button"
             style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
             {isSignUp ? "Already have an account? Sign in →" : "No account yet? Sign up free →"}
           </button>
+          {!isSignUp && !isForgot && (
+            <button onClick={() => { setIsForgot(true); setError(""); setNotice(""); }} type="button"
+              style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted2)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 3 }}>
+              Forgot password?
+            </button>
+          )}
         </div>
 
-        {!isSignUp && (
+        {isForgot && (
+          <form onSubmit={handleForgotPassword} style={{ marginTop: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", textAlign: "center" }}>Enter your email to receive a reset link</p>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="you@company.com"
+              style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "12px 14px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 13, boxSizing: "border-box" as const }} />
+            <button type="submit" disabled={loading}
+              style={{ width: "100%", padding: "13px", borderRadius: 8, background: "var(--surface2)", color: "var(--text)", border: "1px solid var(--border2)", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.1em", cursor: "pointer" }}>
+              {loading ? "SENDING..." : "SEND RESET LINK →"}
+            </button>
+            <button type="button" onClick={() => setIsForgot(false)}
+              style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted2)", background: "none", border: "none", cursor: "pointer", textDecoration: "underline" }}>
+              Back to sign in
+            </button>
+          </form>
+        )}
+
+        {!isSignUp && !isForgot && (
           <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center", marginTop: 10 }}>
             Don&rsquo;t have a paid plan?{" "}
             <a href="/subscribe" style={{ color: "#a78bfa", textDecoration: "none" }}>See pricing →</a>

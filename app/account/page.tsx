@@ -1,9 +1,60 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { NavBar } from "../components/nav";
 import { useAuth } from "../lib/auth-context";
 import { PLAN_CONFIG } from "../lib/supabase";
+
+
+function DeleteAccount() {
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const { createClient } = await import("../lib/supabase");
+      const sb = createClient();
+      const { data: { user } } = await sb.auth.getUser();
+      if (user) {
+        await sb.from("profiles").delete().eq("id", user.id);
+        await sb.auth.signOut();
+      }
+      window.location.href = "/";
+    } catch {
+      setDeleting(false);
+      setConfirming(false);
+      alert("Error deleting account. Please email billing@nexus-diagnostics.com to request deletion.");
+    }
+  };
+
+  if (!confirming) {
+    return (
+      <button onClick={() => setConfirming(true)} type="button"
+        style={{ padding: "10px 20px", borderRadius: 10, border: "1px solid var(--border)", background: "transparent", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em", cursor: "pointer", textAlign: "center" as const }}>
+        DELETE ACCOUNT
+      </button>
+    );
+  }
+
+  return (
+    <div style={{ padding: "16px", borderRadius: 10, border: "1px solid rgba(232,52,26,0.3)", background: "rgba(232,52,26,0.04)" }}>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text2)", marginBottom: 12, textAlign: "center" as const }}>
+        This will permanently delete your account and all data within 30 days. This cannot be undone.
+      </p>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button onClick={handleDelete} disabled={deleting}
+          style={{ flex: 1, padding: "11px", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer", letterSpacing: "0.08em" }}>
+          {deleting ? "DELETING..." : "CONFIRM DELETE →"}
+        </button>
+        <button onClick={() => setConfirming(false)}
+          style={{ flex: 1, padding: "11px", borderRadius: 8, background: "var(--surface)", color: "var(--muted)", border: "1px solid var(--border)", fontFamily: "var(--font-mono)", fontSize: 11, cursor: "pointer" }}>
+          CANCEL
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function Account() {
   const { user, profile, plan, loading, signOut } = useAuth();
@@ -102,6 +153,7 @@ export default function Account() {
               style={{ padding: "14px 20px", borderRadius: 10, border: "1px solid rgba(232,52,26,0.25)", background: "transparent", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--accent)", letterSpacing: "0.08em", cursor: "pointer", textAlign: "center" }}>
               SIGN OUT →
             </button>
+            <DeleteAccount />
           </div>
         </motion.div>
       </div>

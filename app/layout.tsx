@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { CookieBanner } from "./components/cookie-banner";
 import { AuthProvider } from "./lib/auth-context";
 
 export const metadata: Metadata = {
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <div className="corner-bracket bl" aria-hidden="true" />
         <div className="corner-bracket br" aria-hidden="true" />
         <AuthProvider>
+        <CookieBanner />
           {children}
         </AuthProvider>
         <script dangerouslySetInnerHTML={{ __html: `

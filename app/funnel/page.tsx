@@ -198,7 +198,7 @@ function URLIntelligencePanel({ result }: { result: AuditResult }) {
     ...((result.security?.vulnerableLibraryCount ?? 0) > 0 ? [{ id: "vuln", cat: "security", severity: "critical" as Severity, title: `${result.security!.vulnerableLibraryCount} Vulnerable JS ${result.security!.vulnerableLibraryCount === 1 ? "Library" : "Libraries"}`, impact: "Browsers display security warnings at checkout on sites running known-vulnerable scripts. One warning banner = abandoned sale.", fix: "Update jQuery, lodash, or other flagged dependencies to latest stable versions.", icon: "🔒" }] : []),
     ...(!result.security?.hasSecurityHeaders ? [{ id: "headers", cat: "security", severity: "warning" as Severity, title: "Security Headers Missing", impact: "CSP, HSTS, X-Frame-Options absent. B2B buyers run security checks before purchasing — your site will fail them.", fix: "Add security headers via server config or Cloudflare Transform Rules.", icon: "🔒" }] : []),
     // Accessibility
-    ...(result.accessibility?.adaRiskLevel === "high" ? [{ id: "ada-h", cat: "accessibility", severity: "critical" as Severity, title: "HIGH ADA Compliance Risk", impact: `~${result.accessibility.estimatedMarketLockout}% of users locked out. ADA lawsuits average $25k–$90k settlement. Demand letters require no prior warning.`, fix: "WCAG 2.1 AA audit urgently needed. Fix alt text, contrast ratios, form labels.", icon: "♿" }] : result.accessibility?.adaRiskLevel === "medium" ? [{ id: "ada-m", cat: "accessibility", severity: "warning" as Severity, title: "MEDIUM ADA Compliance Risk", impact: "Multiple WCAG failures. Rising number of demand letters and lawsuits even for medium-risk sites.", fix: "Fix missing alt text, improve colour contrast to 4.5:1 ratio minimum.", icon: "♿" }] : []),
+    ...(result.accessibility?.adaRiskLevel === "high" ? [{ id: "ada-h", cat: "accessibility", severity: "critical" as Severity, title: "HIGH ADA Compliance Risk", impact: `~${result.accessibility.estimatedMarketLockout}% of users locked out. ADA lawsuits average £20k–£75k settlement. Demand letters require no prior warning.`, fix: "WCAG 2.1 AA audit urgently needed. Fix alt text, contrast ratios, form labels.", icon: "♿" }] : result.accessibility?.adaRiskLevel === "medium" ? [{ id: "ada-m", cat: "accessibility", severity: "warning" as Severity, title: "MEDIUM ADA Compliance Risk", impact: "Multiple WCAG failures. Rising number of demand letters and lawsuits even for medium-risk sites.", fix: "Fix missing alt text, improve colour contrast to 4.5:1 ratio minimum.", icon: "♿" }] : []),
     // Lead capture
     ...((result.leads?.estimatedLeadScore ?? 100) < 50 ? [{ id: "leads", cat: "leads", severity: "warning" as Severity, title: `Lead Capture Score: ${result.leads?.estimatedLeadScore ?? 0}/100`, impact: `${!result.leads?.hasCTA ? "No clear CTA detected. " : ""}${!result.leads?.hasContactForm ? "No contact form found. " : ""}${!result.leads?.hasPhoneNumber ? "No phone number visible. " : ""}Visitors arrive and bounce with no conversion path.`, fix: "Add visible CTAs, a live chat widget, and a phone number above the fold.", icon: "💼" }] : []),
   ];
@@ -426,7 +426,7 @@ function buildPitch(result: AuditResult, fd: FunnelData): PitchData {
   const vulnCount = result.security?.vulnerableLibraryCount ?? 0;
   const cards: PitchCard[] = [];
   cards.push({
-    icon: "📡", title: "Nexus Pulse — 4-Pillar Monitoring", tag: "MOST POPULAR", price: "$49/mo",
+    icon: "📡", title: "Nexus Pulse — 4-Pillar Monitoring", tag: "MOST POPULAR", price: "£49/mo",
     bullets: [
       "Weekly automated scans across all 4 pillars",
       "SMS + Slack alert the moment any score drops",
@@ -438,9 +438,9 @@ function buildPitch(result: AuditResult, fd: FunnelData): PitchData {
   if (adaRisk && adaRisk !== "low") {
     cards.push({
       icon: "⚖️", title: adaRisk === "high" ? "ADA Compliance Fix — Urgent" : "Accessibility Remediation",
-      tag: adaRisk === "high" ? "HIGH ADA RISK" : "COMPLIANCE FIX", price: "$800",
+      tag: adaRisk === "high" ? "HIGH ADA RISK" : "COMPLIANCE FIX", price: "£800",
       bullets: [
-        adaRisk === "high" ? "HIGH risk — avg ADA settlement $25k–$90k" : "MEDIUM ADA risk — fix before enforcement",
+        adaRisk === "high" ? "HIGH risk — avg ADA settlement £20k–£75k" : "MEDIUM ADA risk — fix before enforcement",
         vulnCount > 0 ? `${vulnCount} vulnerable JS ${vulnCount === 1 ? "library" : "libraries"} patched` : "Full WCAG 2.1 AA remediation",
         "Fixed price, 5 business days", "Compliance certificate on completion",
       ],
@@ -449,7 +449,7 @@ function buildPitch(result: AuditResult, fd: FunnelData): PitchData {
   }
   if (score < 65) {
     cards.push({
-      icon: "⚡", title: "Performance Rebuild", tag: "FIXED PRICE", price: "$1,200",
+      icon: "⚡", title: "Performance Rebuild", tag: "FIXED PRICE", price: "£1,200",
       bullets: [
         `Score ${score}/100 → guaranteed sub-1.5s LCP`, "5-day turnaround, no retainer",
         "Mobile-first, all Core Web Vitals green", "30-day money-back performance guarantee",
@@ -459,7 +459,7 @@ function buildPitch(result: AuditResult, fd: FunnelData): PitchData {
   }
   return {
     headline: leak > 800 ? `You're leaking ~$${Math.round(leak / 100) * 100}/month. Here's the fix order.` : `Highest-ROI moves for your ${bt} site.`,
-    sub: `Based on your ${bt} business and 4-pillar scores — ordered by dollar impact.`,
+    sub: `Based on your ${bt} business and 4-pillar scores — ordered by revenue impact.`,
     cards,
   };
 }
@@ -578,10 +578,10 @@ function FunnelInner() {
             <motion.div key="q2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} style={{ width: "100%" }}>
               <ProgressDots step="q2" />
               <Q q="How much annual revenue flows through this site?" sub="We calculate your exact dollars at risk.">
-                <Choice icon="🌱" label="Under $25,000" sub="Early-stage or side business" onClick={() => go({ q2: "sub25k" }, "q3")} />
-                <Choice icon="📈" label="$25k – $150k" sub="Growing — leaks are real but recoverable" onClick={() => go({ q2: "25-150k" }, "q3")} />
-                <Choice icon="💼" label="$150k – $500k" sub="Every percentage point matters" onClick={() => go({ q2: "150-500k" }, "q3")} />
-                <Choice icon="🏆" label="$500k+" sub="Enterprise — compliance is non-negotiable" onClick={() => go({ q2: "500k+" }, "q3")} />
+                <Choice icon="🌱" label="Under £25,000" sub="Early-stage or side business" onClick={() => go({ q2: "sub25k" }, "q3")} />
+                <Choice icon="📈" label="£25k – £150k" sub="Growing — leaks are real but recoverable" onClick={() => go({ q2: "25-150k" }, "q3")} />
+                <Choice icon="💼" label="£150k – £500k" sub="Every percentage point matters" onClick={() => go({ q2: "150-500k" }, "q3")} />
+                <Choice icon="🏆" label="£500k+" sub="Enterprise — compliance is non-negotiable" onClick={() => go({ q2: "500k+" }, "q3")} />
               </Q>
             </motion.div>
           )}
@@ -650,6 +650,16 @@ function FunnelInner() {
                     <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--accent)" }}>${result.totalMonthlyCost.toLocaleString()}</div>
                     <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted)", letterSpacing: "0.08em", marginTop: 2 }}>LEAKING /MO</div>
                   </div>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+                    <input type="checkbox" id="email-consent" required
+                      style={{ marginTop: 3, accentColor: "var(--accent)", flexShrink: 0 }} />
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>
+                      I agree to receive my report and occasional product updates by email. Unsubscribe anytime.{" "}
+                      <a href="/legal/privacy" target="_blank" style={{ color: "var(--accent)", textDecoration: "none" }}>Privacy Policy</a>
+                    </span>
+                  </label>
                 </div>
                 <input type="email" inputMode="email" autoComplete="email"
                   value={emailInput} onChange={e => setEmailInput(e.target.value)}
