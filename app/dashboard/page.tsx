@@ -450,7 +450,7 @@ export default function Dashboard() {
   }, [sites]);
 
   function addComp(url: string) {
-    if (competitors.length>=MAX_COMPETITORS) { alert("Plan limit — upgrade to Scale for 10 competitors."); return; }
+    if (competitors.length>=MAX_COMPETITORS) { log("Competitor limit reached — upgrade to Scale for up to 10.", "bad"); return; }
     if (!url.trim()) return;
     const id=`comp-${Date.now()}`, label=url.replace(/https?:\/\//,"").split(".")[0].toUpperCase();
     setSites(p=>[...p,{ id, url:url.trim(), label, isOwn:false, result:null, history:[], tasks:[], loading:false, error:"" }]);
@@ -989,8 +989,8 @@ export default function Dashboard() {
                 <div style={{ padding:"22px 24px", borderRadius:14, background:"var(--surface)", border:"1px solid var(--border)" }}>
                   <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:14 }}>🔔 NOTIFICATIONS</p>
                   {[
-                    { key:"weeklyDigest" as const, label:"Weekly Score Digest", desc:"Every Monday — 4-pillar score summary", color:"#10b981" },
-                    { key:"criticalAlerts" as const, label:"Critical Drop Alerts", desc:"Instant alert if any pillar drops >10 points", color:"#e8341a" },
+                    { key:"weeklyDigest" as const, label:"Weekly Score Digest", desc:"Summary email every Monday — 4-pillar scores", color:"#10b981" },
+                    { key:"criticalAlerts" as const, label:"Critical Drop Alerts", desc:"Alert when any pillar drops >10 points (via webhook)", color:"#e8341a" },
                   ].map(({ key, label, desc, color })=>(
                     <div key={key} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 0", borderBottom:"1px solid var(--border)" }}>
                       <div style={{ flex:1, paddingRight:16 }}>
@@ -1037,9 +1037,18 @@ export default function Dashboard() {
                   {plan==="pulse" && (
                     <a href="/subscribe" style={{ display:"block", padding:"10px", borderRadius:8, textAlign:"center", background:"rgba(232,52,26,0.08)", border:"1px solid rgba(232,52,26,0.2)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--accent)", textDecoration:"none", marginBottom:12 }}>Upgrade to Scale — 10 competitors + daily scans →</a>
                   )}
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:12, borderTop:"1px solid var(--border)" }}>
-                    <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Sign out of this device</p>
-                    <button onClick={async()=>{ await supabase.auth.signOut(); window.location.href="/login"; }} style={{ padding:"8px 16px", borderRadius:7, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.25)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--accent)" }}>LOG OUT</button>
+                  <div style={{ display:"flex", flexDirection:"column", gap:8, paddingTop:12, borderTop:"1px solid var(--border)" }}>
+                    <a href="https://nexus-diagnostics.lemonsqueezy.com/billing" target="_blank" rel="noopener"
+                      style={{ display:"block", padding:"9px", borderRadius:7, textAlign:"center", background:"var(--bg)", border:"1px solid var(--border)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--text2)", textDecoration:"none" }}>
+                      MANAGE BILLING / CANCEL ↗
+                    </a>
+                    <a href="/account" style={{ display:"block", padding:"9px", borderRadius:7, textAlign:"center", background:"var(--bg)", border:"1px solid var(--border)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--text2)", textDecoration:"none" }}>
+                      ACCOUNT SETTINGS →
+                    </a>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                      <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Sign out of this device</p>
+                      <button onClick={async()=>{ await supabase.auth.signOut(); window.location.href="/login"; }} style={{ padding:"8px 16px", borderRadius:7, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.25)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--accent)" }}>LOG OUT</button>
+                    </div>
                   </div>
                 </div>
 

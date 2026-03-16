@@ -11,6 +11,8 @@ function LoginInner() {
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgot, setIsForgot] = useState(false);
+  const [isReset, setIsReset] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading]   = useState(false);
@@ -34,12 +36,34 @@ function LoginInner() {
     }
   };
 
-  // If already logged in, skip straight to redirect destination
+  // Detect password reset token in URL hash (Supabase sends #access_token=...&type=recovery)
   useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes("type=recovery")) {
+      setIsReset(true);
+      return;
+    }
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) window.location.href = redirectTo;
+      if (session && !hash.includes("type=recovery")) window.location.href = redirectTo;
     });
   }, [redirectTo]);
+
+  const handleNewPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 8) { setError("Password must be at least 8 characters."); return; }
+    setLoading(true); setError("");
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setNotice("Password updated successfully. Signing you in...");
+      setIsReset(false);
+      setTimeout(() => { window.location.href = redirectTo; }, 1500);
+    } catch (err: unknown) {
+      setError((err as { message?: string }).message ?? "Failed to update password.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +113,29 @@ function LoginInner() {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
         style={{ width: "100%", maxWidth: 400, padding: "40px 36px", borderRadius: 16, background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "0 20px 60px rgba(0,0,0,0.5)", marginTop: 56 }}>
 
+        {isReset ? (
+          <>
+            <div style={{ textAlign: "center", marginBottom: 28 }}>
+              <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, color: "var(--text)", letterSpacing: "0.06em", lineHeight: 1, marginBottom: 8 }}>SET NEW PASSWORD</h1>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)" }}>Choose a strong password for your account.</p>
+            </div>
+            <form onSubmit={handleNewPassword} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div>
+                <label style={{ display: "block", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", marginBottom: 6, letterSpacing: "0.12em" }}>NEW PASSWORD</label>
+                <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={8}
+                  placeholder="Min. 8 characters" autoFocus
+                  style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "13px 14px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 14, boxSizing: "border-box" as const }} />
+              </div>
+              {error && <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.25)" }}><p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", margin: 0 }}>⚠ {error}</p></div>}
+              {notice && <div style={{ padding: "10px 14px", borderRadius: 8, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)" }}><p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#10b981", margin: 0 }}>✓ {notice}</p></div>}
+              <button type="submit" disabled={loading}
+                style={{ width: "100%", padding: "15px", borderRadius: 8, background: "var(--accent)", color: "#fff", border: "none", fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", cursor: "pointer", boxShadow: "0 0 20px rgba(232,52,26,0.3)" }}>
+                {loading ? "UPDATING..." : "SET PASSWORD →"}
+              </button>
+            </form>
+          </>
+        ) : (
+        <>
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: 26, color: "var(--text)", letterSpacing: "0.06em", lineHeight: 1, marginBottom: 8 }}>
             {isSignUp ? "CREATE ACCOUNT" : "WELCOME BACK"}
@@ -169,6 +216,8 @@ function LoginInner() {
             Don&rsquo;t have a paid plan?{" "}
             <a href="/subscribe" style={{ color: "#a78bfa", textDecoration: "none" }}>See pricing →</a>
           </p>
+        )}
+        </>
         )}
       </motion.div>
     </main>
