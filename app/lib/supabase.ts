@@ -5,7 +5,7 @@ export type SubscriptionPlan = "free" | "pulse" | "scale";
 export interface UserProfile {
   id: string;
   email: string;
-  tier: SubscriptionPlan;  // DB column is 'tier' not 'plan'
+  tier: SubscriptionPlan;
   ls_subscription_id?: string;
   ls_customer_id?: string;
   ls_variant_id?: string;
@@ -30,24 +30,29 @@ export function createClient() {
   );
 }
 
-// Legacy named export — lazy singleton to avoid build-time instantiation
-let _supabase: ReturnType<typeof createBrowserClient> | null = null;
-export const supabase = new Proxy({} as ReturnType<typeof createBrowserClient>, {
-  get(_target, prop) {
-    if (!_supabase) {
-      _supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-    }
-    return (_supabase as any)[prop];
+// Lazy singleton — only instantiated when first used at runtime, not at build time
+let _client: ReturnType<typeof createBrowserClient> | null = null;
+function getClient() {
+  if (!_client) {
+    _client = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
   }
-});
+  return _client;
+}
+
+// Legacy named export — wraps lazy getter so it works as a drop-in replacement
+export const supabase = {
+  get auth() { return getClient().auth; },
+  from: (...args: Parameters<ReturnType<typeof createBrowserClient>["from"]>) =>
+    getClient().from(...args),
+} as ReturnType<typeof createBrowserClient>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function getProfile(supabase: any): Promise<UserProfile | null> {
-  const { data: { user } } = await supabase.auth.getUser();
+export async function getProfile(supabaseClient: any): Promise<UserProfile | null> {
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) return null;
-  const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  const { data } = await supabaseClient.from("profiles").select("*").eq("id", user.id).single();
   return data ?? null;
 }

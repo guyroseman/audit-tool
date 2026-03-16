@@ -1,19 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Disable static prerendering — app uses runtime env vars (Supabase)
-  output: undefined,
-  experimental: {},
-  // Mark all pages as dynamic to prevent build-time prerender errors
-  staticPageGenerationTimeout: 0,
   reactStrictMode: true,
   poweredByHeader: false,
 
-  // ── Security & SEO headers ──────────────────────────────────────────────────
   async headers() {
     return [
       {
-        // Block all API routes from being indexed
         source: "/api/:path*",
         headers: [
           { key: "X-Robots-Tag", value: "noindex, nofollow" },
@@ -21,7 +14,6 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        // Global security headers
         source: "/:path*",
         headers: [
           { key: "X-Frame-Options", value: "DENY" },
@@ -44,14 +36,6 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-
-  // ── Redirects: / → /funnel for the main entry point ─────────────────────────
-  // Uncomment this if you want the funnel to be the homepage:
-  // async redirects() {
-  //   return [
-  //     { source: "/", destination: "/funnel", permanent: false },
-  //   ];
-  // },
 };
 
 export default nextConfig;
