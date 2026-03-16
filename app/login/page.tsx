@@ -51,23 +51,35 @@ function LoginInner() {
       } else {
         setError(decodeURIComponent(errorDesc ?? "Something went wrong. Please try again."));
       }
-      // Clean up ugly URL
       window.history.replaceState({}, "", "/login");
       return;
     }
-    
-    // Handle recovery token in hash
+
+    // Listen for Supabase auth events — catches PASSWORD_RECOVERY event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsReset(true);
+        window.history.replaceState({}, "", "/login");
+      } else if (event === "SIGNED_IN" && session && !hash.includes("type=recovery")) {
+        window.location.href = redirectTo;
+      }
+    });
+
+    // Also check hash directly for recovery token
     if (hash.includes("type=recovery") || hash.includes("access_token")) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) setIsReset(true);
       });
-      return;
+      return () => subscription.unsubscribe();
     }
-    
+
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) window.location.href = redirectTo;
+      if (session && !isReset) window.location.href = redirectTo;
     });
-  }, [redirectTo]);
+
+    return () => subscription.unsubscribe();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleNewPassword = async (e: React.FormEvent) => {
     e.preventDefault();
