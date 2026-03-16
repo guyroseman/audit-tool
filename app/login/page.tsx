@@ -36,15 +36,36 @@ function LoginInner() {
     }
   };
 
-  // Detect password reset token in URL hash (Supabase sends #access_token=...&type=recovery)
+  // Detect password reset token OR error from Supabase redirect
   useEffect(() => {
     const hash = window.location.hash;
-    if (hash.includes("type=recovery")) {
-      setIsReset(true);
+    const params = new URLSearchParams(window.location.search);
+    
+    // Handle error in query string (expired link etc)
+    const errorCode = params.get("error_code");
+    const errorDesc = params.get("error_description");
+    if (errorCode) {
+      if (errorCode === "otp_expired") {
+        setError("Your reset link has expired. Please request a new one below.");
+        setIsForgot(true);
+      } else {
+        setError(decodeURIComponent(errorDesc ?? "Something went wrong. Please try again."));
+      }
+      // Clean up ugly URL
+      window.history.replaceState({}, "", "/login");
       return;
     }
+    
+    // Handle recovery token in hash
+    if (hash.includes("type=recovery") || hash.includes("access_token")) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session) setIsReset(true);
+      });
+      return;
+    }
+    
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && !hash.includes("type=recovery")) window.location.href = redirectTo;
+      if (session) window.location.href = redirectTo;
     });
   }, [redirectTo]);
 
