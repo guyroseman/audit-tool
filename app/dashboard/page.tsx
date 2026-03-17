@@ -182,7 +182,7 @@ function SiteScreenshot({ url, result }: { url: string; result: AuditResult }) {
           </div>
         )}
         <img src={screenshotUrl} onLoad={() => setLoaded(true)} onError={() => setErrored(true)}
-          style={{ width: "100%", display: loaded ? "block" : "none", filter: "brightness(0.65) saturate(0.8)" }} alt="Site snapshot"/>
+          style={{ width: "100%", display: loaded ? "block" : "none", filter: "brightness(0.88) saturate(0.85)" }} alt="Site snapshot"/>
         {loaded && <>
           <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 40%, rgba(3,7,15,0.9) 100%)" }}/>
           {visibleIssues.map((issue, i) => (

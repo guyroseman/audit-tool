@@ -63,6 +63,14 @@ export function TerminalLoader({ url }: { url: string }) {
         <motion.div style={{ height: "100%", background: "var(--accent)", boxShadow: "0 0 10px var(--accent-glow)" }}
           initial={{ width: 0 }} animate={{ width: `${(lines.length / SCAN_LINES.length) * 100}%` }} transition={{ duration: 0.3 }} />
       </div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+        style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+        <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }}
+          style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block", flexShrink: 0 }} />
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.1em" }}>
+          Connecting to Google&apos;s servers — this typically takes <strong style={{ color: "var(--text2)" }}>30–60 seconds</strong>. Don&apos;t close this tab.
+        </span>
+      </motion.div>
     </motion.div>
   );
 }
@@ -611,7 +619,46 @@ export function ResultsPanel({ result, onDiscover }: {
                 <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", marginTop: 8 }}>Your site passes all major checks across all 4 pillars.</p>
               </div>
             ) : (
-              criticalFindings.map((f, i) => <FindingBanner key={f.id} finding={f} index={i} />)
+              <div style={{ position: "relative" }}>
+                {/* First finding — always fully visible */}
+                <FindingBanner key={criticalFindings[0].id} finding={criticalFindings[0]} index={0} />
+
+                {/* Remaining findings — blurred with lock overlay */}
+                {criticalFindings.length > 1 && (
+                  <div style={{ position: "relative" }}>
+                    <div style={{ filter: "blur(4px)", pointerEvents: "none", userSelect: "none", opacity: 0.5 }}>
+                      {criticalFindings.slice(1, 4).map((f, i) => (
+                        <FindingBanner key={f.id} finding={f} index={i + 1} />
+                      ))}
+                    </div>
+                    {/* Lock overlay */}
+                    <div style={{
+                      position: "absolute", inset: 0,
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                      background: "linear-gradient(to bottom, rgba(3,7,15,0.2), rgba(3,7,15,0.88))",
+                      borderRadius: 10, padding: "24px 20px", textAlign: "center",
+                    }}>
+                      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.18em", marginBottom: 10 }}>
+                        🔒 {criticalFindings.length - 1} MORE ISSUE{criticalFindings.length > 2 ? "S" : ""} FOUND
+                      </div>
+                      <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text)", maxWidth: 360, marginBottom: 18, lineHeight: 1.6 }}>
+                        You&apos;re losing <strong style={{ color: "var(--accent)" }}>${totalMonthlyCost.toLocaleString()}/mo</strong> across {criticalFindings.length} issues. See how to fix each one — ordered by revenue impact.
+                      </p>
+                      {onDiscover ? (
+                        <button onClick={scrollToFixPlan}
+                          style={{ padding: "13px 28px", borderRadius: 10, background: "var(--accent)", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", letterSpacing: "0.1em", boxShadow: "0 0 30px rgba(232,52,26,0.45)" }}>
+                          GET MY FULL FIX PLAN →
+                        </button>
+                      ) : (
+                        <a href="/subscribe"
+                          style={{ display: "inline-block", padding: "13px 28px", borderRadius: 10, background: "var(--accent)", textDecoration: "none", fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", letterSpacing: "0.1em", boxShadow: "0 0 30px rgba(232,52,26,0.45)" }}>
+                          UNLOCK ALL FINDINGS →
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </motion.div>
         )}
@@ -639,8 +686,41 @@ export function ResultsPanel({ result, onDiscover }: {
           </motion.div>
         )}
         {activeTab === "all" && (
-          <motion.div key="all" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ marginBottom: 14 }}>
-            {explanations.map((f, i) => <FindingBanner key={f.id} finding={f} index={i} />)}
+          <motion.div key="all" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ marginBottom: 14, position: "relative" }}>
+            <FindingBanner key={explanations[0].id} finding={explanations[0]} index={0} />
+            {explanations.length > 1 && (
+              <div style={{ position: "relative" }}>
+                <div style={{ filter: "blur(4px)", pointerEvents: "none", userSelect: "none", opacity: 0.5 }}>
+                  {explanations.slice(1, 5).map((f, i) => (
+                    <FindingBanner key={f.id} finding={f} index={i + 1} />
+                  ))}
+                </div>
+                <div style={{
+                  position: "absolute", inset: 0,
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  background: "linear-gradient(to bottom, rgba(3,7,15,0.2), rgba(3,7,15,0.88))",
+                  borderRadius: 10, padding: "24px 20px", textAlign: "center",
+                }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.18em", marginBottom: 10 }}>
+                    🔒 {explanations.length - 1} MORE FINDINGS LOCKED
+                  </div>
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text)", maxWidth: 360, marginBottom: 18, lineHeight: 1.6 }}>
+                    Your full fix plan — every issue ordered by revenue impact with exact recovery times.
+                  </p>
+                  {onDiscover ? (
+                    <button onClick={scrollToFixPlan}
+                      style={{ padding: "13px 28px", borderRadius: 10, background: "var(--accent)", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", letterSpacing: "0.1em", boxShadow: "0 0 30px rgba(232,52,26,0.45)" }}>
+                      GET MY FULL FIX PLAN →
+                    </button>
+                  ) : (
+                    <a href="/subscribe"
+                      style={{ display: "inline-block", padding: "13px 28px", borderRadius: 10, background: "var(--accent)", textDecoration: "none", fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", letterSpacing: "0.1em", boxShadow: "0 0 30px rgba(232,52,26,0.45)" }}>
+                      UNLOCK ALL FINDINGS →
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>

@@ -20,9 +20,9 @@
   --warn: #f59e0b;
   --ok: #10b981;
   --text: #e2eeff;
-  --text2: #8ba8c8;
-  --muted: #4a6080;
-  --muted2: #2a3f58;
+  --text2: #9ab8d8;
+  --muted: #6888a8;
+  --muted2: #4a6080;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
