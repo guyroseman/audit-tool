@@ -192,7 +192,7 @@ export default function Home() {
         </motion.div>
 
         {/* Headline */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center" }}>
+        <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center" }}>
           <div>
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 100, background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.22)", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.12em", marginBottom: 22 }}>
@@ -329,7 +329,7 @@ export default function Home() {
 
       {/* ── STATS SECTION ── */}
       <section style={{ maxWidth: 1020, margin: "0 auto", padding: "clamp(60px,8vw,96px) 20px" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 1, border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
+        <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 1, border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
           {[
             { n: 2100, prefix: "$", suffix: "/mo", label: "avg ad overspend from slow sites", color: "var(--accent)" },
             { n: 43, prefix: "", suffix: "%", label: "of SEO reach lost to technical gaps", color: "#f59e0b" },
@@ -382,7 +382,7 @@ export default function Home() {
             <span style={{ color: "var(--accent)" }}>NONE SPEAK ENGLISH.</span>
           </h2>
         </motion.div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, maxWidth: 760, margin: "0 auto" }}>
+        <div className="vs-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, maxWidth: 760, margin: "0 auto" }}>
           {[
             { label: "GTmetrix / Pingdom", type: "other" as const, points: ["Engineers read it", "No dollar translation", "Charts. Just dry charts.", "No SEO or accessibility pillar", "No fix blueprint"] },
             { label: "NEXUS", type: "us" as const, points: ["Founders read it instantly", "$ per month, per finding", "Plain-English business impact", "Full 4-pillar engine", "Prioritised fix plan + webhooks"] },

@@ -375,3 +375,48 @@ button {
   /* Blueprint task padding reduction */
   .blueprint-task { padding: 14px 14px !important; }
 }
+
+/* ── Homepage responsive ──────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Hero: hide decorative side panel, stack to single column */
+  .hero-grid { grid-template-columns: 1fr !important; }
+  .hero-stats-panel { display: none !important; }
+  /* VS comparison: stack cards */
+  .vs-grid { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 520px) {
+  /* Stats bar: 2-col on small phones */
+  .stats-grid { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ── Subscribe page responsive ───────────────────────────────────────────── */
+@media (max-width: 580px) {
+  /* Plan cards: single column, no scale transform */
+  .plan-cards { grid-template-columns: 1fr !important; }
+  .plan-cards > * { transform: none !important; }
+}
+
+@media (max-width: 640px) {
+  /* Feature comparison table: horizontal scroll */
+  .feat-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .feat-table-scroll > div { min-width: 420px; }
+  /* ROI proof bar: 2-col */
+  .roi-bar { grid-template-columns: 1fr 1fr !important; }
+}
+
+/* ── EmailGate modal: reduce padding on very small screens ───────────────── */
+@media (max-width: 420px) {
+  .emailgate-inner { padding: 28px 20px !important; }
+}
+
+/* ── Nav: ensure anchor touch targets meet 44px minimum ─────────────────── */
+@media (max-width: 640px) {
+  .nav-action-link { min-height: 44px; display: inline-flex !important; align-items: center; }
+}
+
+/* ── Funnel page responsive ──────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  /* 4-pillar status/score grids: 2×2 instead of 1×4 */
+  .funnel-pillar-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}

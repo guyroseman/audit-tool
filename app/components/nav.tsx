@@ -56,7 +56,7 @@ export function NavBar({ maxWidth = 860, page }: NavBarProps) {
               }}>{planConfig?.label?.toUpperCase() ?? "SCOUT"}</span>
 
               {/* Dashboard button */}
-              <a href="/dashboard" style={{
+              <a href="/dashboard" className="nav-action-link" style={{
                 fontFamily: "var(--font-mono)", fontSize: 11, color: page === "dashboard" ? "#fff" : "var(--text)",
                 textDecoration: "none",
                 background: page === "dashboard" ? "var(--accent)" : "var(--surface)",
@@ -81,13 +81,13 @@ export function NavBar({ maxWidth = 860, page }: NavBarProps) {
             </div>
           ) : !loading && (
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <a href="/login" style={{
+              <a href="/login" className="nav-action-link" style={{
                 fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text)",
                 textDecoration: "none", border: "1px solid var(--border2)",
                 padding: "7px 14px", borderRadius: 6, letterSpacing: "0.1em",
                 background: "var(--surface)", transition: "all 0.15s",
               }}>SIGN IN</a>
-              <a href="/funnel" style={{
+              <a href="/funnel" className="nav-action-link" style={{
                 fontFamily: "var(--font-mono)", fontSize: 11, color: "#fff",
                 textDecoration: "none", background: "var(--accent)",
                 padding: "7px 16px", borderRadius: 6, letterSpacing: "0.1em",

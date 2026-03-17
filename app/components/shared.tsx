@@ -80,8 +80,8 @@ export function ScoreGauge({ score, animated }: { score: number; animated: boole
     return () => cancelAnimationFrame(raf);
   }, [score, animated]);
   return (
-    <div style={{ position: "relative", width: 180, height: 180 }}>
-      <svg width={180} height={180} style={{ transform: "rotate(-90deg)" }} viewBox="0 0 180 180">
+    <div style={{ position: "relative", width: "min(180px, 48vw)", height: "min(180px, 48vw)" }}>
+      <svg width="100%" height="100%" style={{ transform: "rotate(-90deg)" }} viewBox="0 0 180 180">
         <circle cx={90} cy={90} r={r} fill="none" stroke="var(--border)" strokeWidth={8} />
         <circle cx={90} cy={90} r={r} fill="none" stroke={color} strokeWidth={8} strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={animated ? circ - (score / 100) * circ : circ}
@@ -136,7 +136,7 @@ export function EmailGate({ onSubmit, loading }: { onSubmit: (email: string) => 
   return (
     <motion.div initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }}
       style={{ position: "fixed", inset: 0, zIndex: 9000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(20px)", background: "rgba(3,7,15,0.92)" }}>
-      <div style={{ width: "100%", maxWidth: 420, background: "var(--surface)", border: "1px solid rgba(232,52,26,0.35)", borderRadius: 16, padding: "40px 32px", boxShadow: "0 0 80px rgba(232,52,26,0.2)", textAlign: "center" }}>
+      <div className="emailgate-inner" style={{ width: "100%", maxWidth: 420, background: "var(--surface)", border: "1px solid rgba(232,52,26,0.35)", borderRadius: 16, padding: "40px 32px", boxShadow: "0 0 80px rgba(232,52,26,0.2)", textAlign: "center" }}>
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
           style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 56, height: 56, borderRadius: "50%", background: "rgba(232,52,26,0.12)", border: "1px solid rgba(232,52,26,0.3)", marginBottom: 16, fontSize: 26, position: "relative" }}
           className="pulse-ring">🔍</motion.div>

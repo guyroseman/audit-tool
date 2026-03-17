@@ -141,7 +141,7 @@ function ScanLoader({ url, apiReady = false }: { url: string; apiReady?: boolean
       </div>
 
       {/* Pillar status cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginTop: 12 }}>
+      <div className="funnel-pillar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginTop: 12 }}>
         {[
           { label: "PERFORMANCE", icon: "⚡", color: "#e8341a", done: 7, start: 3 },
           { label: "SEO", icon: "🔍", color: "#f59e0b", done: 12, start: 8 },
@@ -312,7 +312,7 @@ function ScanTeaser({ result, onContinue }: { result: AuditResult; onContinue: (
           <strong style={{ color: "var(--accent)" }}>${result.totalMonthlyCost.toLocaleString()}/mo</strong> estimated leak
         </p>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
+      <div className="funnel-pillar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
         {scores.map(({ label, val }) => {
           const color = val < 50 ? "#e8341a" : val < 80 ? "#f59e0b" : "#10b981";
           return (

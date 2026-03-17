@@ -277,7 +277,7 @@ function SubscribeInner() {
 
         {/* ROI proof bar */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px,1fr))", gap: 8, marginBottom: 28, padding: "16px 20px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)" }}>
+          className="roi-bar" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px,1fr))", gap: 8, marginBottom: 28, padding: "16px 20px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)" }}>
           {[
             { n: "$2,100", label: "avg monthly leak recovered", color: "#e8341a" },
             { n: "19 hrs", label: "to break even on Pulse plan", color: "#10b981" },
@@ -292,7 +292,7 @@ function SubscribeInner() {
         </motion.div>
 
         {/* Plan cards */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px,1fr))", gap: 14, marginBottom: 52, alignItems: "stretch", isolation: "isolate" }}>
+        <div className="plan-cards" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px,1fr))", gap: 14, marginBottom: 52, alignItems: "stretch", isolation: "isolate" }}>
           {PLANS.map((plan, i) => (
             <motion.div key={plan.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
               style={{ borderRadius: 16, border: plan.popular ? `1.5px solid ${plan.accentColor}0.5)` : `1px solid ${plan.accentColor}0.2)`, background: plan.popular ? `linear-gradient(135deg,${plan.accentColor}0.1),${plan.accentColor}0.04))` : "var(--surface)", padding: plan.popular ? "28px 24px" : "22px 20px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", transform: plan.popular ? "scale(1.03)" : "none", boxShadow: plan.popular ? `0 0 80px ${plan.accentColor}0.2), 0 24px 60px rgba(0,0,0,0.4)` : "none" }}>
@@ -410,7 +410,7 @@ function SubscribeInner() {
           <AnimatePresence>
             {showTable && (
               <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} style={{ overflow: "hidden" }}>
-                <div style={{ borderRadius: 14, border: "1px solid var(--border)", overflow: "hidden" }}>
+                <div className="feat-table-scroll" style={{ borderRadius: 14, border: "1px solid var(--border)", overflow: "hidden" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 100px 100px 100px", background: "var(--surface2)", padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.1em" }}>FEATURE</span>
                     {["SCOUT", "PULSE", "SCALE"].map((n, i) => (
