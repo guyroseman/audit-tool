@@ -23,20 +23,22 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, {
   scale: { label: "Nexus Scale", maxSites: 11, maxCompetitors: 10, monthlyPriceGBP: 149 },
 };
 
-// Lazy singleton — only instantiated when first used at runtime, not at build time.
-// All callers (auth-context, login page, etc.) share the same instance so auth
-// state change listeners are consistent.
+// Lazy singleton — browser only. createBrowserClient must not run during
+// SSR/prerender (no window, no DOM). All Supabase calls in this app happen
+// inside useEffect or event handlers which only execute on the client, so
+// returning null on the server is safe.
 let _client: ReturnType<typeof createBrowserClient> | null = null;
 function getClient() {
+  if (typeof window === "undefined") {
+    // Server / build-time prerender — return null-safe stub so pages render
+    // without crashing. Methods are never actually invoked during SSR.
+    return null as unknown as ReturnType<typeof createBrowserClient>;
+  }
   if (!_client) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
-    if (!url || !key) {
-      // During build/prerender without env vars — return a stub so the build
-      // doesn't crash. Real auth is always client-side.
-      return { auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }), signOut: async () => {}, getUser: async () => ({ data: { user: null } }) }, from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: null }) }) }) } ) } as unknown as ReturnType<typeof createBrowserClient>;
-    }
-    _client = createBrowserClient(url, key);
+    _client = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
   }
   return _client;
 }
