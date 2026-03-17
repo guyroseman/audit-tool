@@ -553,11 +553,12 @@ export default function Dashboard() {
     }
   }, [sites, settings, loaded, userId]);
 
+  const isScanning = sites.some(s=>s.isOwn && s.loading);
   useEffect(() => {
-    if (!own?.loading) { setScanStartedAt(null); return; }
+    if (!isScanning) { setScanStartedAt(null); return; }
     const t = setInterval(() => setElapsed(Math.floor((Date.now() - (scanStartedAt??Date.now()))/1000)), 1000);
     return () => clearInterval(t);
-  }, [own?.loading, scanStartedAt]);
+  }, [isScanning, scanStartedAt]);
 
   const own = sites.find(s=>s.isOwn);
   const competitors = sites.filter(s=>!s.isOwn);
