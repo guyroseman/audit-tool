@@ -180,11 +180,11 @@ export default function Home() {
       <NavBar page="home" maxWidth={1280} />
 
       {/* ── HERO ── */}
-      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(60px,10vw,100px) clamp(28px,5vw,80px) clamp(50px,7vw,80px)" }}>
+      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(12px,2vw,24px) clamp(28px,5vw,80px) clamp(30px,5vw,60px)" }}>
 
         {/* Live ticker bar */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
-          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 40, flexWrap: "wrap" }}>
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 16px", borderRadius: 8, background: "rgba(14,30,53,0.7)", border: "1px solid var(--border)", minWidth: 0, maxWidth: 480, overflow: "hidden" }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", letterSpacing: "0.1em", flexShrink: 0 }}>LIVE:</span>
             <LiveTicker />
@@ -195,19 +195,19 @@ export default function Home() {
         {/* Centered headline */}
         <div style={{ textAlign: "center", maxWidth: 820, margin: "0 auto" }}>
           <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 18px", borderRadius: 100, background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.25)", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.12em", marginBottom: 28 }}>
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 18px", borderRadius: 100, background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.25)", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.12em", marginBottom: 16 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)" }} className="animate-pulse" />
             FREE REVENUE LEAK AUDIT
           </motion.div>
 
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
-            style={{ fontFamily: "var(--font-display)", fontSize: "clamp(42px,9vw,120px)", lineHeight: 0.9, letterSpacing: "0.02em", marginBottom: 30 }} className="flicker">
+            style={{ fontFamily: "var(--font-display)", fontSize: "clamp(38px,8vw,110px)", lineHeight: 0.9, letterSpacing: "0.02em", marginBottom: 18 }} className="flicker">
             YOUR WEBSITE IS<br />
             <span style={{ color: "var(--accent)", textShadow: "0 0 80px rgba(232,52,26,0.5)" }}>BLEEDING MONEY.</span>
           </motion.h1>
 
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-            style={{ fontFamily: "var(--font-body)", fontSize: "clamp(15px,2.2vw,19px)", color: "var(--text2)", maxWidth: 560, margin: "0 auto 38px", lineHeight: 1.7 }}>
+            style={{ fontFamily: "var(--font-body)", fontSize: "clamp(14px,2vw,17px)", color: "var(--text2)", maxWidth: 560, margin: "0 auto 22px", lineHeight: 1.6 }}>
             Most founders never know until they scan. Nexus runs a 60-second deep audit and tells you <strong style={{ color: "var(--text)" }}>exactly how many dollars your site is costing you every month</strong>, with a fix plan ordered by revenue impact.
           </motion.p>
 

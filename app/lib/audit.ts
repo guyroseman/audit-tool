@@ -96,6 +96,7 @@ export interface AuditResult {
   explanations: AuditFinding[];
   severity: "critical" | "warning" | "ok";
   timestamp: number;
+  screenshot?: string;
 }
 
 // ─── PageSpeed API Response Shape ─────────────────────────────────────────────
@@ -103,7 +104,7 @@ interface PSIAuditItem {
   numericValue?: number;
   displayValue?: string;
   score?: number | null;
-  details?: { items?: { node?: unknown; source?: unknown }[] };
+  details?: { items?: { node?: unknown; source?: unknown }[]; data?: string };
 }
 interface PSICategory { score: number | null; }
 interface PSIResponse {
@@ -140,6 +141,7 @@ interface PSIResponse {
       "geolocation-on-start"?: PSIAuditItem;
       "notification-on-start"?: PSIAuditItem;
       "inspector-issues"?: PSIAuditItem;
+      "final-screenshot"?: PSIAuditItem;
     };
     categories?: {
       performance?: PSICategory;
@@ -596,6 +598,8 @@ export async function fetchAudit(rawUrl: string): Promise<AuditResult> {
     const monthlyAdOverspend = calcMonthlyAdOverspend(adLossPercent);
     const monthlyOrganicLoss = calcMonthlyOrganicLoss(seo);
 
+    const screenshot = audits["final-screenshot"]?.details?.data;
+
     return {
       url: rawUrl.trim(), metrics, seo, tech, accessibility, security, leads,
       adLossPercent, bounceRateIncrease: calcBounceRateIncrease(metrics),
@@ -605,6 +609,7 @@ export async function fetchAudit(rawUrl: string): Promise<AuditResult> {
       explanations: buildExplanations(metrics, seo, tech, accessibility, security),
       severity: calcSeverity(metrics.performanceScore),
       timestamp: Date.now(),
+      ...(screenshot ? { screenshot } : {}),
     };
   } catch (e) {
     clearTimeout(timeout);

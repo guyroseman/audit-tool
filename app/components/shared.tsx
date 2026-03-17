@@ -99,7 +99,7 @@ export function ScoreGauge({ score, animated }: { score: number; animated: boole
 function Tooltip({ text }: { text: string }) {
   const [open, setOpen] = useState(false);
   return (
-    <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+    <span style={{ position: "relative", display: "inline-flex", alignItems: "center", marginLeft: 6 }}>
       <button
         type="button"
         onMouseEnter={() => setOpen(true)}
@@ -109,28 +109,37 @@ function Tooltip({ text }: { text: string }) {
         onClick={() => setOpen(p => !p)}
         aria-label="What does this mean?"
         style={{
-          width: 14, height: 14, borderRadius: "50%",
-          background: "rgba(255,255,255,0.07)", border: "1px solid var(--border2)",
-          color: "var(--muted2)", fontFamily: "var(--font-mono)", fontSize: 8,
-          cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center",
-          lineHeight: 1, padding: 0, flexShrink: 0, marginLeft: 5, verticalAlign: "middle",
-          transition: "all 0.15s",
-        }}>?</button>
+          display: "inline-flex", alignItems: "center", gap: 3,
+          padding: "2px 7px", borderRadius: 4,
+          background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.3)",
+          color: "#a78bfa", fontFamily: "var(--font-mono)", fontSize: 9,
+          cursor: "pointer", lineHeight: 1, flexShrink: 0, verticalAlign: "middle",
+          letterSpacing: "0.05em", transition: "all 0.15s",
+        }}>
+        ℹ <span style={{ opacity: 0.7 }}>INFO</span>
+      </button>
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.92, y: 4 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: 4 }}
-            transition={{ duration: 0.12 }}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 6 }}
+            transition={{ duration: 0.14 }}
             style={{
-              position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
-              zIndex: 500, width: 220, padding: "10px 12px", borderRadius: 8,
-              background: "var(--surface)", border: "1px solid var(--border2)",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-              fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text2)", lineHeight: 1.55,
+              position: "absolute", bottom: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)",
+              zIndex: 600, width: 240, padding: "12px 14px", borderRadius: 10,
+              background: "#0d1829", border: "1px solid rgba(167,139,250,0.35)",
+              boxShadow: "0 12px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(167,139,250,0.1)",
+              fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text2)", lineHeight: 1.6,
               pointerEvents: "none",
             }}>
+            {/* Arrow */}
+            <span style={{
+              position: "absolute", bottom: -5, left: "50%", transform: "translateX(-50%) rotate(45deg)",
+              width: 10, height: 10, background: "#0d1829", border: "1px solid rgba(167,139,250,0.35)",
+              borderTop: "none", borderLeft: "none",
+            }} />
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#a78bfa", letterSpacing: "0.12em", display: "block", marginBottom: 5 }}>WHAT THIS MEANS</span>
             {text}
           </motion.div>
         )}
@@ -291,7 +300,7 @@ export function NexusPulsePitch({ result }: { result: AuditResult }) {
 
 // ─── Finding Banner (expandable plain-English alert card) ─────────────────────
 function FindingBanner({ finding, index }: { finding: AuditFinding; index: number }) {
-  const [expanded, setExpanded] = useState(index === 0);
+  const [expanded, setExpanded] = useState(false);
   const isCritical = finding.severity === "critical";
   const isOk = finding.severity === "ok";
   const borderColor = isCritical ? "rgba(232,52,26,0.35)" : isOk ? "rgba(16,185,129,0.25)" : "rgba(245,158,11,0.3)";
@@ -419,9 +428,49 @@ export function ResultsPanel({ result, onDiscover }: {
     fixPlanRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
+  const [stickyVisible, setStickyVisible] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setStickyVisible(true), 1800);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
     <motion.div ref={topRef} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
       style={{ width: "100%", maxWidth: 880, margin: "0 auto" }}>
+
+      {/* ── Sticky floating CTA bar ── */}
+      {onDiscover && (
+        <AnimatePresence>
+          {stickyVisible && (
+            <motion.div
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 80, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 300, damping: 28 }}
+              style={{
+                position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9000,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                padding: "14px 20px",
+                background: "rgba(3,7,15,0.92)", backdropFilter: "blur(16px)",
+                borderTop: "1px solid rgba(232,52,26,0.3)",
+                boxShadow: "0 -8px 40px rgba(232,52,26,0.18)",
+              }}>
+              <div style={{ maxWidth: 700, width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+                <div>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.18em", display: "block", marginBottom: 2 }}>⚠ REVENUE LEAK DETECTED</span>
+                  <span style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--text)", letterSpacing: "0.04em" }}>
+                    ${totalMonthlyCost.toLocaleString()}<span style={{ fontSize: 13, color: "var(--muted)" }}>/mo leaking</span>
+                  </span>
+                </div>
+                <button onClick={scrollToFixPlan}
+                  style={{ padding: "12px 24px", borderRadius: 10, background: "var(--accent)", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", letterSpacing: "0.1em", boxShadow: "0 0 28px rgba(232,52,26,0.5)", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  SEE HOW TO FIX THIS →
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      )}
 
       {/* ── Status Banner ── */}
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}

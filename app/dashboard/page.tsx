@@ -154,7 +154,7 @@ function SiteScreenshot({ url, result }: { url: string; result: AuditResult }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
   const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
-  const screenshotUrl = `https://image.thum.io/get/width/900/crop/500/${cleanUrl}`;
+  const screenshotUrl = result.screenshot ?? null;
   const issues: { label: string; color: string; x: string; y: string }[] = [];
   if (result.metrics.lcp > 4000) issues.push({ label: "Slow load (LCP)", color: "#e8341a", x: "65%", y: "28%" });
   if (result.metrics.cls > 0.1) issues.push({ label: "Layout shift", color: "#f59e0b", x: "35%", y: "55%" });
@@ -162,14 +162,14 @@ function SiteScreenshot({ url, result }: { url: string; result: AuditResult }) {
   if ((result.security?.vulnerableLibraryCount ?? 0) > 0) issues.push({ label: "Vuln. JS lib", color: "#e8341a", x: "18%", y: "78%" });
   if (!result.accessibility?.missingAltText === false) issues.push({ label: "Missing alt text", color: "#a78bfa", x: "80%", y: "50%" });
   const visibleIssues = issues.slice(0, 4);
-  if (errored) return null;
+  if (errored || !screenshotUrl) return null;
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
       style={{ borderRadius: 13, overflow: "hidden", border: "1px solid var(--border)", marginBottom: 14, background: "var(--surface)" }}>
       <div style={{ padding: "11px 18px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10b981", display: "inline-block" }} className="animate-pulse"/>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.14em" }}>LIVE SITE SNAPSHOT</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.14em" }}>SITE SNAPSHOT — CAPTURED DURING AUDIT</span>
         </div>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>{cleanUrl.replace(/https?:\/\//, "").substring(0, 44)}</span>
       </div>
