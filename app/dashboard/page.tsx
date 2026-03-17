@@ -1,6 +1,6 @@
 // @ts-nocheck
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
 import { fetchAudit, fmtMs, scoreColor } from "../lib/audit";
 import type { AuditResult } from "../lib/audit";
@@ -10,7 +10,7 @@ import { supabase } from "../lib/supabase";
 interface Task { id: string; title: string; desc: string; impact: "High"|"Medium"|"Low"; effort: "High"|"Medium"|"Low"; val: number; status: "pending"|"verifying"|"recovered"; pillar: "performance"|"seo"|"accessibility"|"security"; }
 interface HistoryPoint { ts: number; perf: number; seo: number; a11y: number; sec: number; leak: number; }
 interface TrackedSite { id: string; url: string; label: string; isOwn: boolean; result: AuditResult|null; history: HistoryPoint[]; tasks: Task[]; loading: boolean; error: string; }
-interface UserSettings { smsPhone: string; smsAlerts: boolean; webhookUrl: string; weeklyDigest: boolean; criticalAlerts: boolean; }
+interface UserSettings { smsPhone: string; smsAlerts: boolean; webhookUrl: string; weeklyDigest: boolean; criticalAlerts: boolean; emailTo: string; }
 type Tab = "overview"|"vitals"|"blueprint"|"matrix"|"settings";
 type BlueprintFilter = Task["pillar"]|"all"|"verifying";
 // maxCompetitors is set per-plan in the component (see PLAN_CONFIG in supabase.ts)
@@ -390,11 +390,13 @@ const PM: Record<Task["pillar"], { icon: string; color: string; label: string }>
 export default function Dashboard() {
   const [loaded, setLoaded] = useState(false);
   const [userId, setUserId] = useState<string|null>(null);
+  const [userEmail, setUserEmail] = useState<string>("");
   const [plan, setPlan] = useState<"pulse"|"scale">("pulse");
   const maxCompetitors = plan === "scale" ? 10 : 3;
   const [tab, setTab] = useState<Tab>("overview");
   const [sites, setSites] = useState<TrackedSite[]>([]);
-  const [settings, setSettings] = useState<UserSettings>({ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true });
+  const [settings, setSettings] = useState<UserSettings>({ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [pulse, setPulse] = useState<{ time:string; text:string; type:"good"|"bad"|"neutral" }[]>([{ time:"Just now", text:"Secure connection established. Cloud synced.", type:"neutral" }]);
   const [newUrl, setNewUrl] = useState("");
   const [pillarFilter, setPillarFilter] = useState<BlueprintFilter>("all");
@@ -404,13 +406,14 @@ export default function Dashboard() {
       const { data:{ session } } = await supabase.auth.getSession();
       if (!session) { window.location.href="/login"; return; }
       setUserId(session.user.id);
+      setUserEmail(session.user.email ?? "");
       const { data } = await supabase.from("profiles").select("app_data,tier").eq("id",session.user.id).single();
       if (data?.tier) setPlan(data.tier as "pulse"|"scale");
       if (data?.app_data && Object.keys(data.app_data).length>0) {
         const validP = new Set(["performance","seo","security","accessibility"]);
         const raw: TrackedSite[] = data.app_data.sites||[];
         setSites(raw.map(s => ({ ...s, tasks:(s.tasks||[]).filter((t:Task)=>validP.has(t.pillar)) })));
-        setSettings(data.app_data.settings||{ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true });
+        setSettings(data.app_data.settings||{ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
       } else setSites([]);
       setLoaded(true);
     })();
@@ -441,6 +444,21 @@ export default function Dashboard() {
       try {
         const r = await fetchAudit(url);
         const pt: HistoryPoint = { ts:r.timestamp, perf:r.metrics.performanceScore, seo:r.seo?.estimatedSeoScore??0, a11y:r.accessibility?.estimatedA11yScore??0, sec:r.security?.estimatedBestPracticesScore??0, leak:r.totalMonthlyCost };
+        // ── Critical drop alert ──────────────────────────────────────────────
+        if (site?.isOwn && site.result && settings.criticalAlerts && settings.webhookUrl) {
+          const drops = [
+            { label:"Performance", prev:site.result.metrics.performanceScore,           now:r.metrics.performanceScore },
+            { label:"SEO",         prev:site.result.seo?.estimatedSeoScore??0,           now:r.seo?.estimatedSeoScore??0 },
+            { label:"Accessibility",prev:site.result.accessibility?.estimatedA11yScore??0, now:r.accessibility?.estimatedA11yScore??0 },
+            { label:"Security",    prev:site.result.security?.estimatedBestPracticesScore??0, now:r.security?.estimatedBestPracticesScore??0 },
+          ].filter(d=>d.prev-d.now>=10);
+          if (drops.length>0) {
+            const alertText = `🚨 NEXUS CRITICAL DROP — ${url}\n\n${drops.map(d=>`${d.label}: ${d.prev} → ${d.now} (−${d.prev-d.now} pts)`).join("\n")}\n\nRevenue leak: $${r.totalMonthlyCost.toLocaleString()}/mo`;
+            fetch(settings.webhookUrl,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ text:alertText }) }).catch(()=>{});
+            log(`⚠ Critical drop detected on ${drops.map(d=>d.label).join(", ")} — alert fired.`, "bad");
+          }
+        }
+        // ────────────────────────────────────────────────────────────────────
         setSites(p=>p.map(s=>s.id!==id?s:{ ...s, loading:false, result:r, url, tasks:s.isOwn?generateTasks(r):[], history:[...(s.history||[]).slice(-11), pt] }));
         log("Scan complete. 4 pillars updated.", "good");
       } catch(e) {
@@ -448,7 +466,7 @@ export default function Dashboard() {
         log("Scan failed.", "bad");
       }
     }, 3500);
-  }, [sites]);
+  }, [sites, settings]);
 
   function addComp(url: string) {
     if (competitors.length>=maxCompetitors) { log("Competitor limit reached — upgrade to Scale for up to 10.", "bad"); return; }
@@ -467,6 +485,31 @@ export default function Dashboard() {
       setSites(p=>p.map(s=>s.isOwn?{ ...s, tasks:s.tasks.map(t=>t.id===taskId?{ ...t, status:"recovered" as const }:t) }:s));
       log("Verified. Revenue recovered. ✓", "good");
     }, 5000);
+  }
+
+  async function downloadPDF() {
+    if (!own?.result) return;
+    setPdfLoading(true);
+    try {
+      const { pdf } = await import("@react-pdf/renderer");
+      const { AuditPDF } = await import("./pdf-report");
+      const blob = await pdf(React.createElement(AuditPDF, { own, competitors, plan })).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const domain = own.url.replace(/https?:\/\//, "").replace(/\/.*/, "");
+      a.download = `nexus-audit-${domain}-${new Date().toISOString().split("T")[0]}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      log("PDF report downloaded.", "good");
+    } catch(e) {
+      console.error("PDF error:", e);
+      log("PDF generation failed.", "bad");
+    } finally {
+      setPdfLoading(false);
+    }
   }
 
   async function sendWebhook() {
@@ -592,7 +635,10 @@ export default function Dashboard() {
                     style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", marginBottom:14 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:15 }}>
                       <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.14em" }}>4-PILLAR DIGITAL HEALTH</p>
-                      <button onClick={()=>setTab("vitals")} style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--accent)", background:"none", border:"1px solid rgba(232,52,26,0.25)", padding:"2px 9px", borderRadius:4, cursor:"pointer" }}>DEEP DIVE →</button>
+                      <div style={{ display:"flex", gap:7 }}>
+                        <button onClick={downloadPDF} disabled={pdfLoading} style={{ fontFamily:"var(--font-mono)", fontSize:7, color:pdfLoading?"var(--muted)":"#10b981", background:pdfLoading?"var(--bg)":"rgba(16,185,129,0.08)", border:`1px solid ${pdfLoading?"var(--border)":"rgba(16,185,129,0.3)"}`, padding:"2px 10px", borderRadius:4, cursor:pdfLoading?"not-allowed":"pointer" }}>{pdfLoading?"GENERATING...":"⬇ PDF REPORT"}</button>
+                        <button onClick={()=>setTab("vitals")} style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--accent)", background:"none", border:"1px solid rgba(232,52,26,0.25)", padding:"2px 9px", borderRadius:4, cursor:"pointer" }}>DEEP DIVE →</button>
+                      </div>
                     </div>
                     <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:16 }}>
                       <ScoreRing score={own.result.metrics.performanceScore} size={66} label="PERFORMANCE"/>
@@ -754,6 +800,7 @@ export default function Dashboard() {
                 <div style={{ display:"flex", gap:8 }}>
                   <button onClick={()=>{ const text=allTasks.map(t=>`[${t.impact}|${PM[t.pillar].label}] ${t.title}\n${t.desc}`).join("\n\n"); navigator.clipboard.writeText(`NEXUS 4-PILLAR DEV PLAN:\n\n${text}`); alert("Copied!"); }} style={{ fontFamily:"var(--font-mono)", fontSize:9, background:"var(--surface)", color:"var(--text)", border:"1px solid var(--border2)", padding:"7px 12px", borderRadius:7, cursor:"pointer" }}>📋 COPY</button>
                   <button onClick={sendWebhook} style={{ fontFamily:"var(--font-mono)", fontSize:9, background:"#f59e0b", color:"#000", border:"none", padding:"7px 12px", borderRadius:7, cursor:"pointer", fontWeight:"bold" }}>🚀 WEBHOOK</button>
+                  <button onClick={downloadPDF} disabled={pdfLoading} style={{ fontFamily:"var(--font-mono)", fontSize:9, background:pdfLoading?"var(--surface)":"#10b981", color:pdfLoading?"var(--muted)":"#000", border:"none", padding:"7px 12px", borderRadius:7, cursor:pdfLoading?"not-allowed":"pointer", fontWeight:"bold" }}>{pdfLoading?"GENERATING...":"⬇ PDF"}</button>
                 </div>
               </div>
               {allTasks.length>0 && <div style={{ marginBottom:14 }}><RecoveryTracker tasks={allTasks}/></div>}
@@ -989,9 +1036,15 @@ export default function Dashboard() {
                 {/* Notifications — enhanced toggles */}
                 <div style={{ padding:"22px 24px", borderRadius:14, background:"var(--surface)", border:"1px solid var(--border)" }}>
                   <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:14 }}>🔔 NOTIFICATIONS</p>
+                  {/* Report email */}
+                  <div style={{ marginBottom:14 }}>
+                    <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.1em", marginBottom:6 }}>REPORT EMAIL</p>
+                    <input type="email" value={settings.emailTo||userEmail} onChange={e=>setSettings(s=>({ ...s, emailTo:e.target.value }))} placeholder={userEmail||"you@company.com"} style={{ width:"100%", background:"var(--bg)", border:"1px solid var(--border2)", borderRadius:8, padding:"9px 12px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:11, boxSizing:"border-box" }}/>
+                    <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted2)", marginTop:5 }}>Weekly digests and critical alerts will be sent here.</p>
+                  </div>
                   {[
                     { key:"weeklyDigest" as const, label:"Weekly Score Digest", desc:"Summary email every Monday — 4-pillar scores", color:"#10b981" },
-                    { key:"criticalAlerts" as const, label:"Critical Drop Alerts", desc:"Alert when any pillar drops >10 points (via webhook)", color:"#e8341a" },
+                    { key:"criticalAlerts" as const, label:"Critical Drop Alerts", desc:"Fires webhook automatically when any pillar drops >10 pts", color:"#e8341a" },
                   ].map(({ key, label, desc, color })=>(
                     <div key={key} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 0", borderBottom:"1px solid var(--border)" }}>
                       <div style={{ flex:1, paddingRight:16 }}>
@@ -1039,7 +1092,7 @@ export default function Dashboard() {
                     <a href="/subscribe" style={{ display:"block", padding:"10px", borderRadius:8, textAlign:"center", background:"rgba(232,52,26,0.08)", border:"1px solid rgba(232,52,26,0.2)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--accent)", textDecoration:"none", marginBottom:12 }}>Upgrade to Scale — 10 competitors + daily scans →</a>
                   )}
                   <div style={{ display:"flex", flexDirection:"column", gap:8, paddingTop:12, borderTop:"1px solid var(--border)" }}>
-                    <a href="https://nexus-diagnostics.lemonsqueezy.com/billing" target="_blank" rel="noopener"
+                    <a href={`https://nexus-diagnostics.lemonsqueezy.com/billing?prefilled_email=${encodeURIComponent(userEmail)}`} target="_blank" rel="noopener"
                       style={{ display:"block", padding:"9px", borderRadius:7, textAlign:"center", background:"var(--bg)", border:"1px solid var(--border)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--text2)", textDecoration:"none" }}>
                       MANAGE BILLING / CANCEL ↗
                     </a>
