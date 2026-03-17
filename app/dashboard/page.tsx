@@ -75,7 +75,7 @@ function ScoreRing({ score, size=56, label }: { score: number; size?: number; la
           <span style={{ fontFamily:"var(--font-display)", fontSize:size*0.28, color, lineHeight:1 }}>{score}</span>
         </div>
       </div>
-      {label && <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.1em", textAlign:"center" }}>{label}</span>}
+      {label && <span style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.1em", textAlign:"center" }}>{label}</span>}
     </div>
   );
 }
@@ -525,6 +525,8 @@ export default function Dashboard() {
   const [newUrl, setNewUrl] = useState("");
   const [pillarFilter, setPillarFilter] = useState<BlueprintFilter>("all");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scanStartedAt, setScanStartedAt] = useState<number|null>(null);
+  const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
     (async () => {
@@ -551,6 +553,12 @@ export default function Dashboard() {
     }
   }, [sites, settings, loaded, userId]);
 
+  useEffect(() => {
+    if (!own?.loading) { setScanStartedAt(null); return; }
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - (scanStartedAt??Date.now()))/1000)), 1000);
+    return () => clearInterval(t);
+  }, [own?.loading, scanStartedAt]);
+
   const own = sites.find(s=>s.isOwn);
   const competitors = sites.filter(s=>!s.isOwn);
   const allTasks = own?.tasks||[];
@@ -563,6 +571,7 @@ export default function Dashboard() {
     let url = (forceUrl||site?.url||"").trim();
     if (!url) return;
     if (!url.startsWith("http")) url="https://"+url;
+    setScanStartedAt(Date.now()); setElapsed(0);
     setSites(p=>p.map(s=>s.id===id?{ ...s, loading:true, error:"" }:s));
     log(`Scanning ${url}...`, "neutral");
     setTimeout(async () => {
@@ -584,7 +593,25 @@ export default function Dashboard() {
           }
         }
         // ────────────────────────────────────────────────────────────────────
-        setSites(p=>p.map(s=>s.id!==id?s:{ ...s, loading:false, result:r, url, tasks:s.isOwn?generateTasks(r):[], history:[...(s.history||[]).slice(-11), pt] }));
+        setSites(p=>p.map(s=>{
+          if (s.id!==id) return s;
+          const prevTasks = s.tasks||[];
+          const freshTasks = s.isOwn ? generateTasks(r) : [];
+          // Merge: preserve verifying/recovered status where task still exists
+          const mergedTasks = freshTasks.map(ft=>{
+            const prev = prevTasks.find(pt=>pt.id===ft.id);
+            if (prev?.status==="verifying") {
+              const resolved = isTaskResolved(ft.id, r);
+              return { ...ft, status: resolved ? "recovered" as const : "verifying" as const };
+            }
+            if (prev?.status==="recovered") return { ...ft, status:"recovered" as const };
+            return ft;
+          });
+          // Log resolved tasks
+          const resolved = mergedTasks.filter(t=>t.status==="recovered" && prevTasks.find(pt=>pt.id===t.id&&pt.status==="verifying"));
+          resolved.forEach(t=>log(`✓ ${t.title} — verified & recovered!`, "good"));
+          return { ...s, loading:false, result:r, url, tasks:s.isOwn?mergedTasks:[], history:[...(s.history||[]).slice(-11), pt] };
+        }));
         log("Scan complete. 4 pillars updated.", "good");
       } catch(e) {
         setSites(p=>p.map(s=>s.id===id?{ ...s, loading:false, error:e instanceof Error?e.message:"Scan failed" }:s));
@@ -603,13 +630,24 @@ export default function Dashboard() {
 
   function removeSite(id: string) { setSites(p=>p.filter(s=>s.id!==id)); log("Target removed.", "neutral"); }
 
+  function isTaskResolved(taskId: string, r: AuditResult): boolean {
+    switch(taskId) {
+      case "lcp": return r.metrics.lcp <= 2500;
+      case "tbt": return r.metrics.tbt <= 200;
+      case "cls": return r.metrics.cls <= 0.1;
+      case "meta": return !!r.seo?.hasMeta;
+      case "viewport": return !!r.seo?.mobileViewport;
+      case "vuln": return (r.security?.vulnerableLibraryCount ?? 0) === 0;
+      case "headers": return !!r.security?.hasSecurityHeaders;
+      case "ada": return r.accessibility?.adaRiskLevel === "low";
+      case "alt": return !r.accessibility?.missingAltText;
+      default: return false;
+    }
+  }
+
   function markVerifying(taskId: string) {
     setSites(p=>p.map(s=>s.isOwn?{ ...s, tasks:s.tasks.map(t=>t.id===taskId?{ ...t, status:"verifying" as const }:t) }:s));
-    log("Queuing verification scan...", "neutral");
-    setTimeout(()=>{
-      setSites(p=>p.map(s=>s.isOwn?{ ...s, tasks:s.tasks.map(t=>t.id===taskId?{ ...t, status:"recovered" as const }:t) }:s));
-      log("Verified. Revenue recovered. ✓", "good");
-    }, 5000);
+    log("Task marked for verification — run RESCAN to confirm.", "neutral");
   }
 
   async function downloadPDF() {
@@ -695,7 +733,14 @@ export default function Dashboard() {
             ))}
           </div>
           <div className="dash-tabs-desktop" style={{ marginLeft:"auto", flexShrink:0 }}>
-            {own && <button onClick={()=>own&&scan(own.id)} disabled={own?.loading} style={{ fontFamily:"var(--font-mono)", fontSize:10, color:own?.loading?"var(--muted)":"var(--accent)", background:"none", border:`1px solid ${own?.loading?"var(--border)":"rgba(232,52,26,0.3)"}`, padding:"5px 12px", borderRadius:6, cursor:own?.loading?"not-allowed":"pointer", letterSpacing:"0.08em" }}>{own?.loading?"SCANNING...":"↺ RESCAN"}</button>}
+            {own && (own?.loading ? (
+              <div style={{ display:"flex", alignItems:"center", gap:8, padding:"5px 14px", borderRadius:6, border:"1px solid rgba(232,52,26,0.3)", background:"rgba(232,52,26,0.05)" }}>
+                <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:1.2, ease:"linear" }} style={{ width:8, height:8, border:"2px solid var(--accent)", borderTopColor:"transparent", borderRadius:"50%", flexShrink:0 }}/>
+                <span style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--accent)", letterSpacing:"0.08em" }}>SCANNING {elapsed}s</span>
+              </div>
+            ) : (
+              <button onClick={()=>scan(own.id)} style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--accent)", background:"none", border:"1px solid rgba(232,52,26,0.3)", padding:"5px 12px", borderRadius:6, cursor:"pointer", letterSpacing:"0.08em" }}>↺ RESCAN</button>
+            ))}
           </div>
 
           {/* Mobile: current tab label + hamburger */}
@@ -795,13 +840,13 @@ export default function Dashboard() {
                       </div>
                     )}
                     <div style={{ flex:1, minWidth:0 }}>
-                      <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:4 }}>YOUR DOMAIN</p>
+                      <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:4 }}>YOUR DOMAIN</p>
                       <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--text)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{own.url}</p>
                       {own.result && <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)", marginTop:3 }}>{new Date(own.result.timestamp).toLocaleString()}</p>}
                     </div>
                   </div>
                   <div style={{ padding:"17px 19px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                    <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:7 }}>MONTHLY REVENUE LEAK</p>
+                    <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:7 }}>MONTHLY REVENUE LEAK</p>
                     <div style={{ fontFamily:"var(--font-display)", fontSize:34, color:own.result?"var(--accent)":"var(--muted)", lineHeight:1, marginBottom:3 }}>{own.result?<AnimatedNumber value={own.result.totalMonthlyCost} prefix="$"/>:"—"}</div>
                     {own.result && <>
                       <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>${Math.round(own.result.totalMonthlyCost*12).toLocaleString()}/yr annualised</p>
@@ -830,7 +875,7 @@ export default function Dashboard() {
                   <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}
                     style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", marginBottom:14 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:15 }}>
-                      <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.14em" }}>4-PILLAR DIGITAL HEALTH</p>
+                      <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em" }}>4-PILLAR DIGITAL HEALTH</p>
                       <div style={{ display:"flex", gap:7 }}>
                         <button onClick={downloadPDF} disabled={pdfLoading} style={{ fontFamily:"var(--font-mono)", fontSize:7, color:pdfLoading?"var(--muted)":"#10b981", background:pdfLoading?"var(--bg)":"rgba(16,185,129,0.08)", border:`1px solid ${pdfLoading?"var(--border)":"rgba(16,185,129,0.3)"}`, padding:"2px 10px", borderRadius:4, cursor:pdfLoading?"not-allowed":"pointer" }}>{pdfLoading?"GENERATING...":"⬇ PDF REPORT"}</button>
                         <button onClick={()=>setTab("vitals")} style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--accent)", background:"none", border:"1px solid rgba(232,52,26,0.25)", padding:"2px 9px", borderRadius:4, cursor:"pointer" }}>DEEP DIVE →</button>
@@ -1013,7 +1058,7 @@ export default function Dashboard() {
                     { id:"verifying" as const, label:"⏳ Verifying", count:allTasks.filter(t=>t.status==="verifying").length, color:"#f59e0b" },
                     ...Object.entries(PM).map(([id,m])=>({ id:id as Task["pillar"], label:m.label, count:allTasks.filter(t=>t.pillar===id&&t.status==="pending").length, color:m.color }))
                   ]).map(item=>(
-                    <button key={item.id} onClick={()=>setPillarFilter(item.id as BlueprintFilter)} style={{ padding:"4px 12px", borderRadius:20, border:`1px solid ${"color" in item?item.color+"40":"var(--border2)"}`, cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:8, transition:"all 0.15s", background:pillarFilter===item.id?("color" in item?item.color:"var(--accent)"):"none", color:pillarFilter===item.id?"#fff":"var(--muted)" }}>
+                    <button key={item.id} onClick={()=>setPillarFilter(item.id as BlueprintFilter)} style={{ padding:"4px 12px", borderRadius:20, border:`1px solid ${"color" in item?item.color+"40":"var(--border2)"}`, cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, transition:"all 0.15s", background:pillarFilter===item.id?("color" in item?item.color:"var(--accent)"):"none", color:pillarFilter===item.id?"#fff":"var(--muted)" }}>
                       {item.label} ({item.count})
                     </button>
                   ))}
@@ -1087,26 +1132,26 @@ export default function Dashboard() {
                             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, flexWrap:"wrap", gap:6 }}>
                               <div style={{ display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
                                 <span style={{ fontSize:13 }}>{pm.icon}</span>
-                                <h4 style={{ fontFamily:"var(--font-body)", fontSize:15, fontWeight:600, color:t.status==="verifying"?"var(--muted)":"var(--text)", margin:0 }}>{t.title}</h4>
-                                {isQuickWin && <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#10b981", background:"rgba(16,185,129,0.12)", border:"1px solid rgba(16,185,129,0.3)", padding:"2px 8px", borderRadius:10, letterSpacing:"0.1em" }}>⚡ QUICK WIN</span>}
+                                <h4 style={{ fontFamily:"var(--font-body)", fontSize:16, fontWeight:600, color:t.status==="verifying"?"var(--muted)":"var(--text)", margin:0 }}>{t.title}</h4>
+                                {isQuickWin && <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.12)", border:"1px solid rgba(16,185,129,0.3)", padding:"2px 8px", borderRadius:10, letterSpacing:"0.1em" }}>⚡ QUICK WIN</span>}
                               </div>
                               <div style={{ display:"flex", gap:5, alignItems:"center", flexWrap:"wrap" }}>
-                                {t.val>0 && <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#10b981", background:"rgba(16,185,129,0.1)", padding:"2px 8px", borderRadius:4, border:"1px solid rgba(16,185,129,0.2)" }}>~${t.val}k/yr recoverable</span>}
-                                {timeEst[t.id] && <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", background:"var(--bg)", padding:"2px 8px", borderRadius:4, border:"1px solid var(--border)" }}>⏱ {timeEst[t.id]}</span>}
+                                {t.val>0 && <span style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"#10b981", background:"rgba(16,185,129,0.1)", padding:"2px 8px", borderRadius:4, border:"1px solid rgba(16,185,129,0.2)" }}>~${t.val}k/yr recoverable</span>}
+                                {timeEst[t.id] && <span style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", background:"var(--bg)", padding:"2px 8px", borderRadius:4, border:"1px solid var(--border)" }}>⏱ {timeEst[t.id]}</span>}
                               </div>
                             </div>
-                            <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)", lineHeight:1.65, marginBottom:10 }}>{t.desc}</p>
+                            <p style={{ fontFamily:"var(--font-body)", fontSize:14, color:"var(--text2)", lineHeight:1.65, marginBottom:10 }}>{t.desc}</p>
                             {/* Plain English explanation */}
                             {simpleTerms[t.id] && (
                               <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(167,139,250,0.05)", border:"1px solid rgba(167,139,250,0.15)", marginBottom:10 }}>
-                                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#a78bfa", letterSpacing:"0.1em", marginBottom:3 }}>💬 IN PLAIN ENGLISH</p>
-                                <p style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text2)", lineHeight:1.65, margin:0 }}>{simpleTerms[t.id]}</p>
+                                <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"#a78bfa", letterSpacing:"0.1em", marginBottom:3 }}>💬 IN PLAIN ENGLISH</p>
+                                <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)", lineHeight:1.65, margin:0 }}>{simpleTerms[t.id]}</p>
                               </div>
                             )}
                             {whyItMatters[t.id] && (
                               <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(232,52,26,0.05)", border:"1px solid rgba(232,52,26,0.12)", marginBottom:10 }}>
-                                <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.08em", marginBottom:3 }}>📊 WHY THIS MATTERS</p>
-                                <p style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text2)", lineHeight:1.6, margin:0 }}>{whyItMatters[t.id]}</p>
+                                <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.08em", marginBottom:3 }}>📊 WHY THIS MATTERS</p>
+                                <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)", lineHeight:1.6, margin:0 }}>{whyItMatters[t.id]}</p>
                               </div>
                             )}
                             {codeSnippets[t.id] && (
@@ -1125,14 +1170,17 @@ export default function Dashboard() {
                                   { label:`Effort: ${t.effort}`, color:"var(--muted)" },
                                   { label:pm.label, color:pm.color },
                                 ].map(({ label, color })=>(
-                                  <span key={label} style={{ fontFamily:"var(--font-mono)", fontSize:7, padding:"2px 7px", borderRadius:4, background:"var(--bg)", border:"1px solid var(--border)", color }}>{label}</span>
+                                  <span key={label} style={{ fontFamily:"var(--font-mono)", fontSize:9, padding:"2px 7px", borderRadius:4, background:"var(--bg)", border:"1px solid var(--border)", color }}>{label}</span>
                                 ))}
                               </div>
                               {t.status==="pending"
-                                ? <button onClick={()=>markVerifying(t.id)} style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", padding:"4px 12px", borderRadius:6, cursor:"pointer" }}>✓ Mark Deployed →</button>
-                                : <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#f59e0b", display:"flex", alignItems:"center", gap:5 }}>
-                                    <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:2, ease:"linear" }} style={{ width:7, height:7, border:"2px solid #f59e0b", borderTopColor:"transparent", borderRadius:"50%" }}/> Verifying — next scan will confirm
-                                  </span>}
+                                ? <button onClick={()=>markVerifying(t.id)} style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"#10b981", background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", padding:"7px 14px", borderRadius:6, cursor:"pointer" }}>✓ Mark Deployed →</button>
+                                : <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                                    <span style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"#f59e0b", display:"flex", alignItems:"center", gap:5 }}>
+                                      <motion.div animate={{ rotate:360 }} transition={{ repeat:Infinity, duration:2, ease:"linear" }} style={{ width:8, height:8, border:"2px solid #f59e0b", borderTopColor:"transparent", borderRadius:"50%", flexShrink:0 }}/> Awaiting verification
+                                    </span>
+                                    <button onClick={()=>own&&scan(own.id)} style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"#fff", background:"#f59e0b", border:"none", padding:"5px 12px", borderRadius:6, cursor:"pointer", letterSpacing:"0.08em" }}>VERIFY — RESCAN →</button>
+                                  </div>}
                             </div>
                           </div>
                         </div>

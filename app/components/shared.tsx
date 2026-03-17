@@ -33,10 +33,12 @@ const SCAN_LINES = [
 ];
 export function TerminalLoader({ url }: { url: string }) {
   const [lines, setLines] = useState<string[]>([]);
+  const [elapsed, setElapsed] = useState(0);
   useEffect(() => {
     let i = 0;
     const t = setInterval(() => { if (i < SCAN_LINES.length) { setLines(p => [...p, SCAN_LINES[i]]); i++; } else clearInterval(t); }, 280);
-    return () => clearInterval(t);
+    const clock = setInterval(() => setElapsed(s => s + 1), 1000);
+    return () => { clearInterval(t); clearInterval(clock); };
   }, []);
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
@@ -63,14 +65,25 @@ export function TerminalLoader({ url }: { url: string }) {
         <motion.div style={{ height: "100%", background: "var(--accent)", boxShadow: "0 0 10px var(--accent-glow)" }}
           initial={{ width: 0 }} animate={{ width: `${(lines.length / SCAN_LINES.length) * 100}%` }} transition={{ duration: 0.3 }} />
       </div>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
-        style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-        <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }}
-          style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block", flexShrink: 0 }} />
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.1em" }}>
-          Connecting to Google&apos;s servers — this typically takes <strong style={{ color: "var(--text2)" }}>30–60 seconds</strong>. Don&apos;t close this tab.
-        </span>
-      </motion.div>
+      <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+          style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <motion.span animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 2 }}
+            style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block", flexShrink: 0 }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.1em" }}>
+            Connecting to Google&apos;s servers — this typically takes <strong style={{ color: "var(--text2)" }}>30–60 seconds</strong>. Don&apos;t close this tab.
+          </span>
+        </motion.div>
+        {/* Elapsed clock */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+          style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 6, background: "var(--surface)", border: "1px solid var(--border2)", flexShrink: 0 }}>
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+            style={{ width: 8, height: 8, border: "1.5px solid var(--accent)", borderTopColor: "transparent", borderRadius: "50%" }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text2)", letterSpacing: "0.08em" }}>
+            {String(Math.floor(elapsed / 60)).padStart(2, "0")}:{String(elapsed % 60).padStart(2, "0")}
+          </span>
+        </motion.div>
+      </div>
     </motion.div>
   );
 }
