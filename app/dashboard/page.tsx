@@ -497,12 +497,13 @@ export default function Dashboard() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
+      a.style.display = "none";
       const domain = own.url.replace(/https?:\/\//, "").replace(/\/.*/, "");
       a.download = `nexus-audit-${domain}-${new Date().toISOString().split("T")[0]}.pdf`;
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // Delay cleanup — browser needs time to start the download before the URL is revoked
+      setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 30000);
       log("PDF report downloaded.", "good");
     } catch(e) {
       console.error("PDF error:", e);
@@ -1033,31 +1034,48 @@ export default function Dashboard() {
                   <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", marginTop:7 }}>Supports Slack, Make, Zapier, n8n, and any webhook endpoint.</p>
                 </div>
 
-                {/* Notifications — enhanced toggles */}
+                {/* Notifications */}
                 <div style={{ padding:"22px 24px", borderRadius:14, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                  <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:14 }}>🔔 NOTIFICATIONS</p>
-                  {/* Report email */}
-                  <div style={{ marginBottom:14 }}>
-                    <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.1em", marginBottom:6 }}>REPORT EMAIL</p>
-                    <input type="email" value={settings.emailTo||userEmail} onChange={e=>setSettings(s=>({ ...s, emailTo:e.target.value }))} placeholder={userEmail||"you@company.com"} style={{ width:"100%", background:"var(--bg)", border:"1px solid var(--border2)", borderRadius:8, padding:"9px 12px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:11, boxSizing:"border-box" }}/>
-                    <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted2)", marginTop:5 }}>Weekly digests and critical alerts will be sent here.</p>
-                  </div>
-                  {[
-                    { key:"weeklyDigest" as const, label:"Weekly Score Digest", desc:"Summary email every Monday — 4-pillar scores", color:"#10b981" },
-                    { key:"criticalAlerts" as const, label:"Critical Drop Alerts", desc:"Fires webhook automatically when any pillar drops >10 pts", color:"#e8341a" },
-                  ].map(({ key, label, desc, color })=>(
-                    <div key={key} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 0", borderBottom:"1px solid var(--border)" }}>
-                      <div style={{ flex:1, paddingRight:16 }}>
-                        <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", marginBottom:3, fontWeight:500 }}>{label}</p>
-                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)" }}>{desc}</p>
+                  <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:16 }}>🔔 NOTIFICATIONS</p>
+
+                  {/* Weekly Digest — coming soon */}
+                  <div style={{ padding:"14px 16px", borderRadius:10, background:"var(--bg)", border:"1px solid var(--border)", marginBottom:10, opacity:0.7 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                      <div style={{ flex:1, paddingRight:12 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+                          <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500, margin:0 }}>Weekly Score Digest</p>
+                          <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"2px 7px", borderRadius:4, letterSpacing:"0.08em" }}>COMING SOON</span>
+                        </div>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Summary email every Monday — 4-pillar scores</p>
                       </div>
-                      <ToggleSwitch
-                        value={settings[key]}
-                        onChange={v=>setSettings(s=>({ ...s, [key]:v }))}
-                        color={color}
-                      />
+                      <ToggleSwitch value={settings.weeklyDigest} onChange={v=>setSettings(s=>({ ...s, weeklyDigest:v }))} color="#10b981"/>
                     </div>
-                  ))}
+                    {settings.weeklyDigest && (
+                      <div style={{ marginTop:12 }}>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.08em", marginBottom:6 }}>SEND TO</p>
+                        <input type="email" value={settings.emailTo||userEmail} onChange={e=>setSettings(s=>({ ...s, emailTo:e.target.value }))} placeholder={userEmail||"you@company.com"} style={{ width:"100%", background:"var(--surface)", border:"1px solid var(--border2)", borderRadius:7, padding:"8px 11px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:11, boxSizing:"border-box" }}/>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Critical Drop Alerts — live */}
+                  <div style={{ padding:"14px 16px", borderRadius:10, background:settings.criticalAlerts?"rgba(232,52,26,0.04)":"var(--bg)", border:`1px solid ${settings.criticalAlerts?"rgba(232,52,26,0.2)":"var(--border)"}`, transition:"all 0.2s" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                      <div style={{ flex:1, paddingRight:12 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
+                          <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500, margin:0 }}>Critical Drop Alerts</p>
+                          {settings.criticalAlerts && settings.webhookUrl && (
+                            <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.25)", padding:"2px 7px", borderRadius:4, letterSpacing:"0.08em" }}>● LIVE</span>
+                          )}
+                          {settings.criticalAlerts && !settings.webhookUrl && (
+                            <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"2px 7px", borderRadius:4, letterSpacing:"0.08em" }}>SET WEBHOOK</span>
+                          )}
+                        </div>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Auto-fires webhook when any pillar drops &gt;10 pts on rescan</p>
+                      </div>
+                      <ToggleSwitch value={settings.criticalAlerts} onChange={v=>setSettings(s=>({ ...s, criticalAlerts:v }))} color="#e8341a"/>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Scan schedule */}

@@ -85,7 +85,7 @@ function ScoreRing({ score, label }) {
             stroke={color}
             strokeWidth={3.5}
             strokeDasharray={`${fill} ${gap}`}
-            strokeDashoffset={String(offset)}
+            strokeDashoffset={offset}
             strokeLinecap="round"
           />
         </Svg>

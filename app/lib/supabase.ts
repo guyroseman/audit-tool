@@ -29,10 +29,14 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, {
 let _client: ReturnType<typeof createBrowserClient> | null = null;
 function getClient() {
   if (!_client) {
-    _client = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+    if (!url || !key) {
+      // During build/prerender without env vars — return a stub so the build
+      // doesn't crash. Real auth is always client-side.
+      return { auth: { getSession: async () => ({ data: { session: null } }), onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }), signOut: async () => {}, getUser: async () => ({ data: { user: null } }) }, from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: null }) }) }) } ) } as unknown as ReturnType<typeof createBrowserClient>;
+    }
+    _client = createBrowserClient(url, key);
   }
   return _client;
 }
