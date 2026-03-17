@@ -422,10 +422,18 @@ button {
 }
 
 /* ── Dashboard nav responsive ────────────────────────────────────────────── */
-@media (max-width: 600px) {
+@media (max-width: 640px) {
+  /* Hide desktop tab bar + rescan, show hamburger */
+  .dash-tabs-desktop { display: none !important; }
+  .dash-hamburger-area { display: flex !important; }
   /* Hide secondary badges — keep plan badge visible */
   .dash-badge-live { display: none !important; }
   .dash-badge-recovered { display: none !important; }
+}
+
+@media (min-width: 641px) {
+  /* Never show hamburger on desktop */
+  .dash-hamburger-area { display: none !important; }
 }
 
 @media (max-width: 480px) {

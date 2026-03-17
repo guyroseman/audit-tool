@@ -400,6 +400,7 @@ export default function Dashboard() {
   const [pulse, setPulse] = useState<{ time:string; text:string; type:"good"|"bad"|"neutral" }[]>([{ time:"Just now", text:"Secure connection established. Cloud synced.", type:"neutral" }]);
   const [newUrl, setNewUrl] = useState("");
   const [pillarFilter, setPillarFilter] = useState<BlueprintFilter>("all");
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -548,7 +549,7 @@ export default function Dashboard() {
 
       {/* ── Top Nav ── */}
       <nav style={{ borderBottom:"1px solid var(--border)", background:"rgba(8,15,28,0.97)", backdropFilter:"blur(12px)", position:"sticky", top:0, zIndex:100 }}>
-        <div style={{ width:"100%", padding:"0 24px", height:58, display:"flex", alignItems:"center", gap:10, boxSizing:"border-box" }}>
+        <div style={{ width:"100%", padding:"0 16px", height:58, display:"flex", alignItems:"center", gap:8, boxSizing:"border-box" }}>
           <a href="/" style={{ display:"flex", alignItems:"center", gap:7, textDecoration:"none", flexShrink:0 }}>
             <svg width={15} height={15} viewBox="0 0 28 28" fill="none">
               <path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)"/>
@@ -559,7 +560,9 @@ export default function Dashboard() {
           <span className="dash-badge-live" style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.2)", padding:"2px 7px", borderRadius:3, flexShrink:0 }}>● LIVE</span>
           <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:plan==="scale"?"#e8341a":"#a78bfa", background:plan==="scale"?"rgba(232,52,26,0.1)":"rgba(167,139,250,0.1)", border:`1px solid ${plan==="scale"?"rgba(232,52,26,0.25)":"rgba(167,139,250,0.25)"}`, padding:"2px 8px", borderRadius:3, flexShrink:0 }}>{plan.toUpperCase()}</span>
           {totalRecovered>0 && <span className="dash-badge-recovered" style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", padding:"2px 8px", borderRadius:3, flexShrink:0 }}>↑ ${totalRecovered}k RECOVERED</span>}
-          <div style={{ display:"flex", overflowX:"auto", marginLeft:4, flex:1 }} className="hide-scrollbar dash-tabs-scroll">
+
+          {/* Desktop: scrollable tab bar */}
+          <div style={{ display:"flex", overflowX:"auto", marginLeft:4, flex:1 }} className="hide-scrollbar dash-tabs-scroll dash-tabs-desktop">
             {TABS.map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)} style={{ padding:"6px 14px", background:"none", border:"none", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, letterSpacing:"0.1em", color:tab===t.id?"var(--text)":"var(--muted)", borderBottom:`2px solid ${tab===t.id?"var(--accent)":"transparent"}`, transition:"all 0.15s", whiteSpace:"nowrap", position:"relative" }}>
                 {t.label}
@@ -567,11 +570,66 @@ export default function Dashboard() {
               </button>
             ))}
           </div>
-          <div style={{ marginLeft:"auto", flexShrink:0 }}>
+          <div className="dash-tabs-desktop" style={{ marginLeft:"auto", flexShrink:0 }}>
             {own && <button onClick={()=>own&&scan(own.id)} disabled={own?.loading} style={{ fontFamily:"var(--font-mono)", fontSize:10, color:own?.loading?"var(--muted)":"var(--accent)", background:"none", border:`1px solid ${own?.loading?"var(--border)":"rgba(232,52,26,0.3)"}`, padding:"5px 12px", borderRadius:6, cursor:own?.loading?"not-allowed":"pointer", letterSpacing:"0.08em" }}>{own?.loading?"SCANNING...":"↺ RESCAN"}</button>}
+          </div>
+
+          {/* Mobile: current tab label + hamburger */}
+          <div className="dash-hamburger-area" style={{ display:"none", alignItems:"center", gap:8, marginLeft:"auto", flexShrink:0 }}>
+            <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.1em", position:"relative" }}>
+              {TABS.find(t=>t.id===tab)?.label}
+              {tab==="blueprint"&&pendingCount>0 && <span style={{ position:"absolute", top:-2, right:-8, width:5, height:5, borderRadius:"50%", background:"#f59e0b" }}/>}
+            </span>
+            <button onClick={()=>setMenuOpen(o=>!o)}
+              style={{ width:40, height:40, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:5, background:"none", border:"1px solid var(--border2)", borderRadius:8, cursor:"pointer", padding:0, flexShrink:0 }}>
+              {menuOpen ? (
+                <span style={{ fontFamily:"var(--font-mono)", fontSize:16, color:"var(--text)", lineHeight:1 }}>✕</span>
+              ) : (
+                <>
+                  <span style={{ width:18, height:1.5, background:"var(--text)", borderRadius:1, display:"block" }}/>
+                  <span style={{ width:18, height:1.5, background:"var(--text)", borderRadius:1, display:"block" }}/>
+                  <span style={{ width:12, height:1.5, background:"var(--muted)", borderRadius:1, display:"block" }}/>
+                </>
+              )}
+            </button>
           </div>
         </div>
       </nav>
+
+      {/* ── Mobile Menu Overlay ── */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div key="mobile-menu" initial={{ opacity:0, y:-8 }} animate={{ opacity:1, y:0 }} exit={{ opacity:0, y:-8 }} transition={{ duration:0.18 }}
+            style={{ position:"fixed", top:58, left:0, right:0, bottom:0, zIndex:99, background:"rgba(3,7,15,0.97)", backdropFilter:"blur(16px)", display:"flex", flexDirection:"column", padding:"12px 16px 32px" }}>
+            {/* Tabs */}
+            <div style={{ flex:1, display:"flex", flexDirection:"column", gap:4, marginBottom:16 }}>
+              {TABS.map(t=>{
+                const active = tab===t.id;
+                return (
+                  <button key={t.id} onClick={()=>{ setTab(t.id); setMenuOpen(false); }}
+                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"18px 20px", borderRadius:12, background:active?"rgba(232,52,26,0.08)":"var(--surface)", border:`1px solid ${active?"rgba(232,52,26,0.3)":"var(--border)"}`, cursor:"pointer", transition:"all 0.15s", position:"relative" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                      <span style={{ fontSize:16 }}>{ {overview:"📊",vitals:"⚡",blueprint:"📋",matrix:"🎯",settings:"⚙️"}[t.id] }</span>
+                      <span style={{ fontFamily:"var(--font-mono)", fontSize:13, letterSpacing:"0.1em", color:active?"var(--text)":"var(--text2)" }}>{t.label}</span>
+                    </div>
+                    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                      {t.id==="blueprint"&&pendingCount>0 && <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#f59e0b", background:"rgba(245,158,11,0.12)", border:"1px solid rgba(245,158,11,0.3)", padding:"1px 7px", borderRadius:10 }}>{pendingCount} tasks</span>}
+                      {active && <span style={{ color:"var(--accent)", fontSize:14 }}>●</span>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+            {/* Rescan */}
+            {own && (
+              <button onClick={()=>{ scan(own.id); setMenuOpen(false); }} disabled={own?.loading}
+                style={{ width:"100%", padding:"16px", borderRadius:12, background:own?.loading?"var(--surface)":"rgba(232,52,26,0.08)", border:`1px solid ${own?.loading?"var(--border)":"rgba(232,52,26,0.3)"}`, cursor:own?.loading?"not-allowed":"pointer", fontFamily:"var(--font-mono)", fontSize:12, color:own?.loading?"var(--muted)":"var(--accent)", letterSpacing:"0.12em" }}>
+                {own?.loading?"SCANNING...":"↺ RESCAN SITE"}
+              </button>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div style={{ width:"100%", padding:"24px 24px 100px", boxSizing:"border-box" }}>
         <AnimatePresence mode="wait">
