@@ -556,9 +556,9 @@ export default function Dashboard() {
             </svg>
             <span style={{ fontFamily:"var(--font-display)", fontSize:16, color:"var(--text)", letterSpacing:"0.08em" }}>NEXUS</span>
           </a>
-          <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.2)", padding:"2px 7px", borderRadius:3, flexShrink:0 }}>● LIVE</span>
+          <span className="dash-badge-live" style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.2)", padding:"2px 7px", borderRadius:3, flexShrink:0 }}>● LIVE</span>
           <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:plan==="scale"?"#e8341a":"#a78bfa", background:plan==="scale"?"rgba(232,52,26,0.1)":"rgba(167,139,250,0.1)", border:`1px solid ${plan==="scale"?"rgba(232,52,26,0.25)":"rgba(167,139,250,0.25)"}`, padding:"2px 8px", borderRadius:3, flexShrink:0 }}>{plan.toUpperCase()}</span>
-          {totalRecovered>0 && <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", padding:"2px 8px", borderRadius:3, flexShrink:0 }}>↑ ${totalRecovered}k RECOVERED</span>}
+          {totalRecovered>0 && <span className="dash-badge-recovered" style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", padding:"2px 8px", borderRadius:3, flexShrink:0 }}>↑ ${totalRecovered}k RECOVERED</span>}
           <div style={{ display:"flex", overflowX:"auto", marginLeft:4, flex:1 }} className="hide-scrollbar dash-tabs-scroll">
             {TABS.map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)} style={{ padding:"6px 14px", background:"none", border:"none", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, letterSpacing:"0.1em", color:tab===t.id?"var(--text)":"var(--muted)", borderBottom:`2px solid ${tab===t.id?"var(--accent)":"transparent"}`, transition:"all 0.15s", whiteSpace:"nowrap", position:"relative" }}>
@@ -591,7 +591,7 @@ export default function Dashboard() {
                 </motion.div>
               ) : (<>
                 {(own.history?.length??0)>=2 && <ScanDigest history={own.history}/>}
-                <div style={{ display:"grid", gridTemplateColumns:`repeat(${allTasks.length>0?"4":"3"},1fr)`, gap:11, marginBottom:16 }}>
+                <div className="dash-stat-grid-top" style={{ display:"grid", gridTemplateColumns:`repeat(${allTasks.length>0?"4":"3"},1fr)`, gap:11, marginBottom:16 }}>
                   <div style={{ padding:"17px 19px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", display:"flex", alignItems:"center", gap:13, position:"relative" }}>
                     <div style={{ position:"absolute", top:0, right:0, background:own.result?.severity==="critical"?"var(--accent)":own.result?.severity==="warning"?"#f59e0b":"#10b981", color:"#fff", fontFamily:"var(--font-mono)", fontSize:7, padding:"2px 9px", borderBottomLeftRadius:8 }}>{own.result?.severity?.toUpperCase()||"PENDING"}</div>
                     {own.result?<ScoreRing score={own.result.metrics.performanceScore} size={62}/>:(
@@ -641,13 +641,13 @@ export default function Dashboard() {
                         <button onClick={()=>setTab("vitals")} style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--accent)", background:"none", border:"1px solid rgba(232,52,26,0.25)", padding:"2px 9px", borderRadius:4, cursor:"pointer" }}>DEEP DIVE →</button>
                       </div>
                     </div>
-                    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:16 }}>
+                    <div className="pillar-rings" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:16 }}>
                       <ScoreRing score={own.result.metrics.performanceScore} size={66} label="PERFORMANCE"/>
                       <ScoreRing score={own.result.seo?.estimatedSeoScore??0} size={66} label="SEO"/>
                       <ScoreRing score={own.result.accessibility?.estimatedA11yScore??0} size={66} label="ACCESSIBILITY"/>
                       <ScoreRing score={own.result.security?.estimatedBestPracticesScore??0} size={66} label="SECURITY"/>
                     </div>
-                    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, paddingTop:12, borderTop:"1px solid var(--border)" }}>
+                    <div className="dash-4pillar-stats" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, paddingTop:12, borderTop:"1px solid var(--border)" }}>
                       {[
                         { label:"Ad Tax", value:`${own.result.adLossPercent}%`, bad:own.result.adLossPercent>20 },
                         { label:"SEO Reach Lost", value:`${own.result.seo?.seoReachLossPercent??0}%`, bad:(own.result.seo?.seoReachLossPercent??0)>20 },
@@ -932,7 +932,7 @@ export default function Dashboard() {
                   <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,30px)", color:"var(--text)", letterSpacing:"0.05em", marginBottom:4 }}>MARKET MATRIX</h2>
                   <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>4-pillar competitor intelligence. Know where rivals beat you — and where they're exposed.</p>
                 </div>
-                <div style={{ display:"flex", gap:7 }}>
+                <div className="matrix-input-row" style={{ display:"flex", gap:7 }}>
                   <input type="text" value={newUrl} onChange={e=>setNewUrl(e.target.value)} placeholder="https://competitor.com" onKeyDown={e=>{ if(e.key==="Enter"){ addComp(newUrl); setNewUrl(""); }}} disabled={competitors.length>=maxCompetitors} style={{ background:"var(--surface)", border:"1px solid var(--border2)", borderRadius:7, padding:"8px 12px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:10, width:180, opacity:competitors.length>=maxCompetitors?0.5:1 }}/>
                   <button onClick={()=>{ addComp(newUrl); setNewUrl(""); }} disabled={competitors.length>=maxCompetitors||!newUrl} style={{ background:"var(--surface2)", border:"1px solid var(--border2)", color:"var(--text)", padding:"8px 12px", borderRadius:7, cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:9 }}>+ ADD</button>
                 </div>

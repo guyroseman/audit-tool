@@ -35,7 +35,7 @@ export function NavBar({ maxWidth = 860, page }: NavBarProps) {
         <a href="/" style={{ textDecoration: "none" }}><NexusLogo size={20} /></a>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <a href="/subscribe"
+          <a href="/subscribe" className="nav-pricing-link"
             style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: page === "subscribe" ? "#a78bfa" : "var(--muted)", letterSpacing: "0.1em", textDecoration: "none", padding: "6px 11px", borderRadius: 5 }}>
             PRICING
           </a>
@@ -48,7 +48,7 @@ export function NavBar({ maxWidth = 860, page }: NavBarProps) {
           {!loading && user ? (
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
               {/* Plan badge */}
-              <span style={{
+              <span className="nav-plan-badge" style={{
                 fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.12em", padding: "4px 9px", borderRadius: 4,
                 color: plan === "scale" ? "#10b981" : plan === "pulse" ? "#a78bfa" : "var(--muted2)",
                 background: plan === "scale" ? "rgba(16,185,129,0.08)" : plan === "pulse" ? "rgba(167,139,250,0.08)" : "rgba(42,63,88,0.3)",
@@ -67,7 +67,7 @@ export function NavBar({ maxWidth = 860, page }: NavBarProps) {
               }}>DASHBOARD</a>
 
               {/* Account link — shows email prefix, links to /account */}
-              <a href="/account" style={{
+              <a href="/account" className="nav-account-link" style={{
                 fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", background: "none",
                 border: "1px solid var(--border)", padding: "6px 11px", borderRadius: 6,
                 letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: 5,

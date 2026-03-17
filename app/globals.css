@@ -420,3 +420,32 @@ button {
   /* 4-pillar status/score grids: 2×2 instead of 1×4 */
   .funnel-pillar-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
+
+/* ── Dashboard nav responsive ────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  /* Hide secondary badges — keep plan badge visible */
+  .dash-badge-live { display: none !important; }
+  .dash-badge-recovered { display: none !important; }
+}
+
+@media (max-width: 480px) {
+  /* Overview top stat cards: 2-col grid on phones */
+  .dash-stat-grid-top { grid-template-columns: 1fr 1fr !important; }
+  /* 4-pillar stats row at bottom of health card: 2-col */
+  .dash-4pillar-stats { grid-template-columns: 1fr 1fr !important; }
+  /* Matrix competitor add row: stack input+button */
+  .matrix-input-row { flex-direction: column !important; align-items: stretch !important; }
+  .matrix-input-row input { width: 100% !important; }
+}
+
+/* ── Shared NavBar responsive ────────────────────────────────────────────── */
+@media (max-width: 520px) {
+  /* Hide PRICING link and plan badge to give CTA buttons room */
+  .nav-pricing-link { display: none !important; }
+  .nav-plan-badge { display: none !important; }
+}
+
+@media (max-width: 380px) {
+  /* Very small phones: hide account email link, keep only dashboard */
+  .nav-account-link { display: none !important; }
+}
