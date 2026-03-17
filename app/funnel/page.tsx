@@ -334,10 +334,13 @@ function ScanTeaser({ result, onContinue }: { result: AuditResult; onContinue: (
         <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 6, filter: "blur(3px)", userSelect: "none", pointerEvents: "none" }}>
           {[...Array(4)].map((_, i) => <div key={i} style={{ height: 36, background: "var(--surface)", borderRadius: 6, opacity: 0.6 - i * 0.1 }} />)}
         </div>
-        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(3,7,15,0.72)", backdropFilter: "blur(2px)" }}>
-          <span style={{ fontSize: 22, marginBottom: 6 }}>🔐</span>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text2)", letterSpacing: "0.1em" }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(3,7,15,0.75)", backdropFilter: "blur(2px)" }}>
+          <span style={{ fontSize: 22, marginBottom: 8 }}>🔐</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text2)", letterSpacing: "0.1em", marginBottom: 4 }}>
             {result.explanations.length - 1} more findings locked
+          </span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.08em" }}>
+            + full fix blueprint
           </span>
         </div>
       </div>
@@ -611,7 +614,7 @@ function FunnelInner() {
                 {urlError && <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--accent)", marginBottom: 10 }}>⚠ {urlError}</p>}
                 <button onClick={() => urlInput.trim() && runAudit(urlInput)} disabled={!urlInput.trim()} className="btn-primary"
                   style={{ width: "100%", padding: "16px", borderRadius: 10, fontSize: 13, letterSpacing: "0.12em", opacity: !urlInput.trim() ? 0.6 : 1 }}>
-                  RUN FREE 4-PILLAR AUDIT →
+                  SHOW ME MY LEAK NUMBER →
                 </button>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center" }}>
                   Free · No account needed · We&apos;ll ask for your email after the scan to send your report
@@ -639,7 +642,10 @@ function FunnelInner() {
                 <div style={{ textAlign: "center", marginBottom: 18 }}>
                   <div style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 52, height: 52, borderRadius: "50%", background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.25)", fontSize: 24, marginBottom: 12 }}>🔍</div>
                   <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.18em", marginBottom: 8 }}>YOUR REPORT IS READY</p>
-                  <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px,5vw,28px)", color: "var(--text)", letterSpacing: "0.04em", lineHeight: 1.05, marginBottom: 10 }}>WHERE DO WE SEND YOUR BREAKDOWN?</h3>
+                  <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px,5vw,30px)", color: "var(--text)", letterSpacing: "0.04em", lineHeight: 1.05, marginBottom: 6 }}>
+                    YOUR SITE IS LEAKING<br /><span style={{ color: "var(--accent)" }}>${result.totalMonthlyCost.toLocaleString()}/MO</span>
+                  </h3>
+                  <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.55, marginBottom: 10 }}>Enter your email to unlock all {result.explanations.length} findings and the full fix plan.</p>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 18 }}>
                   <div style={{ padding: "10px 12px", background: "var(--bg)", borderRadius: 8, border: "1px solid rgba(232,52,26,0.15)", textAlign: "center" }}>

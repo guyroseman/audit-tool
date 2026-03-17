@@ -254,12 +254,12 @@ function SubscribeInner() {
             PERFORMANCE · SEO · ACCESSIBILITY · SECURITY
           </div>
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(34px,7vw,70px)", lineHeight: 0.94, letterSpacing: "0.02em", marginBottom: 16 }}>
-            KNOW BEFORE<br />
-            <span style={{ color: "#a78bfa", textShadow: "0 0 40px rgba(167,139,250,0.4)" }}>YOUR COMPETITORS</span><br />
-            DO.
+            STOP THE BLEED.<br />
+            <span style={{ color: "#a78bfa", textShadow: "0 0 40px rgba(167,139,250,0.4)" }}>BEFORE IT COSTS</span><br />
+            YOU MORE.
           </h1>
           <p style={{ fontFamily: "var(--font-body)", fontSize: "clamp(14px,2.5vw,16px)", color: "var(--text2)", maxWidth: 480, margin: "0 auto 24px", lineHeight: 1.75 }}>
-            Nexus monitors your full digital health automatically. You get alerted the moment anything changes — before your competitor capitalises on it.
+            Nexus watches your site 24/7 and alerts you the moment your scores drop — so you fix revenue leaks before they compound into thousands lost.
           </p>
           {/* Billing toggle — annual pricing coming soon */}
           <div style={{ display: "inline-flex", alignItems: "center", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: 4, gap: 2 }}>

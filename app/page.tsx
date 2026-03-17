@@ -86,12 +86,12 @@ function UrlInput({ onScan, size = "lg" }: { onScan: (url: string) => void; size
           style={{ borderRadius: 0, padding: isLg ? "18px 26px" : "13px 18px",
             fontSize: isLg ? 13 : 11, letterSpacing: "0.14em", flexShrink: 0,
             borderLeft: "1px solid rgba(232,52,26,0.25)" }}>
-          SCAN FREE →
+          REVEAL MY LEAK →
         </button>
       </div>
       {err && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
         style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", marginTop: 2, letterSpacing: "0.08em" }}>⚠ {err}</motion.p>}
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", textAlign: "center" }}>Free · No account · 60 seconds · Report sent by email after scan</p>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", textAlign: "center" }}>No credit card · No signup required · Full report in 60 seconds</p>
     </div>
   );
 }
@@ -197,7 +197,7 @@ export default function Home() {
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
               style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 100, background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.22)", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.12em", marginBottom: 22 }}>
               <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--accent)" }} className="animate-pulse" />
-              FREE 4-PILLAR REVENUE DIAGNOSTIC
+              FREE REVENUE LEAK AUDIT — 60 SECONDS
             </motion.div>
 
             <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
@@ -209,7 +209,7 @@ export default function Home() {
 
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
               style={{ fontFamily: "var(--font-body)", fontSize: "clamp(14px,2vw,17px)", color: "var(--text2)", maxWidth: 480, lineHeight: 1.75, marginBottom: 32 }}>
-              Nexus runs a 4-pillar scan across Performance, SEO, Accessibility, and Security — then tells you <strong style={{ color: "var(--text)" }}>exactly how many dollars you&rsquo;re losing every month</strong> and precisely how to stop it.
+              Most founders never find out — until they scan. Nexus runs a 60-second deep audit and returns <strong style={{ color: "var(--text)" }}>your exact monthly revenue leak in dollars</strong>, plus a step-by-step fix plan ordered by ROI.
             </motion.p>
 
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }} style={{ maxWidth: 580, marginBottom: 16 }}>
@@ -218,7 +218,7 @@ export default function Home() {
 
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.32 }}
               style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-              {["🔒 No signup required", "⚡ Google Lighthouse API", "📋 Full fix blueprint included"].map(t => (
+              {["🔒 Zero signup", "⚡ Real Google data", "📋 ROI-ordered fix plan", "💸 Dollar impact per finding"].map(t => (
                 <span key={t} style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.05em" }}>{t}</span>
               ))}
             </motion.div>
@@ -263,9 +263,9 @@ export default function Home() {
       {/* ── URGENCY STRIP ── */}
       <div style={{ background: "rgba(232,52,26,0.04)", borderTop: "1px solid rgba(232,52,26,0.12)", borderBottom: "1px solid rgba(232,52,26,0.12)", padding: "14px 20px" }}>
         <div style={{ maxWidth: 1020, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.12em", background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.25)", padding: "3px 8px", borderRadius: 4, flexShrink: 0 }}>⚠ THE BLIND BLEED</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.12em", background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.25)", padding: "3px 8px", borderRadius: 4, flexShrink: 0 }}>⚠ THE HIDDEN DRAIN</span>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
-            Founders pour money into ads, social, and content — then blame their agency. The real culprit: a technical bottleneck you can&rsquo;t see without scanning.
+            Most founders spend $2k–$10k/mo on ads and never fix the slow page that&rsquo;s eating every conversion. The damage is invisible until you measure it.
           </p>
         </div>
       </div>
@@ -291,7 +291,7 @@ export default function Home() {
 
         <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           style={{ textAlign: "center", marginTop: 44 }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.12em", marginBottom: 18 }}>SCAN YOUR SITE FREE — 60 SECONDS</p>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.12em", marginBottom: 18 }}>GET YOUR LEAK NUMBER — FREE, 60 SECONDS</p>
           <div style={{ maxWidth: 560, margin: "0 auto" }}>
             <UrlInput onScan={handleScan} />
           </div>
@@ -405,20 +405,20 @@ export default function Home() {
       <section style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", padding: "clamp(70px,10vw,120px) 20px" }}>
         <motion.div initial={{ opacity: 0, scale: 0.96 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
           style={{ maxWidth: 680, margin: "0 auto", textAlign: "center" }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", marginBottom: 18 }}>FIND YOUR LEAK NUMBER — FREE</p>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", marginBottom: 18 }}>YOUR NUMBER IS WAITING</p>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(38px,7vw,78px)", color: "var(--text)", letterSpacing: "0.02em", lineHeight: 0.95, marginBottom: 20 }}>
-            HOW MUCH IS YOUR<br />
-            <span style={{ color: "var(--accent)", textShadow: "0 0 60px rgba(232,52,26,0.4)" }}>WEBSITE COSTING</span><br />
-            YOU THIS MONTH?
+            WHAT IF YOUR SITE IS<br />
+            <span style={{ color: "var(--accent)", textShadow: "0 0 60px rgba(232,52,26,0.4)" }}>COSTING YOU $3,000</span><br />
+            THIS MONTH?
           </h2>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", lineHeight: 1.72, marginBottom: 36 }}>
-            Free. No signup. No credit card. Full 4-pillar report with dollar impact in 60 seconds.
+            Enter your URL and find out in 60 seconds. No credit card, no signup — just your real leak number and a fix plan that pays for itself.
           </p>
           <div style={{ maxWidth: 580, margin: "0 auto" }}>
             <UrlInput onScan={handleScan} />
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 20, flexWrap: "wrap" }}>
-            {["🔒 SSL Encrypted", "⚡ Real Google Data", "✓ No Signup", "📋 Fix Plan Included"].map(t => (
+            {["🔒 SSL Encrypted", "⚡ Real Google Data", "✓ No Signup", "📋 ROI Fix Plan"].map(t => (
               <span key={t} style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.06em" }}>{t}</span>
             ))}
           </div>

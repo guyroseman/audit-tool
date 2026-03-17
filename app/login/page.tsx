@@ -182,8 +182,8 @@ function LoginInner() {
           </h1>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6 }}>
             {isSignUp
-              ? "Free account to save your audit history."
-              : "Sign in to access your performance dashboard."}
+              ? "Free account — skip the email gate on every scan and track your fixes over time."
+              : "Sign in to access your full audit history and performance dashboard."}
           </p>
         </div>
 
