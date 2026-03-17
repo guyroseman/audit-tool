@@ -80,6 +80,129 @@ function ScoreRing({ score, size=56, label }: { score: number; size?: number; la
   );
 }
 
+// ─── Composite Health Score ───────────────────────────────────────────────────
+function CompositeScore({ result, simpleMode }: { result: AuditResult; simpleMode: boolean }) {
+  const perf = result.metrics.performanceScore;
+  const seo = result.seo?.estimatedSeoScore ?? 0;
+  const a11y = result.accessibility?.estimatedA11yScore ?? 0;
+  const sec = result.security?.estimatedBestPracticesScore ?? 0;
+  const composite = Math.round(perf * 0.35 + seo * 0.30 + a11y * 0.20 + sec * 0.15);
+  const color = scoreColor(composite);
+  const grade = composite >= 90
+    ? { label: "EXCELLENT", desc: "Your website is in great shape — keep it maintained", emoji: "🏆" }
+    : composite >= 75
+    ? { label: "GOOD", desc: "Performing well, but a few issues are costing you revenue", emoji: "✅" }
+    : composite >= 50
+    ? { label: "NEEDS WORK", desc: "Several issues are quietly draining customers and ad spend", emoji: "⚠️" }
+    : { label: "CRITICAL", desc: "Serious problems are costing you customers every single day", emoji: "🚨" };
+  const pillars = [
+    { label: simpleMode ? "Speed" : "PERFORMANCE", score: perf, color: "#e8341a", weight: "35%", simple: "How fast your pages load" },
+    { label: simpleMode ? "Google Rank" : "SEO", score: seo, color: "#f59e0b", weight: "30%", simple: "How visible you are on Google" },
+    { label: simpleMode ? "Everyone Can Use It" : "ACCESSIBILITY", score: a11y, color: "#a78bfa", weight: "20%", simple: "Can all users access your site?" },
+    { label: simpleMode ? "Safety" : "SECURITY", score: sec, color: "#3b82f6", weight: "15%", simple: "Protection from threats" },
+  ];
+  return (
+    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 16, borderRadius: 16, overflow: "hidden", border: `1.5px solid ${color}30`, background: `linear-gradient(135deg, ${color}08 0%, var(--surface) 50%)`, boxShadow: `0 0 80px ${color}08` }}>
+      {/* Header */}
+      <div style={{ padding: "14px 22px", borderBottom: `1px solid ${color}18`, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <svg width={14} height={14} viewBox="0 0 28 28" fill="none"><path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)"/><path d="M14 7L20.93 11V19L14 23L7.07 19V11L14 7Z" fill="#e8341a" opacity="0.7"/></svg>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.18em" }}>NEXUS HEALTH SCORE</span>
+        </div>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>COMPOSITE · 4-PILLAR WEIGHTED</span>
+      </div>
+      {/* Body */}
+      <div style={{ padding: "22px", display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
+        {/* Big score */}
+        <div style={{ textAlign: "center", flexShrink: 0 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(64px,10vw,100px)", color, lineHeight: 1, textShadow: `0 0 60px ${color}50`, letterSpacing: "-0.02em" }}>{composite}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted)", letterSpacing: "0.15em", marginTop: 4 }}>OUT OF 100</div>
+        </div>
+        {/* Grade + leak */}
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 20 }}>{grade.emoji}</span>
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 26, color, letterSpacing: "0.06em", lineHeight: 1 }}>{grade.label}</span>
+          </div>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6, marginBottom: 10 }}>{grade.desc}</p>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "8px 14px", borderRadius: 8, background: "rgba(232,52,26,0.06)", border: "1px solid rgba(232,52,26,0.18)" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block" }} className="animate-pulse"/>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)" }}>Revenue leaking: <strong>${result.totalMonthlyCost.toLocaleString()}/mo</strong></span>
+          </div>
+        </div>
+        {/* 4 sub-pillars */}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {pillars.map(({ label, score, color: c, weight, simple }) => (
+            <div key={label} style={{ textAlign: "center", minWidth: 64 }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 32, color: c, lineHeight: 1 }}>{score}</div>
+              <div style={{ height: 3, background: "var(--border)", borderRadius: 2, margin: "5px 0", overflow: "hidden" }}>
+                <motion.div initial={{ width: 0 }} animate={{ width: `${score}%` }} transition={{ duration: 1.2 }}
+                  style={{ height: "100%", background: c, borderRadius: 2 }}/>
+              </div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--muted)", letterSpacing: "0.06em", marginBottom: 2 }}>{simpleMode ? simple : label}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--muted2)" }}>{weight} weight</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+// ─── Site Screenshot ──────────────────────────────────────────────────────────
+function SiteScreenshot({ url, result }: { url: string; result: AuditResult }) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+  const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
+  const screenshotUrl = `https://image.thum.io/get/width/900/crop/500/${cleanUrl}`;
+  const issues: { label: string; color: string; x: string; y: string }[] = [];
+  if (result.metrics.lcp > 4000) issues.push({ label: "Slow load (LCP)", color: "#e8341a", x: "65%", y: "28%" });
+  if (result.metrics.cls > 0.1) issues.push({ label: "Layout shift", color: "#f59e0b", x: "35%", y: "55%" });
+  if (!result.seo?.hasMeta) issues.push({ label: "Missing meta tag", color: "#f59e0b", x: "50%", y: "6%" });
+  if ((result.security?.vulnerableLibraryCount ?? 0) > 0) issues.push({ label: "Vuln. JS lib", color: "#e8341a", x: "18%", y: "78%" });
+  if (!result.accessibility?.missingAltText === false) issues.push({ label: "Missing alt text", color: "#a78bfa", x: "80%", y: "50%" });
+  const visibleIssues = issues.slice(0, 4);
+  if (errored) return null;
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+      style={{ borderRadius: 13, overflow: "hidden", border: "1px solid var(--border)", marginBottom: 14, background: "var(--surface)" }}>
+      <div style={{ padding: "11px 18px", borderBottom: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10b981", display: "inline-block" }} className="animate-pulse"/>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.14em" }}>LIVE SITE SNAPSHOT</span>
+        </div>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>{cleanUrl.replace(/https?:\/\//, "").substring(0, 44)}</span>
+      </div>
+      <div style={{ position: "relative", overflow: "hidden", maxHeight: 300, minHeight: loaded ? undefined : 180 }}>
+        {!loaded && (
+          <div style={{ height: 180, display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", flexDirection: "column", gap: 8 }}>
+            <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+              style={{ width: 18, height: 18, border: "2px solid var(--accent)", borderTopColor: "transparent", borderRadius: "50%" }}/>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)" }}>Loading snapshot...</span>
+          </div>
+        )}
+        <img src={screenshotUrl} onLoad={() => setLoaded(true)} onError={() => setErrored(true)}
+          style={{ width: "100%", display: loaded ? "block" : "none", filter: "brightness(0.65) saturate(0.8)" }} alt="Site snapshot"/>
+        {loaded && <>
+          <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom, transparent 40%, rgba(3,7,15,0.9) 100%)" }}/>
+          {visibleIssues.map((issue, i) => (
+            <motion.div key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.4 + i * 0.15, type: "spring", stiffness: 260 }}
+              style={{ position: "absolute", left: issue.x, top: issue.y, transform: "translate(-50%,-50%)", zIndex: 2 }}>
+              <div style={{ width: 26, height: 26, borderRadius: "50%", background: issue.color, border: "2px solid rgba(255,255,255,0.9)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: "bold", color: "#fff", boxShadow: `0 0 18px ${issue.color}80, 0 2px 8px rgba(0,0,0,0.5)`, cursor: "default" }}>{i + 1}</div>
+              <div style={{ position: "absolute", top: "calc(100% + 5px)", left: "50%", transform: "translateX(-50%)", background: "rgba(3,7,15,0.92)", border: `1px solid ${issue.color}55`, borderRadius: 5, padding: "3px 8px", whiteSpace: "nowrap", fontFamily: "var(--font-mono)", fontSize: 8, color: issue.color, backdropFilter: "blur(4px)" }}>{issue.label}</div>
+            </motion.div>
+          ))}
+          <div style={{ position: "absolute", bottom: 14, left: 16, right: 16, zIndex: 2 }}>
+            {visibleIssues.length > 0
+              ? <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text2)" }}>{visibleIssues.length} issue{visibleIssues.length > 1 ? "s" : ""} detected on your live site — see Blueprint tab to fix</p>
+              : <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981" }}>✓ No critical visual issues detected on live snapshot</p>}
+          </div>
+        </>}
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Mini Sparkline ───────────────────────────────────────────────────────────
 function Spark({ data, color="#e8341a", w=80, h=28 }: { data: number[]; color?: string; w?: number; h?: number }) {
   if (data.length < 2) return <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)" }}>—</span>;
@@ -397,6 +520,7 @@ export default function Dashboard() {
   const [sites, setSites] = useState<TrackedSite[]>([]);
   const [settings, setSettings] = useState<UserSettings>({ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [simpleMode, setSimpleMode] = useState(false);
   const [pulse, setPulse] = useState<{ time:string; text:string; type:"good"|"bad"|"neutral" }[]>([{ time:"Just now", text:"Secure connection established. Cloud synced.", type:"neutral" }]);
   const [newUrl, setNewUrl] = useState("");
   const [pillarFilter, setPillarFilter] = useState<BlueprintFilter>("all");
@@ -649,6 +773,19 @@ export default function Dashboard() {
                 </motion.div>
               ) : (<>
                 {(own.history?.length??0)>=2 && <ScanDigest history={own.history}/>}
+
+              {/* ── Plain English toggle ── */}
+              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, padding:"9px 14px", borderRadius:9, background:"var(--surface)", border:"1px solid var(--border)", flexWrap:"wrap", gap:8 }}>
+                <div>
+                  <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--text)", letterSpacing:"0.1em" }}>PLAIN ENGLISH MODE</span>
+                  <span style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--muted)", marginLeft:10 }}>{simpleMode ? "Showing simplified labels for non-technical users" : "Showing technical metric names"}</span>
+                </div>
+                <ToggleSwitch value={simpleMode} onChange={setSimpleMode} color="#a78bfa"/>
+              </div>
+
+              {/* ── Composite NEXUS Health Score ── */}
+              {own.result && <CompositeScore result={own.result} simpleMode={simpleMode}/>}
+
                 <div className="dash-stat-grid-top" style={{ display:"grid", gridTemplateColumns:`repeat(${allTasks.length>0?"4":"3"},1fr)`, gap:11, marginBottom:16 }}>
                   <div style={{ padding:"17px 19px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", display:"flex", alignItems:"center", gap:13, position:"relative" }}>
                     <div style={{ position:"absolute", top:0, right:0, background:own.result?.severity==="critical"?"var(--accent)":own.result?.severity==="warning"?"#f59e0b":"#10b981", color:"#fff", fontFamily:"var(--font-mono)", fontSize:7, padding:"2px 9px", borderBottomLeftRadius:8 }}>{own.result?.severity?.toUpperCase()||"PENDING"}</div>
@@ -720,6 +857,9 @@ export default function Dashboard() {
                     </div>
                   </motion.div>
                 )}
+                {/* ── Site Screenshot ── */}
+                {own.result && <SiteScreenshot url={own.url} result={own.result}/>}
+
                 {(own.history?.length??0)>=1 && (
                   <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.12 }}
                     style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", marginBottom:14 }}>
@@ -853,8 +993,11 @@ export default function Dashboard() {
             <motion.div key="blueprint" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:16, flexWrap:"wrap", gap:10 }}>
                 <div>
-                  <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,30px)", color:"var(--text)", letterSpacing:"0.05em", marginBottom:4 }}>DEVELOPER BLUEPRINT</h2>
-                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>4-pillar tasks from your scan, ordered by ROI. Mark deployed to track revenue recovery.</p>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
+                    <svg width={14} height={14} viewBox="0 0 28 28" fill="none"><path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)"/><path d="M14 7L20.93 11V19L14 23L7.07 19V11L14 7Z" fill="#e8341a" opacity="0.7"/></svg>
+                    <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,30px)", color:"var(--text)", letterSpacing:"0.05em" }}>NEXUS BLUEPRINT</h2>
+                  </div>
+                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Issues from your scan, ordered by revenue impact. ⚡ Quick Wins recover money with the least effort.</p>
                 </div>
                 <div style={{ display:"flex", gap:8 }}>
                   <button onClick={()=>{ const text=allTasks.map(t=>`[${t.impact}|${PM[t.pillar].label}] ${t.title}\n${t.desc}`).join("\n\n"); navigator.clipboard.writeText(`NEXUS 4-PILLAR DEV PLAN:\n\n${text}`); alert("Copied!"); }} style={{ fontFamily:"var(--font-mono)", fontSize:9, background:"var(--surface)", color:"var(--text)", border:"1px solid var(--border2)", padding:"7px 12px", borderRadius:7, cursor:"pointer" }}>📋 COPY</button>
@@ -900,6 +1043,18 @@ export default function Dashboard() {
                       lcp:"30–90 min", tbt:"1–3 hrs", cls:"30–60 min", meta:"2–4 hrs", viewport:"5 min",
                       vuln:"30–60 min", headers:"15–30 min", ada:"2–8 hrs", alt:"1–2 hrs", cache:"15–30 min",
                     };
+                    const simpleTerms: Record<string,string> = {
+                      lcp:"Your page takes too long to show anything. Visitors see a blank screen and leave before they even read your headline. This directly costs you ad money.",
+                      tbt:"After the page looks loaded, clicking buttons does nothing for a moment. People think it's broken and close the tab.",
+                      cls:"Elements jump around while loading — visitors accidentally tap the wrong button. Frustrating and bad for sales.",
+                      meta:"When people search Google, your site shows up without a proper description. Fewer people click on your result.",
+                      viewport:"Your site wasn't built to work on phones. Google ranks phone-friendly sites higher, and most of your visitors are on mobile.",
+                      vuln:"Your website uses outdated software with known security holes. Browsers warn visitors 'this site may be unsafe' — that kills conversions.",
+                      headers:"Missing security settings that tell browsers your site is safe. Enterprise clients check for this before buying.",
+                      ada:"Some people using your site with a screen reader or keyboard can't use it properly. This is both a legal risk and lost revenue.",
+                      alt:"Your images have no descriptions. Google can't understand them for search, and screen readers can't describe them to visually impaired users.",
+                      cache:"Every time someone visits, they download everything fresh. Returning visitors should see your site instantly — this wastes their time and your server costs.",
+                    };
                     const whyItMatters: Record<string,string> = {
                       lcp:"Google's Core Web Vital threshold is 2.5s. Every 100ms delay reduces conversions by ~1%. LCP is the single biggest ranking factor in Performance.",
                       tbt:"Total Blocking Time freezes the browser — users think the page is broken and bounce. Direct Google ranking signal since 2021.",
@@ -912,21 +1067,28 @@ export default function Dashboard() {
                       alt:"Alt text is how Google Images indexes your content AND how screen readers describe your site. Both impact SEO reach and accessibility compliance.",
                       cache:"First-time visitors are slow — return visitors should be instant. Cache-Control headers reduce server load and improve repeat-visit LCP by 60–80%.",
                     };
+                    const isQuickWin = t.impact==="High" && t.effort==="Low";
                     return (
                       <motion.div key={t.id} initial={{ opacity:0, y:7 }} animate={{ opacity:1, y:0 }} transition={{ delay:i*0.05 }}
-                        style={{ background:"var(--surface)", borderRadius:13, border:`1px solid ${t.status==="verifying"?"rgba(245,158,11,0.4)":"var(--border)"}`, position:"relative", overflow:"hidden" }}>
-                        <div style={{ position:"absolute", left:0, top:0, bottom:0, width:3, background:pm.color }}/>
+                        style={{ background:"var(--surface)", borderRadius:13, border:`1px solid ${isQuickWin?"rgba(16,185,129,0.3)":t.status==="verifying"?"rgba(245,158,11,0.4)":"var(--border)"}`, position:"relative", overflow:"hidden" }}>
+                        {/* Color accent bar */}
+                        <div style={{ position:"absolute", left:0, top:0, bottom:0, width:3, background:isQuickWin?"#10b981":pm.color }}/>
                         {t.status==="verifying" && <div style={{ position:"absolute", top:0, left:0, right:0, height:2, background:"linear-gradient(90deg,transparent,#f59e0b,transparent)", animation:"shimmer 2s infinite" }}/>}
                         <div style={{ display:"flex", gap:14, padding:"18px 20px 14px 20px" }}>
-                          <button onClick={()=>t.status==="pending"&&markVerifying(t.id)} disabled={t.status!=="pending"}
-                            style={{ width:22, height:22, borderRadius:"50%", border:`2px solid ${t.status==="pending"?"var(--border2)":"#f59e0b"}`, background:t.status==="pending"?"var(--bg)":"rgba(245,158,11,0.12)", display:"flex", alignItems:"center", justifyContent:"center", cursor:t.status==="pending"?"pointer":"default", flexShrink:0, marginTop:1 }}>
-                            {t.status!=="pending" && <span style={{ color:"#f59e0b", fontSize:10 }}>✓</span>}
-                          </button>
+                          {/* Priority number + checkbox */}
+                          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6, flexShrink:0 }}>
+                            <div style={{ fontFamily:"var(--font-display)", fontSize:20, color:`${pm.color}50`, lineHeight:1 }}>#{i+1}</div>
+                            <button onClick={()=>t.status==="pending"&&markVerifying(t.id)} disabled={t.status!=="pending"}
+                              style={{ width:22, height:22, borderRadius:"50%", border:`2px solid ${t.status==="pending"?"var(--border2)":"#f59e0b"}`, background:t.status==="pending"?"var(--bg)":"rgba(245,158,11,0.12)", display:"flex", alignItems:"center", justifyContent:"center", cursor:t.status==="pending"?"pointer":"default" }}>
+                              {t.status!=="pending" && <span style={{ color:"#f59e0b", fontSize:10 }}>✓</span>}
+                            </button>
+                          </div>
                           <div style={{ flex:1, minWidth:0 }}>
                             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6, flexWrap:"wrap", gap:6 }}>
-                              <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                              <div style={{ display:"flex", alignItems:"center", gap:7, flexWrap:"wrap" }}>
                                 <span style={{ fontSize:13 }}>{pm.icon}</span>
                                 <h4 style={{ fontFamily:"var(--font-body)", fontSize:15, fontWeight:600, color:t.status==="verifying"?"var(--muted)":"var(--text)", margin:0 }}>{t.title}</h4>
+                                {isQuickWin && <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#10b981", background:"rgba(16,185,129,0.12)", border:"1px solid rgba(16,185,129,0.3)", padding:"2px 8px", borderRadius:10, letterSpacing:"0.1em" }}>⚡ QUICK WIN</span>}
                               </div>
                               <div style={{ display:"flex", gap:5, alignItems:"center", flexWrap:"wrap" }}>
                                 {t.val>0 && <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#10b981", background:"rgba(16,185,129,0.1)", padding:"2px 8px", borderRadius:4, border:"1px solid rgba(16,185,129,0.2)" }}>~${t.val}k/yr recoverable</span>}
@@ -934,9 +1096,16 @@ export default function Dashboard() {
                               </div>
                             </div>
                             <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)", lineHeight:1.65, marginBottom:10 }}>{t.desc}</p>
+                            {/* Plain English explanation */}
+                            {simpleTerms[t.id] && (
+                              <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(167,139,250,0.05)", border:"1px solid rgba(167,139,250,0.15)", marginBottom:10 }}>
+                                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#a78bfa", letterSpacing:"0.1em", marginBottom:3 }}>💬 IN PLAIN ENGLISH</p>
+                                <p style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text2)", lineHeight:1.65, margin:0 }}>{simpleTerms[t.id]}</p>
+                              </div>
+                            )}
                             {whyItMatters[t.id] && (
                               <div style={{ padding:"9px 12px", borderRadius:8, background:"rgba(232,52,26,0.05)", border:"1px solid rgba(232,52,26,0.12)", marginBottom:10 }}>
-                                <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.08em", marginBottom:3 }}>WHY THIS MATTERS</p>
+                                <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.08em", marginBottom:3 }}>📊 WHY THIS MATTERS</p>
                                 <p style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text2)", lineHeight:1.6, margin:0 }}>{whyItMatters[t.id]}</p>
                               </div>
                             )}
@@ -1081,108 +1250,112 @@ export default function Dashboard() {
           {/* ══════════════ SETTINGS ══════════════ */}
           {tab==="settings" && (
             <motion.div key="settings" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
-              <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,32px)", color:"var(--text)", letterSpacing:"0.05em", marginBottom:24 }}>ACCOUNT SETTINGS</h2>
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gap:13 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:24 }}>
+                <svg width={16} height={16} viewBox="0 0 28 28" fill="none"><path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)"/><path d="M14 7L20.93 11V19L14 23L7.07 19V11L14 7Z" fill="#e8341a" opacity="0.7"/></svg>
+                <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,32px)", color:"var(--text)", letterSpacing:"0.05em" }}>NEXUS SETTINGS</h2>
+                <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted2)", background:"var(--surface)", border:"1px solid var(--border)", padding:"3px 9px", borderRadius:4 }}>{plan.toUpperCase()} PLAN</span>
+              </div>
 
-                {/* Webhook */}
-                <div style={{ padding:"22px 24px", borderRadius:14, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                  <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:9 }}>🔗 DEVELOPER WEBHOOK</p>
-                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)", marginBottom:12, lineHeight:1.6 }}>Push your Blueprint action plan to Slack, Make.com, or Zapier automatically.</p>
-                  <input type="text" value={settings.webhookUrl} onChange={e=>setSettings({ ...settings, webhookUrl:e.target.value })} placeholder="https://hooks.slack.com/services/..." style={{ width:"100%", background:"var(--bg)", border:"1px solid var(--border2)", borderRadius:8, padding:"11px 14px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:12, boxSizing:"border-box" }}/>
-                  <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", marginTop:7 }}>Supports Slack, Make, Zapier, n8n, and any webhook endpoint.</p>
-                </div>
-
-                {/* Notifications */}
-                <div style={{ padding:"22px 24px", borderRadius:14, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                  <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:16 }}>🔔 NOTIFICATIONS</p>
-
-                  {/* Weekly Digest — coming soon */}
-                  <div style={{ padding:"14px 16px", borderRadius:10, background:"var(--bg)", border:"1px solid var(--border)", marginBottom:10, opacity:0.7 }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                      <div style={{ flex:1, paddingRight:12 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
-                          <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500, margin:0 }}>Weekly Score Digest</p>
-                          <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"2px 7px", borderRadius:4, letterSpacing:"0.08em" }}>COMING SOON</span>
-                        </div>
-                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Summary email every Monday — 4-pillar scores</p>
-                      </div>
-                      <ToggleSwitch value={settings.weeklyDigest} onChange={v=>setSettings(s=>({ ...s, weeklyDigest:v }))} color="#10b981"/>
+              {/* ─ Section: Plan ─ */}
+              <div style={{ marginBottom:18 }}>
+                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>YOUR PLAN</p>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap:10 }}>
+                  <div style={{ padding:"18px 22px", borderRadius:13, background:"var(--surface)", border:`1.5px solid ${plan==="scale"?"rgba(232,52,26,0.3)":"rgba(167,139,250,0.3)"}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
+                    <div>
+                      <div style={{ fontFamily:"var(--font-display)", fontSize:28, color:plan==="scale"?"#e8341a":"#a78bfa", lineHeight:1, marginBottom:4 }}>{plan.toUpperCase()}</div>
+                      <div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>{plan==="scale"?"$149/mo · Daily scans · 10 competitors":"$49/mo · Weekly scans · 3 competitors"}</div>
                     </div>
-                    {settings.weeklyDigest && (
-                      <div style={{ marginTop:12 }}>
-                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.08em", marginBottom:6 }}>SEND TO</p>
-                        <input type="email" value={settings.emailTo||userEmail} onChange={e=>setSettings(s=>({ ...s, emailTo:e.target.value }))} placeholder={userEmail||"you@company.com"} style={{ width:"100%", background:"var(--surface)", border:"1px solid var(--border2)", borderRadius:7, padding:"8px 11px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:11, boxSizing:"border-box" }}/>
-                      </div>
-                    )}
+                    {plan==="pulse" && <a href="/subscribe" style={{ padding:"9px 18px", borderRadius:8, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.3)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--accent)", textDecoration:"none", whiteSpace:"nowrap" }}>UPGRADE TO SCALE →</a>}
                   </div>
-
-                  {/* Critical Drop Alerts — live */}
-                  <div style={{ padding:"14px 16px", borderRadius:10, background:settings.criticalAlerts?"rgba(232,52,26,0.04)":"var(--bg)", border:`1px solid ${settings.criticalAlerts?"rgba(232,52,26,0.2)":"var(--border)"}`, transition:"all 0.2s" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
-                      <div style={{ flex:1, paddingRight:12 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:4 }}>
-                          <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500, margin:0 }}>Critical Drop Alerts</p>
-                          {settings.criticalAlerts && settings.webhookUrl && (
-                            <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.25)", padding:"2px 7px", borderRadius:4, letterSpacing:"0.08em" }}>● LIVE</span>
-                          )}
-                          {settings.criticalAlerts && !settings.webhookUrl && (
-                            <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"2px 7px", borderRadius:4, letterSpacing:"0.08em" }}>SET WEBHOOK</span>
-                          )}
-                        </div>
-                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Auto-fires webhook when any pillar drops &gt;10 pts on rescan</p>
-                      </div>
-                      <ToggleSwitch value={settings.criticalAlerts} onChange={v=>setSettings(s=>({ ...s, criticalAlerts:v }))} color="#e8341a"/>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Scan schedule */}
-                <div style={{ padding:"22px 24px", borderRadius:14, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                  <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:9 }}>📡 SCAN SCHEDULE</p>
-                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)", marginBottom:14, lineHeight:1.5 }}>Automated scans run on your plan cadence.</p>
-                  <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  <div style={{ padding:"18px 22px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", display:"flex", flexDirection:"column", gap:8 }}>
                     {[
-                      { label:"Your site", val:plan==="scale"?"Daily":"Weekly", color:plan==="scale"?"#10b981":"#a78bfa" },
-                      { label:"Competitors", val:plan==="scale"?"Daily (10 URLs)":"Weekly (3 URLs)", color:"var(--text2)" },
-                      { label:"Last scan", val:own?.result?new Date(own.result.timestamp).toLocaleDateString("en-GB",{ day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit" }):"Never", color:"var(--muted)" },
-                    ].map(({ label, val, color })=>(
-                      <div key={label} style={{ display:"flex", justifyContent:"space-between", padding:"8px 11px", borderRadius:8, background:"var(--bg)", border:"1px solid var(--border)" }}>
-                        <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>{label}</span>
+                      { label:"Your site scan cadence", val:plan==="scale"?"Daily":"Weekly", color:plan==="scale"?"#10b981":"#a78bfa" },
+                      { label:"Competitor tracking", val:plan==="scale"?"10 URLs":"3 URLs", color:"var(--text2)" },
+                      { label:"Last scan", val:own?.result?new Date(own.result.timestamp).toLocaleDateString("en-GB",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}):"Not yet scanned", color:"var(--muted)" },
+                    ].map(({label,val,color})=>(
+                      <div key={label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 10px", borderRadius:7, background:"var(--bg)", border:"1px solid var(--border)" }}>
+                        <span style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text2)" }}>{label}</span>
                         <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color }}>{val}</span>
                       </div>
                     ))}
                   </div>
-                  {plan==="pulse" && (
-                    <a href="/subscribe" style={{ display:"block", marginTop:12, padding:"9px", borderRadius:8, textAlign:"center", background:"rgba(167,139,250,0.08)", border:"1px solid rgba(167,139,250,0.2)", fontFamily:"var(--font-mono)", fontSize:9, color:"#a78bfa", textDecoration:"none" }}>Upgrade to Scale for daily scans →</a>
-                  )}
                 </div>
+              </div>
 
-                {/* Plan info */}
-                <div style={{ padding:"22px 24px", borderRadius:14, background:"var(--surface)", border:`1px solid ${plan==="scale"?"rgba(232,52,26,0.25)":"rgba(167,139,250,0.25)"}` }}>
-                  <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:9 }}>💳 YOUR PLAN</p>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-                    <span style={{ fontFamily:"var(--font-display)", fontSize:22, color:plan==="scale"?"#e8341a":"#a78bfa" }}>{plan.toUpperCase()}</span>
-                    <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", background:"var(--bg)", padding:"2px 9px", borderRadius:4, border:"1px solid var(--border)" }}>{plan==="scale"?"$149/mo":"$49/mo"}</span>
+              {/* ─ Section: Alerts ─ */}
+              <div style={{ marginBottom:18 }}>
+                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>ALERTS & NOTIFICATIONS</p>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:10 }}>
+
+                  {/* Weekly digest */}
+                  <div style={{ padding:"16px 18px", borderRadius:12, background:"var(--surface)", border:"1px solid var(--border)", opacity:0.75 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                      <div>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+                          <span style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500 }}>Weekly Score Digest</span>
+                          <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"1px 6px", borderRadius:3 }}>COMING SOON</span>
+                        </div>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Monday summary email — all 4 pillar scores</p>
+                      </div>
+                      <ToggleSwitch value={settings.weeklyDigest} onChange={v=>setSettings(s=>({...s,weeklyDigest:v}))} color="#10b981"/>
+                    </div>
+                    {settings.weeklyDigest && (
+                      <div style={{ marginTop:10 }}>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.08em", marginBottom:5 }}>SEND TO EMAIL</p>
+                        <input type="email" value={settings.emailTo||userEmail} onChange={e=>setSettings(s=>({...s,emailTo:e.target.value}))} placeholder={userEmail||"you@company.com"} style={{ width:"100%", background:"var(--bg)", border:"1px solid var(--border2)", borderRadius:7, padding:"8px 11px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:11, boxSizing:"border-box" as const }}/>
+                      </div>
+                    )}
                   </div>
-                  {plan==="pulse" && (
-                    <a href="/subscribe" style={{ display:"block", padding:"10px", borderRadius:8, textAlign:"center", background:"rgba(232,52,26,0.08)", border:"1px solid rgba(232,52,26,0.2)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--accent)", textDecoration:"none", marginBottom:12 }}>Upgrade to Scale — 10 competitors + daily scans →</a>
-                  )}
-                  <div style={{ display:"flex", flexDirection:"column", gap:8, paddingTop:12, borderTop:"1px solid var(--border)" }}>
-                    <a href={`https://nexus-diagnostics.lemonsqueezy.com/billing?prefilled_email=${encodeURIComponent(userEmail)}`} target="_blank" rel="noopener"
-                      style={{ display:"block", padding:"9px", borderRadius:7, textAlign:"center", background:"var(--bg)", border:"1px solid var(--border)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--text2)", textDecoration:"none" }}>
-                      MANAGE BILLING / CANCEL ↗
-                    </a>
-                    <a href="/account" style={{ display:"block", padding:"9px", borderRadius:7, textAlign:"center", background:"var(--bg)", border:"1px solid var(--border)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--text2)", textDecoration:"none" }}>
-                      ACCOUNT SETTINGS →
-                    </a>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                      <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Sign out of this device</p>
-                      <button onClick={async()=>{ await supabase.auth.signOut(); window.location.href="/login"; }} style={{ padding:"8px 16px", borderRadius:7, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.25)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--accent)" }}>LOG OUT</button>
+
+                  {/* Critical drop alerts */}
+                  <div style={{ padding:"16px 18px", borderRadius:12, background:settings.criticalAlerts?"rgba(232,52,26,0.04)":"var(--surface)", border:`1px solid ${settings.criticalAlerts?"rgba(232,52,26,0.2)":"var(--border)"}`, transition:"all 0.2s" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                      <div>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+                          <span style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500 }}>Critical Drop Alerts</span>
+                          {settings.criticalAlerts && settings.webhookUrl && <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.25)", padding:"1px 6px", borderRadius:3 }}>● LIVE</span>}
+                          {settings.criticalAlerts && !settings.webhookUrl && <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"1px 6px", borderRadius:3 }}>SET WEBHOOK BELOW</span>}
+                        </div>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Auto-fires when any pillar drops {">"}10 pts on rescan</p>
+                      </div>
+                      <ToggleSwitch value={settings.criticalAlerts} onChange={v=>setSettings(s=>({...s,criticalAlerts:v}))} color="#e8341a"/>
                     </div>
                   </div>
                 </div>
-
               </div>
+
+              {/* ─ Section: Integrations ─ */}
+              <div style={{ marginBottom:18 }}>
+                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>INTEGRATIONS</p>
+                <div style={{ padding:"18px 22px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", maxWidth:560 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
+                    <span style={{ fontSize:14 }}>🔗</span>
+                    <span style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500 }}>Developer Webhook</span>
+                  </div>
+                  <p style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text2)", marginBottom:11, lineHeight:1.6 }}>Push your Blueprint to Slack, Make.com, Zapier or n8n. Fires automatically on critical drops when enabled above.</p>
+                  <input type="text" value={settings.webhookUrl} onChange={e=>setSettings({...settings,webhookUrl:e.target.value})} placeholder="https://hooks.slack.com/services/..." style={{ width:"100%", background:"var(--bg)", border:"1px solid var(--border2)", borderRadius:8, padding:"11px 14px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:11, boxSizing:"border-box" as const }}/>
+                  <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", marginTop:6 }}>Works with: Slack · Make · Zapier · n8n · any HTTP endpoint</p>
+                </div>
+              </div>
+
+              {/* ─ Section: Account ─ */}
+              <div>
+                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>ACCOUNT</p>
+                <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+                  <a href={`https://nexus-diagnostics.lemonsqueezy.com/billing?prefilled_email=${encodeURIComponent(userEmail)}`} target="_blank" rel="noopener"
+                    style={{ padding:"11px 20px", borderRadius:9, background:"var(--surface)", border:"1px solid var(--border)", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--text2)", textDecoration:"none" }}>
+                    MANAGE BILLING ↗
+                  </a>
+                  <a href="/account" style={{ padding:"11px 20px", borderRadius:9, background:"var(--surface)", border:"1px solid var(--border)", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--text2)", textDecoration:"none" }}>
+                    ACCOUNT PAGE →
+                  </a>
+                  <button onClick={async()=>{ await supabase.auth.signOut(); window.location.href="/login"; }}
+                    style={{ padding:"11px 20px", borderRadius:9, background:"rgba(232,52,26,0.08)", border:"1px solid rgba(232,52,26,0.25)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--accent)" }}>
+                    LOG OUT →
+                  </button>
+                </div>
+              </div>
+
             </motion.div>
           )}
 

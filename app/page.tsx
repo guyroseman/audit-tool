@@ -180,7 +180,7 @@ export default function Home() {
       <NavBar page="home" maxWidth={1280} />
 
       {/* ── HERO ── */}
-      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(60px,10vw,100px) 20px clamp(50px,7vw,80px)" }}>
+      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(60px,10vw,100px) clamp(28px,5vw,80px) clamp(50px,7vw,80px)" }}>
 
         {/* Live ticker bar */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
@@ -201,10 +201,9 @@ export default function Home() {
           </motion.div>
 
           <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
-            style={{ fontFamily: "var(--font-display)", fontSize: "clamp(60px,11vw,120px)", lineHeight: 0.88, letterSpacing: "0.02em", marginBottom: 30 }} className="flicker">
-            YOUR WEBSITE<br />
-            IS <span style={{ color: "var(--accent)", textShadow: "0 0 80px rgba(232,52,26,0.5)" }}>BLEEDING</span><br />
-            MONEY.
+            style={{ fontFamily: "var(--font-display)", fontSize: "clamp(42px,9vw,120px)", lineHeight: 0.9, letterSpacing: "0.02em", marginBottom: 30 }} className="flicker">
+            YOUR WEBSITE IS<br />
+            <span style={{ color: "var(--accent)", textShadow: "0 0 80px rgba(232,52,26,0.5)" }}>BLEEDING MONEY.</span>
           </motion.h1>
 
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
@@ -378,15 +377,47 @@ export default function Home() {
       </section>
 
       {/* ── FOOTER ── */}
-      <footer style={{ borderTop: "1px solid var(--border)", padding: "22px 20px" }}>
-        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--muted)", letterSpacing: "0.1em" }}>NEXUS</span>
-          <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-            {[["PRICING", "/subscribe"], ["DASHBOARD", "/dashboard"], ["FREE AUDIT", "/funnel"], ["PRIVACY", "/legal/privacy"], ["TERMS", "/legal/terms"]].map(([l, h]) => (
-              <a key={l} href={h} style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textDecoration: "none", letterSpacing: "0.08em" }}>{l}</a>
-            ))}
+      <footer style={{ borderTop: "1px solid var(--border)", background: "var(--surface)", padding: "40px clamp(28px,5vw,80px)" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 32, marginBottom: 32 }}>
+            {/* Brand */}
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10 }}>
+                <svg width={22} height={22} viewBox="0 0 28 28" fill="none">
+                  <path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)"/>
+                  <path d="M14 7L20.93 11V19L14 23L7.07 19V11L14 7Z" fill="#e8341a" opacity="0.7"/>
+                </svg>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "var(--text)", letterSpacing: "0.12em" }}>NEXUS</span>
+              </div>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--muted)", maxWidth: 220, lineHeight: 1.6 }}>
+                Revenue leak diagnostic engine. Built for founders who run on real data.
+              </p>
+              <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                {["⚡ Real Google Data", "🔒 SSL Encrypted", "✓ No Signup"].map(t => (
+                  <span key={t} style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", background: "var(--bg)", border: "1px solid var(--border)", padding: "3px 8px", borderRadius: 4 }}>{t}</span>
+                ))}
+              </div>
+            </div>
+            {/* Links */}
+            <div style={{ display: "flex", gap: 48, flexWrap: "wrap" }}>
+              <div>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", letterSpacing: "0.12em", marginBottom: 12 }}>PRODUCT</p>
+                {[["Free Audit", "/funnel"], ["Pricing", "/subscribe"], ["Dashboard", "/dashboard"], ["About", "/about"]].map(([l, h]) => (
+                  <a key={l} href={h} style={{ display: "block", fontFamily: "var(--font-body)", fontSize: 13, color: "var(--muted)", textDecoration: "none", marginBottom: 8, transition: "color 0.15s" }}>{l}</a>
+                ))}
+              </div>
+              <div>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", letterSpacing: "0.12em", marginBottom: 12 }}>LEGAL</p>
+                {[["Privacy Policy", "/legal/privacy"], ["Terms of Service", "/legal/terms"]].map(([l, h]) => (
+                  <a key={l} href={h} style={{ display: "block", fontFamily: "var(--font-body)", fontSize: 13, color: "var(--muted)", textDecoration: "none", marginBottom: 8 }}>{l}</a>
+                ))}
+              </div>
+            </div>
           </div>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>© {new Date().getFullYear()} Nexus Diagnostics</p>
+          <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>© {new Date().getFullYear()} Nexus Diagnostics Ltd. All rights reserved.</p>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>4-Pillar Diagnostic Engine · Powered by Google Lighthouse</p>
+          </div>
         </div>
       </footer>
 
