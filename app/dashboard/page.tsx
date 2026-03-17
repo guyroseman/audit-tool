@@ -139,8 +139,8 @@ function CompositeScore({ result, simpleMode }: { result: AuditResult; simpleMod
                 <motion.div initial={{ width: 0 }} animate={{ width: `${score}%` }} transition={{ duration: 1.2 }}
                   style={{ height: "100%", background: c, borderRadius: 2 }}/>
               </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--muted)", letterSpacing: "0.06em", marginBottom: 2 }}>{simpleMode ? simple : label}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--muted2)" }}>{weight} weight</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.06em", marginBottom: 2 }}>{simpleMode ? simple : label}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>{weight} weight</div>
             </div>
           ))}
         </div>
@@ -525,6 +525,7 @@ export default function Dashboard() {
   const [newUrl, setNewUrl] = useState("");
   const [pillarFilter, setPillarFilter] = useState<BlueprintFilter>("all");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [scoreToast, setScoreToast] = useState<string|null>(null);
   const [scanStartedAt, setScanStartedAt] = useState<number|null>(null);
   const [elapsed, setElapsed] = useState(0);
 
@@ -594,6 +595,12 @@ export default function Dashboard() {
           }
         }
         // ────────────────────────────────────────────────────────────────────
+        const prevOwn = sites.find(s=>s.id===id&&s.isOwn);
+        const prevComposite = prevOwn?.result ? Math.round(prevOwn.result.metrics.performanceScore*0.35+(prevOwn.result.seo?.estimatedSeoScore??0)*0.30+(prevOwn.result.accessibility?.estimatedA11yScore??0)*0.20+(prevOwn.result.security?.estimatedBestPracticesScore??0)*0.15) : null;
+        const newComposite = Math.round(r.metrics.performanceScore*0.35+(r.seo?.estimatedSeoScore??0)*0.30+(r.accessibility?.estimatedA11yScore??0)*0.20+(r.security?.estimatedBestPracticesScore??0)*0.15);
+        if (prevComposite!==null && newComposite>prevComposite) {
+          setTimeout(()=>{ setScoreToast(`🎉 Score improved +${newComposite-prevComposite} pts! Now ${newComposite}/100`); setTimeout(()=>setScoreToast(null),5000); },800);
+        }
         setSites(p=>p.map(s=>{
           if (s.id!==id) return s;
           const prevTasks = s.tasks||[];
@@ -708,7 +715,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text)" }}>
+    <div role="main" style={{ minHeight:"100vh", background:"var(--bg)", color:"var(--text)" }}>
 
       {/* ── Top Nav ── */}
       <nav style={{ borderBottom:"1px solid var(--border)", background:"rgba(8,15,28,0.97)", backdropFilter:"blur(12px)", position:"sticky", top:0, zIndex:100 }}>
@@ -852,20 +859,20 @@ export default function Dashboard() {
                     {own.result && <>
                       <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>${Math.round(own.result.totalMonthlyCost*12).toLocaleString()}/yr annualised</p>
                       <div style={{ marginTop:8, display:"flex", gap:12 }}>
-                        <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>AD WASTE</div><div style={{ fontFamily:"var(--font-display)", fontSize:14, color:"#f59e0b" }}>${own.result.monthlyAdOverspend}/mo</div></div>
-                        <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>SEO LOSS</div><div style={{ fontFamily:"var(--font-display)", fontSize:14, color:"#f59e0b" }}>${own.result.monthlyOrganicLoss}/mo</div></div>
+                        <div><div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>AD WASTE</div><div style={{ fontFamily:"var(--font-display)", fontSize:16, color:"#f59e0b" }}>${own.result.monthlyAdOverspend}/mo</div></div>
+                        <div><div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>SEO LOSS</div><div style={{ fontFamily:"var(--font-display)", fontSize:16, color:"#f59e0b" }}>${own.result.monthlyOrganicLoss}/mo</div></div>
                       </div>
                     </>}
                   </div>
                   {allTasks.length>0 && <RecoveryTracker tasks={allTasks}/>}
                   <div style={{ padding:"17px 19px", borderRadius:13, background:"linear-gradient(180deg,var(--surface) 0%,#030712 100%)", border:"1px solid rgba(16,185,129,0.2)" }}>
-                    <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#10b981", letterSpacing:"0.14em", marginBottom:10, display:"flex", alignItems:"center", gap:5 }}>
+                    <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", letterSpacing:"0.14em", marginBottom:10, display:"flex", alignItems:"center", gap:5 }}>
                       <span style={{ width:5, height:5, borderRadius:"50%", background:"#10b981", boxShadow:"0 0 6px #10b981" }} className="animate-pulse"/> SYSTEM PULSE
                     </p>
                     <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                       {pulse.map((ev,i)=>(
                         <motion.div key={i} initial={{ opacity:0, x:8 }} animate={{ opacity:1, x:0 }} style={{ display:"flex", gap:7 }}>
-                          <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted2)", width:36, flexShrink:0 }}>{ev.time}</span>
+                          <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted2)", width:36, flexShrink:0 }}>{ev.time}</span>
                           <span style={{ fontFamily:"var(--font-body)", fontSize:10, color:ev.type==="good"?"#10b981":ev.type==="bad"?"var(--accent)":"var(--text2)", lineHeight:1.4 }}>{ev.text}</span>
                         </motion.div>
                       ))}
@@ -897,7 +904,7 @@ export default function Dashboard() {
                       ].map(({ label, value, bad })=>(
                         <div key={label} style={{ textAlign:"center" }}>
                           <div style={{ fontFamily:"var(--font-display)", fontSize:16, color:bad?"#e8341a":"#10b981", marginBottom:2 }}>{value}</div>
-                          <div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)", letterSpacing:"0.1em" }}>{label}</div>
+                          <div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.1em" }}>{label}</div>
                         </div>
                       ))}
                     </div>
@@ -910,8 +917,8 @@ export default function Dashboard() {
                   <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.12 }}
                     style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", marginBottom:14 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                      <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.14em" }}>SCORE HISTORY — ALL 4 PILLARS</p>
-                      <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted2)" }}>{own.history?.length??0} SCANS RECORDED</span>
+                      <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em" }}>SCORE HISTORY — ALL 4 PILLARS</p>
+                      <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted2)" }}>{own.history?.length??0} SCANS RECORDED</span>
                     </div>
                     <HistoryChart history={own.history||[]}/>
                   </motion.div>
@@ -946,7 +953,7 @@ export default function Dashboard() {
                   <VitalCard label="PERFORMANCE SCORE" value={own.result.metrics.performanceScore} unit="score" good={90} poor={50} desc="Google Lighthouse composite score (0–100). Directly determines your Ad Quality Score and search ranking position." fix="Address LCP, TBT, and CLS above — they account for ~80% of this score."/>
                 </div>
                 <div style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", marginBottom:13 }}>
-                  <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:13 }}>SEO SIGNAL BREAKDOWN</p>
+                  <p style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:13 }}>SEO SIGNAL BREAKDOWN</p>
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(190px,1fr))", gap:7, marginBottom:13 }}>
                     {[
                       { label:"Meta Description", has:own.result.seo.hasMeta, impact:"~35% CTR increase when present" },
@@ -959,8 +966,8 @@ export default function Dashboard() {
                       <div key={label} style={{ display:"flex", gap:7, padding:"7px 9px", borderRadius:8, background:has?"rgba(16,185,129,0.04)":"rgba(232,52,26,0.04)", border:`1px solid ${has?"rgba(16,185,129,0.14)":"rgba(232,52,26,0.12)"}` }}>
                         <span style={{ fontSize:9, marginTop:1 }}>{has?"✅":"❌"}</span>
                         <div>
-                          <div style={{ fontFamily:"var(--font-mono)", fontSize:8, color:has?"#10b981":"var(--text2)", marginBottom:1 }}>{label}</div>
-                          <div style={{ fontFamily:"var(--font-body)", fontSize:9, color:"var(--muted)" }}>{impact}</div>
+                          <div style={{ fontFamily:"var(--font-mono)", fontSize:10, color:has?"#10b981":"var(--text2)", marginBottom:1 }}>{label}</div>
+                          <div style={{ fontFamily:"var(--font-body)", fontSize:11, color:"var(--muted)" }}>{impact}</div>
                         </div>
                       </div>
                     ))}
@@ -974,7 +981,7 @@ export default function Dashboard() {
                     ].map(({ label, val, color })=>(
                       <div key={label} style={{ textAlign:"center" }}>
                         <div style={{ fontFamily:"var(--font-display)", fontSize:18, color, marginBottom:1 }}>{val}</div>
-                        <div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>{label}</div>
+                        <div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>{label}</div>
                       </div>
                     ))}
                   </div>
@@ -1057,7 +1064,7 @@ export default function Dashboard() {
                   {([
                     { id:"all" as const, label:"All", count:allTasks.filter(t=>t.status==="pending").length },
                     { id:"verifying" as const, label:"⏳ Verifying", count:allTasks.filter(t=>t.status==="verifying").length, color:"#f59e0b" },
-                    ...Object.entries(PM).map(([id,m])=>({ id:id as Task["pillar"], label:m.label, count:allTasks.filter(t=>t.pillar===id&&t.status==="pending").length, color:m.color }))
+                    ...Object.entries(PM).map(([id,m])=>({ id:id as Task["pillar"], label:m.label, count:allTasks.filter(t=>t.pillar===id&&t.status!=="recovered").length, color:m.color }))
                   ]).map(item=>(
                     <button key={item.id} onClick={()=>setPillarFilter(item.id as BlueprintFilter)} style={{ padding:"4px 12px", borderRadius:20, border:`1px solid ${"color" in item?item.color+"40":"var(--border2)"}`, cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, transition:"all 0.15s", background:pillarFilter===item.id?("color" in item?item.color:"var(--accent)"):"none", color:pillarFilter===item.id?"#fff":"var(--muted)" }}>
                       {item.label} ({item.count})
@@ -1208,9 +1215,10 @@ export default function Dashboard() {
                   <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,30px)", color:"var(--text)", letterSpacing:"0.05em", marginBottom:4 }}>MARKET MATRIX</h2>
                   <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>4-pillar competitor intelligence. Know where rivals beat you — and where they're exposed.</p>
                 </div>
-                <div className="matrix-input-row" style={{ display:"flex", gap:7 }}>
+                <div className="matrix-input-row" style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
                   <input type="text" value={newUrl} onChange={e=>setNewUrl(e.target.value)} placeholder="https://competitor.com" onKeyDown={e=>{ if(e.key==="Enter"){ addComp(newUrl); setNewUrl(""); }}} disabled={competitors.length>=maxCompetitors} style={{ background:"var(--surface)", border:"1px solid var(--border2)", borderRadius:7, padding:"8px 12px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:10, width:180, opacity:competitors.length>=maxCompetitors?0.5:1 }}/>
                   <button onClick={()=>{ addComp(newUrl); setNewUrl(""); }} disabled={competitors.length>=maxCompetitors||!newUrl} style={{ background:"var(--surface2)", border:"1px solid var(--border2)", color:"var(--text)", padding:"8px 12px", borderRadius:7, cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:9 }}>+ ADD</button>
+                  {competitors.length>0 && <button onClick={()=>competitors.forEach(c=>scan(c.id,c.url))} style={{ background:"rgba(232,52,26,0.08)", border:"1px solid rgba(232,52,26,0.3)", color:"var(--accent)", padding:"8px 12px", borderRadius:7, cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:9, letterSpacing:"0.08em" }}>↺ SCAN ALL</button>}
                 </div>
               </div>
               {competitors.length===0 ? (
@@ -1232,8 +1240,8 @@ export default function Dashboard() {
                               <div style={{ fontFamily:"var(--font-body)", fontSize:13, fontWeight:600 }}>{c.label}</div>
                               <div style={{ display:"flex", alignItems:"center", gap:5, marginTop:2 }}>
                                 <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)" }}>{c.url}</span>
-                                <button onClick={()=>scan(c.id,c.url)} style={{ background:"none", border:"none", color:"var(--text2)", cursor:"pointer", fontSize:10 }}>↺</button>
-                                <button onClick={()=>removeSite(c.id)} style={{ background:"none", border:"none", color:"var(--accent)", cursor:"pointer", fontSize:11 }}>×</button>
+                                <button onClick={()=>scan(c.id,c.url)} aria-label={`Rescan ${c.label}`} title={`Rescan ${c.label}`} style={{ background:"none", border:"none", color:"var(--text2)", cursor:"pointer", fontSize:10 }}>↺</button>
+                                <button onClick={()=>removeSite(c.id)} aria-label={`Remove ${c.label}`} title={`Remove ${c.label}`} style={{ background:"none", border:"none", color:"var(--accent)", cursor:"pointer", fontSize:11 }}>×</button>
                               </div>
                             </div>
                           </div>
@@ -1274,13 +1282,13 @@ export default function Dashboard() {
                                 return (
                                   <div key={m.label} style={{ padding:"8px 10px", background:"var(--bg)", borderRadius:8, border:`1px solid ${wc}20` }}>
                                     <div style={{ display:"flex", alignItems:"center", gap:4, marginBottom:5 }}>
-                                      <span style={{ fontSize:8 }}>{m.icon}</span>
-                                      <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>{m.label}</span>
+                                      <span style={{ fontSize:10 }}>{m.icon}</span>
+                                      <span style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)" }}>{m.label}</span>
                                     </div>
                                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                                      <div><div style={{ fontFamily:"var(--font-mono)", fontSize:6, color:"var(--muted2)", marginBottom:1 }}>YOU</div><div style={{ fontFamily:"var(--font-display)", fontSize:13, color:wc }}>{dY}</div></div>
-                                      <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)" }}>vs</span>
-                                      <div style={{ textAlign:"right" }}><div style={{ fontFamily:"var(--font-mono)", fontSize:6, color:"var(--muted2)", marginBottom:1 }}>THEM</div><div style={{ fontFamily:"var(--font-display)", fontSize:13, color:"var(--muted)" }}>{dT}</div></div>
+                                      <div><div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted2)", marginBottom:1 }}>YOU</div><div style={{ fontFamily:"var(--font-display)", fontSize:16, color:wc }}>{dY}</div></div>
+                                      <span style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted2)" }}>vs</span>
+                                      <div style={{ textAlign:"right" }}><div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted2)", marginBottom:1 }}>THEM</div><div style={{ fontFamily:"var(--font-display)", fontSize:16, color:"var(--muted)" }}>{dT}</div></div>
                                     </div>
                                   </div>
                                 );
@@ -1307,12 +1315,12 @@ export default function Dashboard() {
 
               {/* ─ Section: Plan ─ */}
               <div style={{ marginBottom:18 }}>
-                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>YOUR PLAN</p>
+                <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>YOUR PLAN</p>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))", gap:10 }}>
                   <div style={{ padding:"18px 22px", borderRadius:13, background:"var(--surface)", border:`1.5px solid ${plan==="scale"?"rgba(232,52,26,0.3)":"rgba(167,139,250,0.3)"}`, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
                     <div>
                       <div style={{ fontFamily:"var(--font-display)", fontSize:28, color:plan==="scale"?"#e8341a":"#a78bfa", lineHeight:1, marginBottom:4 }}>{plan.toUpperCase()}</div>
-                      <div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>{plan==="scale"?"$149/mo · Daily scans · 10 competitors":"$49/mo · Weekly scans · 3 competitors"}</div>
+                      <div style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"var(--muted)" }}>{plan==="scale"?"$149/mo · Daily scans · 10 competitors":"$49/mo · Weekly scans · 3 competitors"}</div>
                     </div>
                     {plan==="pulse" && <a href="/subscribe" style={{ padding:"9px 18px", borderRadius:8, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.3)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--accent)", textDecoration:"none", whiteSpace:"nowrap" }}>UPGRADE TO SCALE →</a>}
                   </div>
@@ -1333,7 +1341,7 @@ export default function Dashboard() {
 
               {/* ─ Section: Alerts ─ */}
               <div style={{ marginBottom:18 }}>
-                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>ALERTS & NOTIFICATIONS</p>
+                <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>ALERTS & NOTIFICATIONS</p>
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:10 }}>
 
                   {/* Weekly digest */}
@@ -1370,12 +1378,26 @@ export default function Dashboard() {
                       <ToggleSwitch value={settings.criticalAlerts} onChange={v=>setSettings(s=>({...s,criticalAlerts:v}))} color="#e8341a"/>
                     </div>
                   </div>
+
+                  {/* SMS alerts — coming soon */}
+                  <div style={{ padding:"16px 18px", borderRadius:12, background:"var(--surface)", border:"1px solid var(--border)", opacity:0.7 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                      <div>
+                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+                          <span style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500 }}>SMS Alerts</span>
+                          <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"1px 6px", borderRadius:3, marginLeft:6, letterSpacing:"0.08em" }}>COMING SOON</span>
+                        </div>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Instant SMS when a critical drop is detected</p>
+                      </div>
+                      <ToggleSwitch value={settings.smsAlerts} onChange={v=>setSettings(s=>({...s,smsAlerts:v}))} color="#f59e0b"/>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* ─ Section: Integrations ─ */}
               <div style={{ marginBottom:18 }}>
-                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>INTEGRATIONS</p>
+                <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>INTEGRATIONS</p>
                 <div style={{ padding:"18px 22px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", maxWidth:560 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:5 }}>
                     <span style={{ fontSize:14 }}>🔗</span>
@@ -1389,7 +1411,7 @@ export default function Dashboard() {
 
               {/* ─ Section: Account ─ */}
               <div>
-                <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>ACCOUNT</p>
+                <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted2)", letterSpacing:"0.16em", marginBottom:10, paddingBottom:6, borderBottom:"1px solid var(--border)" }}>ACCOUNT</p>
                 <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
                   <a href={`https://nexus-diagnostics.lemonsqueezy.com/billing?prefilled_email=${encodeURIComponent(userEmail)}`} target="_blank" rel="noopener"
                     style={{ padding:"11px 20px", borderRadius:9, background:"var(--surface)", border:"1px solid var(--border)", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--text2)", textDecoration:"none" }}>
@@ -1410,6 +1432,18 @@ export default function Dashboard() {
 
         </AnimatePresence>
       </div>
+      {/* ── Score improvement toast ── */}
+      <AnimatePresence>
+        {scoreToast && (
+          <motion.div
+            initial={{ opacity:0, y:60, scale:0.9 }}
+            animate={{ opacity:1, y:0, scale:1 }}
+            exit={{ opacity:0, y:60, scale:0.9 }}
+            style={{ position:"fixed", bottom:80, left:"50%", transform:"translateX(-50%)", zIndex:9999, padding:"14px 24px", borderRadius:12, background:"linear-gradient(135deg,rgba(16,185,129,0.15),rgba(16,185,129,0.08))", border:"1px solid rgba(16,185,129,0.4)", boxShadow:"0 8px 32px rgba(0,0,0,0.4)", backdropFilter:"blur(12px)", whiteSpace:"nowrap" }}>
+            <span style={{ fontFamily:"var(--font-mono)", fontSize:13, color:"#10b981", letterSpacing:"0.08em" }}>{scoreToast}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <style>{`
         @keyframes shimmer { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
         @media (max-width: 640px) {

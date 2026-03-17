@@ -145,7 +145,7 @@ function SubscribeInner() {
               badge: "FOR AGENCIES", badgeColor: "#e8341a", accentColor: "rgba(232,52,26,",
               popular: false, ctaBg: "#e8341a", ctaColor: "#fff", cta: "ACTIVATE SCALE",
               href: process.env.NEXT_PUBLIC_LS_SCALE_URL ?? "/login", guarantee: "Cancel anytime. White-label day 1.",
-              features: ["Everything in Pulse", "Daily scans (vs weekly)", "Track 10 competitor URLs", "White-label PDF reports for clients", "3 team seats included", "WCAG compliance certificates", "Agency resell licence"],
+              features: ["Everything in Pulse", "Daily scans (vs weekly)", "Track 10 competitor URLs", "White-label PDF reports for clients", "3 team seats included*", "WCAG compliance certificates*", "Agency resell licence"],
               locked: [],
             },
           ].map((plan, i) => (
@@ -175,12 +175,19 @@ function SubscribeInner() {
               <div style={{ height: 1, background: `${plan.accentColor}0.15)`, marginBottom: 12 }} />
 
               <div style={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, marginBottom: 14 }}>
-                {plan.features.map(text => (
+                {plan.features.map(text => {
+                  const comingSoon = text.endsWith("*");
+                  const label = comingSoon ? text.slice(0, -1) : text;
+                  return (
                   <div key={text} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "5px 0" }}>
-                    <span style={{ color: "#10b981", fontSize: 12, flexShrink: 0, marginTop: 1 }}>✓</span>
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: text === "Everything in Scout" || text === "Everything in Pulse" ? "var(--muted)" : "var(--text2)", lineHeight: 1.4 }}>{text}</span>
+                    <span style={{ color: comingSoon ? "#f59e0b" : "#10b981", fontSize: 12, flexShrink: 0, marginTop: 1 }}>{comingSoon ? "◷" : "✓"}</span>
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: label === "Everything in Scout" || label === "Everything in Pulse" ? "var(--muted)" : "var(--text2)", lineHeight: 1.4 }}>
+                      {label}
+                      {comingSoon && <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#f59e0b", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", padding: "1px 5px", borderRadius: 3, marginLeft: 6, letterSpacing: "0.08em", verticalAlign: "middle" }}>SOON</span>}
+                    </span>
                   </div>
-                ))}
+                  );
+                })}
                 {plan.locked.map(text => (
                   <div key={text} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "4px 0", opacity: 0.3 }}>
                     <span style={{ fontSize: 10, flexShrink: 0, marginTop: 2 }}>—</span>
