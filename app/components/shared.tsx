@@ -95,9 +95,53 @@ export function ScoreGauge({ score, animated }: { score: number; animated: boole
   );
 }
 
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+function Tooltip({ text }: { text: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+      <button
+        type="button"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={() => setOpen(p => !p)}
+        aria-label="What does this mean?"
+        style={{
+          width: 14, height: 14, borderRadius: "50%",
+          background: "rgba(255,255,255,0.07)", border: "1px solid var(--border2)",
+          color: "var(--muted2)", fontFamily: "var(--font-mono)", fontSize: 8,
+          cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center",
+          lineHeight: 1, padding: 0, flexShrink: 0, marginLeft: 5, verticalAlign: "middle",
+          transition: "all 0.15s",
+        }}>?</button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92, y: 4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: 4 }}
+            transition={{ duration: 0.12 }}
+            style={{
+              position: "absolute", bottom: "calc(100% + 8px)", left: "50%", transform: "translateX(-50%)",
+              zIndex: 500, width: 220, padding: "10px 12px", borderRadius: 8,
+              background: "var(--surface)", border: "1px solid var(--border2)",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+              fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text2)", lineHeight: 1.55,
+              pointerEvents: "none",
+            }}>
+            {text}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
 // ─── Metric Row ───────────────────────────────────────────────────────────────
-export function MetricRow({ label, value, formatted, thresholds, ragequit }: {
-  label: string; value: number; formatted: string; thresholds: [number, number]; ragequit?: string;
+export function MetricRow({ label, value, formatted, thresholds, ragequit, tooltip }: {
+  label: string; value: number; formatted: string; thresholds: [number, number]; ragequit?: string; tooltip?: string;
 }) {
   const s = metricStatus(value, thresholds);
   const c = { ok: "#10b981", warn: "#f59e0b", bad: "#e8341a" }[s];
@@ -107,7 +151,9 @@ export function MetricRow({ label, value, formatted, thresholds, ragequit }: {
     <div style={{ padding: "13px 0", borderBottom: "1px solid var(--border)" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", marginBottom: 6 }}>{label}</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", marginBottom: 6, display: "flex", alignItems: "center" }}>
+            {label}{tooltip && <Tooltip text={tooltip} />}
+          </div>
           <div style={{ height: 2, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
             <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 1, delay: 0.3 }}
               style={{ height: "100%", background: c, boxShadow: `0 0 8px ${c}` }} />
@@ -305,7 +351,7 @@ function FindingBanner({ finding, index }: { finding: AuditFinding; index: numbe
 // ─── Pillar Card (2×2 grid) ───────────────────────────────────────────────────
 function PillarCard({ icon, title, score, stats, delay = 0 }: {
   icon: string; title: string; score: number;
-  stats: { label: string; value: string; alarm?: boolean }[];
+  stats: { label: string; value: string; alarm?: boolean; tooltip?: string }[];
   delay?: number;
 }) {
   const color = scoreColor(score);
@@ -328,7 +374,9 @@ function PillarCard({ icon, title, score, stats, delay = 0 }: {
       </div>
       {stats.map(s => (
         <div key={s.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.07em" }}>{s.label}</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.07em", display: "flex", alignItems: "center" }}>
+            {s.label}{s.tooltip && <Tooltip text={s.tooltip} />}
+          </span>
           <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: s.alarm ? "#e8341a" : color }}>{s.value}</span>
         </div>
       ))}
@@ -447,23 +495,23 @@ export function ResultsPanel({ result, onDiscover }: {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(185px, 1fr))", gap: 10 }}>
           <PillarCard icon="⚡" title="PERFORMANCE" score={metrics.performanceScore} delay={0.15}
             stats={[
-              { label: "Google Ad Tax", value: `${adLossPercent}%`, alarm: adLossPercent > 20 },
-              { label: "Bounce Spike", value: `+${bounceRateIncrease}%`, alarm: bounceRateIncrease > 15 },
+              { label: "Google Ad Tax", value: `${adLossPercent}%`, alarm: adLossPercent > 20, tooltip: "Slow sites cost more per ad click. Google charges higher CPCs (cost per click) to advertisers whose landing pages are slow, directly reducing your ad ROI." },
+              { label: "Bounce Spike", value: `+${bounceRateIncrease}%`, alarm: bounceRateIncrease > 15, tooltip: "Extra visitors who leave without engaging, caused by slow load times. Even a 1-second delay raises bounce rate by ~20%, meaning fewer conversions from the same ad spend." },
             ]} />
           <PillarCard icon="🔍" title="SEO" score={seo?.estimatedSeoScore ?? 0} delay={0.2}
             stats={[
-              { label: "Organic Reach Lost", value: `${seo?.seoReachLossPercent ?? 0}%`, alarm: (seo?.seoReachLossPercent ?? 0) > 20 },
-              { label: "CTR Loss", value: `${seo?.ctrLoss ?? 0}%`, alarm: (seo?.ctrLoss ?? 0) > 10 },
+              { label: "Organic Reach Lost", value: `${seo?.seoReachLossPercent ?? 0}%`, alarm: (seo?.seoReachLossPercent ?? 0) > 20, tooltip: "Estimated share of free Google search traffic you're not receiving due to technical SEO issues — missing meta tags, broken links, slow Core Web Vitals, and crawlability problems." },
+              { label: "CTR Loss", value: `${seo?.ctrLoss ?? 0}%`, alarm: (seo?.ctrLoss ?? 0) > 10, tooltip: "Click-through rate loss from Google Search results. Poor titles, missing descriptions, or low relevance signals make users skip your result and click competitors instead." },
             ]} />
           <PillarCard icon="♿" title="ACCESSIBILITY" score={accessibility?.estimatedA11yScore ?? 0} delay={0.25}
             stats={[
-              { label: "Market Lockout", value: `${accessibility?.estimatedMarketLockout ?? 0}%`, alarm: (accessibility?.estimatedMarketLockout ?? 0) > 10 },
-              { label: "ADA Risk", value: (accessibility?.adaRiskLevel ?? "low").toUpperCase(), alarm: accessibility?.adaRiskLevel === "high" },
+              { label: "Market Lockout", value: `${accessibility?.estimatedMarketLockout ?? 0}%`, alarm: (accessibility?.estimatedMarketLockout ?? 0) > 10, tooltip: "Estimated share of potential customers who cannot use your site due to accessibility barriers — screen reader incompatibility, poor contrast, missing alt text, keyboard navigation failures." },
+              { label: "ADA Risk", value: (accessibility?.adaRiskLevel ?? "low").toUpperCase(), alarm: accessibility?.adaRiskLevel === "high", tooltip: "Legal exposure under the Americans with Disabilities Act. Inaccessible websites can face demand letters and lawsuits — US courts have ruled websites must meet WCAG accessibility standards." },
             ]} />
           <PillarCard icon="🔒" title="SECURITY" score={security?.estimatedBestPracticesScore ?? 0} delay={0.3}
             stats={[
-              { label: "Vuln. Scripts", value: (security?.vulnerableLibraryCount ?? 0) > 0 ? `${security!.vulnerableLibraryCount} detected` : "Clean", alarm: (security?.vulnerableLibraryCount ?? 0) > 0 },
-              { label: "Trust Risk", value: (security?.trustRiskLevel ?? "low").toUpperCase(), alarm: security?.trustRiskLevel === "high" },
+              { label: "Vuln. Scripts", value: (security?.vulnerableLibraryCount ?? 0) > 0 ? `${security!.vulnerableLibraryCount} detected` : "Clean", alarm: (security?.vulnerableLibraryCount ?? 0) > 0, tooltip: "Outdated JavaScript libraries with known security holes. Attackers can exploit these to steal customer data, hijack sessions, or redirect users — harming both your visitors and your SEO trust score." },
+              { label: "Trust Risk", value: (security?.trustRiskLevel ?? "low").toUpperCase(), alarm: security?.trustRiskLevel === "high", tooltip: "Overall visitor trust signal based on HTTPS validity, security headers, and vulnerability exposure. Browsers show warnings for untrusted sites, immediately killing conversions." },
             ]} />
         </div>
       </div>
@@ -526,14 +574,19 @@ export function ResultsPanel({ result, onDiscover }: {
               <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>💭 = what your visitor feels</p>
             </div>
             <MetricRow label="Largest Contentful Paint (LCP)" value={metrics.lcp} formatted={fmtMs(metrics.lcp)} thresholds={[2500, 4000]}
+              tooltip="How long before the biggest visible element (hero image, headline) fully loads. This is what users perceive as 'when the page was ready.' Google wants under 2.5s."
               ragequit={metrics.lcp > 4000 ? `Your users wait ${(metrics.lcp / 1000).toFixed(1)}s to see anything. They assume the site is broken and leave.` : metrics.lcp > 2500 ? `${(metrics.lcp / 1000).toFixed(1)}s to load. Users are already reaching for the back button.` : undefined} />
             <MetricRow label="First Contentful Paint (FCP)" value={metrics.fcp} formatted={fmtMs(metrics.fcp)} thresholds={[1800, 3000]}
+              tooltip="The moment any content (text, image, logo) first appears on a blank screen. A slow FCP makes visitors think the page crashed before it even starts loading."
               ragequit={metrics.fcp > 3000 ? `A blank screen for ${(metrics.fcp / 1000).toFixed(1)}s. Mobile users think the page crashed.` : undefined} />
             <MetricRow label="Total Blocking Time (TBT)" value={metrics.tbt} formatted={fmtMs(metrics.tbt)} thresholds={[200, 600]}
+              tooltip="Total time the page looks loaded but ignores clicks and taps — buttons appear clickable but do nothing. Caused by heavy JavaScript running in the background. Under 200ms is good."
               ragequit={metrics.tbt > 600 ? `${metrics.tbt}ms of completely frozen UI. Buttons do nothing. Users assume it's broken.` : metrics.tbt > 200 ? `${metrics.tbt}ms where the page looks ready but ignores taps.` : undefined} />
             <MetricRow label="Cumulative Layout Shift (CLS)" value={metrics.cls} formatted={metrics.cls.toFixed(3)} thresholds={[0.1, 0.25]}
+              tooltip="Measures how much the page 'jumps around' as it loads — ads appearing and pushing content down, images loading late, buttons shifting position. A high score means users accidentally click the wrong thing."
               ragequit={metrics.cls > 0.25 ? `Layout jumps ${metrics.cls.toFixed(2)} units mid-load. Buttons shift — users hit the wrong thing.` : undefined} />
-            <MetricRow label="Speed Index" value={metrics.speedIndex} formatted={fmtMs(metrics.speedIndex)} thresholds={[3400, 5800]} />
+            <MetricRow label="Speed Index" value={metrics.speedIndex} formatted={fmtMs(metrics.speedIndex)} thresholds={[3400, 5800]}
+              tooltip="How quickly the visible part of the page fills in. Unlike LCP, this measures the whole above-the-fold experience progressively — a low score means users see content appearing fast, not all at once at the end." />
           </motion.div>
         )}
         {activeTab === "all" && (

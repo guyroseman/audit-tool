@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { CookieBanner } from "./components/cookie-banner";
 import { AuthProvider } from "./lib/auth-context";
+import { PageDecorations } from "./components/page-decorations";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://audit-tool-beige.vercel.app"),
@@ -42,11 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <div id="cursor" aria-hidden="true" suppressHydrationWarning />
         <div id="cursor-ring" aria-hidden="true" suppressHydrationWarning />
-        <div className="scanline" aria-hidden="true" />
-        <div className="corner-bracket tl" aria-hidden="true" />
-        <div className="corner-bracket tr" aria-hidden="true" />
-        <div className="corner-bracket bl" aria-hidden="true" />
-        <div className="corner-bracket br" aria-hidden="true" />
+        <PageDecorations />
         <AuthProvider>
         <CookieBanner />
           {children}

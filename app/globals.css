@@ -447,13 +447,23 @@ button {
 }
 
 /* ── Shared NavBar responsive ────────────────────────────────────────────── */
-@media (max-width: 520px) {
-  /* Hide PRICING link and plan badge to give CTA buttons room */
-  .nav-pricing-link { display: none !important; }
+@media (max-width: 600px) {
+  /* Hide centre nav links + plan badge on small phones */
+  .nav-centre-links { display: none !important; }
   .nav-plan-badge { display: none !important; }
 }
 
-@media (max-width: 380px) {
-  /* Very small phones: hide account email link, keep only dashboard */
+@media (max-width: 420px) {
+  /* Very small phones: hide account link, keep only dashboard */
   .nav-account-link { display: none !important; }
+}
+/* ── About page ──────────────────────────────────────────────────────────── */
+.about-story-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+@media (max-width: 700px) {
+  .about-story-grid { grid-template-columns: 1fr; gap: 24px; }
 }

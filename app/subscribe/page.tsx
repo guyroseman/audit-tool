@@ -6,137 +6,6 @@ import { Suspense } from "react";
 import { NavBar } from "../components/nav";
 import { useAuth } from "../lib/auth-context";
 
-// ─── Shared base features (shown on all plans) ────────────────────────────────
-const SCOUT_FEATURES = [
-  { icon: "⚡", text: "1 manual 4-pillar audit per day" },
-  { icon: "📊", text: "Full Performance · SEO · A11y · Security report" },
-  { icon: "💸", text: "Revenue leakage estimate in dollars" },
-  { icon: "🔍", text: "Itemised findings with fix instructions" },
-];
-
-const PULSE_OWN_FEATURES = [
-  { icon: "📡", text: "Weekly automated 4-pillar scans — set and forget" },
-  { icon: "🔍", text: "Track up to 3 competitor URLs side-by-side" },
-  { icon: "📱", text: "Slack alerts the moment any score drops (SMS coming soon)" },
-  { icon: "⚖️", text: "ADA compliance change monitoring — lawsuit prevention" },
-  { icon: "🔒", text: "Vulnerable JS library security alerts" },
-  { icon: "🤖", text: "AI Developer Blueprint — prioritised fix list by ROI" },
-  { icon: "📊", text: "Historical score trend charts" },
-  { icon: "🔔", text: "Make.com & Zapier webhooks" },
-];
-
-const SCALE_OWN_FEATURES = [
-  { icon: "📡", text: "Daily automated 4-pillar scans (vs weekly on Pulse)" },
-  { icon: "🔍", text: "Track up to 10 competitor URLs (vs 3 on Pulse)" },
-  { icon: "📄", text: "White-label PDF reports — send to clients (coming soon)" },
-  { icon: "👥", text: "3 team seats included" },
-  { icon: "⚖️", text: "Full WCAG audit trail & compliance certificates" },
-  { icon: "🔒", text: "Priority security vulnerability alerts" },
-  { icon: "🎯", text: "Dedicated technical support" },
-  { icon: "🏷️", text: "Agency resell licence" },
-];
-
-// ─── Plan config ──────────────────────────────────────────────────────────────
-const PLANS = [
-  {
-    id: "free",
-    name: "SCOUT",
-    tagline: "Diagnose the bleeding. Once a day.",
-    price: 0,
-    badge: "FREE FOREVER",
-    badgeColor: "#4a6080",
-    accentColor: "rgba(74,96,128,",
-    features: SCOUT_FEATURES,
-    inheritedLabel: null,
-    ownLabel: null,
-    locked: [
-      "Automated weekly scans",
-      "Competitor tracking (0 URLs)",
-      "SMS & Slack alerts",
-      "AI Developer Blueprint",
-      "Historical score trends",
-    ],
-    cta: "RUN FREE AUDIT",
-    ctaBg: "var(--surface2)",
-    ctaColor: "var(--text2)",
-    href: "/funnel",
-    popular: false,
-    guarantee: "No credit card · Forever free",
-  },
-  {
-    id: "pulse",
-    name: "PULSE",
-    tagline: "Stop leaking. Start watching. Automatically.",
-    price: 49,
-    badge: "★ BEST VALUE — MOST POPULAR",
-    badgeColor: "#a78bfa",
-    accentColor: "rgba(167,139,250,",
-    inheritedLabel: "EVERYTHING IN SCOUT, PLUS:",
-    ownLabel: null,
-    features: [
-      // Show Scout features first as inherited
-      ...SCOUT_FEATURES.map(f => ({ ...f, inherited: true })),
-      // Then Pulse's own additions
-      ...PULSE_OWN_FEATURES.map(f => ({ ...f, inherited: false })),
-    ],
-    locked: [],
-    cta: "ACTIVATE PULSE",
-    ctaBg: "#a78bfa",
-    ctaColor: "#fff",
-    href: process.env.NEXT_PUBLIC_LS_PULSE_URL ?? "/login",
-    popular: true,
-    guarantee: "7-day money-back guarantee · Cancel anytime",
-  },
-  {
-    id: "scale",
-    name: "SCALE",
-    tagline: "Your clients pay you for this report.",
-    price: 149,
-    badge: "FOR AGENCIES",
-    badgeColor: "#e8341a",
-    accentColor: "rgba(232,52,26,",
-    inheritedLabel: "EVERYTHING IN PULSE, PLUS:",
-    ownLabel: null,
-    features: [
-      // Show Scout + Pulse features as inherited
-      ...SCOUT_FEATURES.map(f => ({ ...f, inherited: true })),
-      ...PULSE_OWN_FEATURES.map(f => ({ ...f, inherited: true })),
-      // Then Scale's own additions
-      ...SCALE_OWN_FEATURES.map(f => ({ ...f, inherited: false })),
-    ],
-    locked: [],
-    cta: "ACTIVATE SCALE",
-    ctaBg: "#e8341a",
-    ctaColor: "#fff",
-    href: process.env.NEXT_PUBLIC_LS_SCALE_URL ?? "/login",
-    popular: false,
-    guarantee: "Cancel anytime · White-label from day 1",
-  },
-];
-
-// ─── Feature comparison table ─────────────────────────────────────────────────
-const COMPARISON = [
-  { label: "Manual audits / day", free: "1", pulse: "Unlimited", scale: "Unlimited" },
-  { label: "Automated weekly scans", free: false, pulse: true, scale: "Daily" },
-  { label: "Competitor URLs tracked", free: "0", pulse: "3", scale: "10" },
-  { label: "SMS + Slack alerts", free: false, pulse: true, scale: true },
-  { label: "AI Developer Blueprint", free: false, pulse: true, scale: true },
-  { label: "Historical score trends", free: false, pulse: true, scale: true },
-  { label: "Make.com / Zapier webhooks", free: false, pulse: true, scale: true },
-  { label: "White-label PDF reports", free: false, pulse: false, scale: true },
-  { label: "Team seats", free: "1", pulse: "1", scale: "3" },
-  { label: "WCAG compliance cert", free: false, pulse: false, scale: true },
-  { label: "Dedicated support", free: false, pulse: false, scale: true },
-  { label: "Agency resell licence", free: false, pulse: false, scale: true },
-];
-
-const TESTIMONIALS = [
-  { name: "James H.", role: "SaaS Founder · Manchester", stat: "$2,400/mo recovered", quote: "Found out my competitor dropped from 81 to 47 overnight. Called 3 of their prospects that week. Pulse paid for itself in 20 minutes." },
-  { name: "Asha P.", role: "E-commerce Director · Sydney", stat: "$12k recovered", quote: "Weekly scan caught a third-party script that added 3.2s to every load. Fixed in a day." },
-  { name: "Marcus T.", role: "Law Firm Partner · Chicago", stat: "$50k lawsuit avoided", quote: "Nexus flagged HIGH ADA risk before a law firm letter did. Fixed in a week, compliance cert on file." },
-  { name: "Tom W.", role: "Agency Owner · London", stat: "12 clients on Scale", quote: "The 4-pillar report goes straight to clients. It's a recurring deliverable that practically sells itself." },
-];
-
 const FAQ = [
   { q: "What's in the free audit?", a: "Every free scan runs the full 4-pillar engine — Performance, SEO, Accessibility, and Security — powered by the Google PageSpeed Insights API. You get the complete report with findings, dollar impact, and exact fixes. No credit card required." },
   { q: "What does Pulse add on top of free?", a: "Pulse automates everything. Weekly re-scans of your site plus up to 3 competitors, with SMS or Slack alerts the moment a score drops. You also get the AI Developer Blueprint — a prioritised 4-pillar task list your dev can execute immediately." },
@@ -146,12 +15,6 @@ const FAQ = [
   { q: "Can I cancel anytime?", a: "Yes. Manage or cancel via the Lemon Squeezy customer portal. No lock-in, no cancellation fees, no questions asked." },
   { q: "Does Scale include white-label reports for clients?", a: "Yes. Scale includes weekly white-label PDF reports you can send directly to clients under your own brand. It's a ready-made recurring deliverable that justifies your retainer." },
 ];
-
-function CellCheck({ value }: { value: string | boolean }) {
-  if (value === true) return <span style={{ color: "#10b981", fontSize: 14 }}>✓</span>;
-  if (value === false) return <span style={{ color: "var(--muted2)", fontSize: 12 }}>—</span>;
-  return <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text2)" }}>{value}</span>;
-}
 
 // ─── Upgrade banner (shown when redirected from dashboard) ───────────────────
 function UpgradeBanner() {
@@ -177,7 +40,7 @@ function SubscribeInner() {
 
   const { user, plan: currentPlan, loading: authLoading } = useAuth();
 
-  function handleCheckout(p: typeof PLANS[0]) {
+  function handleCheckout(p: { id: string; href: string }) {
     if (p.id === "free") { window.location.href = p.href; return; }
 
     const lsUrl = p.href;
@@ -210,7 +73,7 @@ function SubscribeInner() {
     <main style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)", fontFamily: "var(--font-body)", position: "relative" }}>
 
       {/* Shared nav — shows SIGN IN / DASHBOARD / plan badge automatically */}
-      <NavBar page="subscribe" maxWidth={1000} />
+      <NavBar page="subscribe" maxWidth={1280} />
 
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 20px 80px" }}>
 
@@ -247,275 +110,131 @@ function SubscribeInner() {
           </motion.div>
         )}
 
-        {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: "center", marginBottom: 44 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 100, background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.25)", fontFamily: "var(--font-mono)", fontSize: 9, color: "#a78bfa", letterSpacing: "0.14em", marginBottom: 18 }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#a78bfa" }} className="animate-pulse" />
-            PERFORMANCE · SEO · ACCESSIBILITY · SECURITY
-          </div>
-          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(34px,7vw,70px)", lineHeight: 0.94, letterSpacing: "0.02em", marginBottom: 16 }}>
-            STOP THE BLEED.<br />
-            <span style={{ color: "#a78bfa", textShadow: "0 0 40px rgba(167,139,250,0.4)" }}>BEFORE IT COSTS</span><br />
-            YOU MORE.
+        {/* Compact header */}
+        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+          style={{ textAlign: "center", padding: "clamp(28px,5vw,48px) 0 28px" }}>
+          <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px,5vw,52px)", lineHeight: 1, letterSpacing: "0.04em", marginBottom: 10 }}>
+            CHOOSE YOUR <span style={{ color: "#a78bfa" }}>PLAN</span>
           </h1>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: "clamp(14px,2.5vw,16px)", color: "var(--text2)", maxWidth: 480, margin: "0 auto 24px", lineHeight: 1.75 }}>
-            Nexus watches your site 24/7 and alerts you the moment your scores drop — so you fix revenue leaks before they compound into thousands lost.
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", maxWidth: 420, margin: "0 auto" }}>
+            Every plan includes the full 4-pillar audit engine. Paid plans add automation, alerts, and competitor intelligence.
           </p>
-          {/* Billing toggle — annual pricing coming soon */}
-          <div style={{ display: "inline-flex", alignItems: "center", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: 4, gap: 2 }}>
-            <button
-              style={{ padding: "7px 18px", borderRadius: 6, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.08em", cursor: "default", border: "none", background: "#a78bfa", color: "#fff", transition: "all 0.2s" }}>
-              MONTHLY
-            </button>
-            <button disabled
-              style={{ padding: "7px 18px", borderRadius: 6, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.08em", cursor: "not-allowed", border: "none", background: "transparent", color: "var(--muted)", position: "relative", opacity: 0.6 }}>
-              ANNUAL
-              <span style={{ position: "absolute", top: -8, right: -8, fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--muted)", background: "var(--bg)", border: "1px solid var(--border)", padding: "1px 5px", borderRadius: 4, whiteSpace: "nowrap" }}>SOON</span>
-            </button>
-          </div>
         </motion.div>
 
-        {/* ROI proof bar */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="roi-bar" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px,1fr))", gap: 8, marginBottom: 28, padding: "16px 20px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)" }}>
+        {/* Plan cards — compact 3-col */}
+        <div className="plan-cards" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 32, alignItems: "stretch", isolation: "isolate" }}>
           {[
-            { n: "$2,100", label: "avg monthly leak recovered", color: "#e8341a" },
-            { n: "19 hrs", label: "to break even on Pulse plan", color: "#10b981" },
-            { n: "300%", label: "ADA lawsuits up since 2020", color: "#a78bfa" },
-            { n: "43%", label: "SEO reach lost to tech gaps", color: "#f59e0b" },
-          ].map(({ n, label, color }) => (
-            <div key={label} style={{ textAlign: "center", padding: "10px 8px" }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 32, color, letterSpacing: "0.04em", lineHeight: 1, marginBottom: 5 }}>{n}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.08em", lineHeight: 1.5 }}>{label}</div>
-            </div>
-          ))}
-        </motion.div>
+            {
+              id: "free", name: "SCOUT", price: "FREE", tagline: "Diagnose the bleeding. Once a day.",
+              badge: "FREE FOREVER", badgeColor: "#4a6080", accentColor: "rgba(74,96,128,",
+              popular: false, ctaBg: "var(--surface2)", ctaColor: "var(--text2)", cta: "RUN FREE AUDIT",
+              href: "/funnel", guarantee: "No credit card. Forever free.",
+              features: ["1 manual 4-pillar audit per day", "Full Performance, SEO, A11y & Security report", "Dollar impact per finding", "Fix instructions included"],
+              locked: ["Auto scans", "Competitor tracking", "Alerts", "AI Blueprint"],
+            },
+            {
+              id: "pulse", name: "PULSE", price: "$49", tagline: "Set it. Watch it. Fix it automatically.",
+              badge: "★ MOST POPULAR", badgeColor: "#a78bfa", accentColor: "rgba(167,139,250,",
+              popular: true, ctaBg: "#a78bfa", ctaColor: "#fff", cta: "START 7-DAY FREE TRIAL",
+              href: process.env.NEXT_PUBLIC_LS_PULSE_URL ?? "/login", guarantee: "7-day money-back. Cancel anytime.",
+              features: ["Everything in Scout", "Weekly automated 4-pillar scans", "Track 3 competitor URLs", "Slack + SMS score alerts", "ADA compliance monitoring", "AI Developer Blueprint by ROI", "Webhooks for Make.com / Zapier"],
+              locked: [],
+            },
+            {
+              id: "scale", name: "SCALE", price: "$149", tagline: "Your clients pay you for this report.",
+              badge: "FOR AGENCIES", badgeColor: "#e8341a", accentColor: "rgba(232,52,26,",
+              popular: false, ctaBg: "#e8341a", ctaColor: "#fff", cta: "ACTIVATE SCALE",
+              href: process.env.NEXT_PUBLIC_LS_SCALE_URL ?? "/login", guarantee: "Cancel anytime. White-label day 1.",
+              features: ["Everything in Pulse", "Daily scans (vs weekly)", "Track 10 competitor URLs", "White-label PDF reports for clients", "3 team seats included", "WCAG compliance certificates", "Agency resell licence"],
+              locked: [],
+            },
+          ].map((plan, i) => (
+            <motion.div key={plan.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.07 }}
+              style={{ borderRadius: 14, border: plan.popular ? `1.5px solid ${plan.accentColor}0.5)` : `1px solid ${plan.accentColor}0.2)`, background: plan.popular ? `linear-gradient(135deg,${plan.accentColor}0.1),${plan.accentColor}0.04))` : "var(--surface)", padding: "20px 18px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", boxShadow: plan.popular ? `0 0 60px ${plan.accentColor}0.18), 0 16px 48px rgba(0,0,0,0.35)` : "none" }}>
 
-        {/* Plan cards */}
-        <div className="plan-cards" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(270px,1fr))", gap: 14, marginBottom: 52, alignItems: "stretch", isolation: "isolate" }}>
-          {PLANS.map((plan, i) => (
-            <motion.div key={plan.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
-              style={{ borderRadius: 16, border: plan.popular ? `1.5px solid ${plan.accentColor}0.5)` : `1px solid ${plan.accentColor}0.2)`, background: plan.popular ? `linear-gradient(135deg,${plan.accentColor}0.1),${plan.accentColor}0.04))` : "var(--surface)", padding: plan.popular ? "28px 24px" : "22px 20px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", transform: plan.popular ? "scale(1.03)" : "none", boxShadow: plan.popular ? `0 0 80px ${plan.accentColor}0.2), 0 24px 60px rgba(0,0,0,0.4)` : "none" }}>
+              {plan.popular && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${plan.accentColor}1), transparent)` }} />}
 
-              {/* Popular glow line */}
-              {plan.popular && (
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, transparent, ${plan.accentColor}1), transparent)` }} />
-              )}
-
-              <div style={{ display: "inline-flex", alignSelf: "flex-start", marginBottom: 14, padding: "3px 10px", borderRadius: 4, background: `${plan.accentColor}0.14)`, border: `1px solid ${plan.accentColor}0.32)` }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: plan.badgeColor, letterSpacing: "0.1em" }}>{plan.badge}</span>
+              <div style={{ display: "inline-flex", alignSelf: "flex-start", marginBottom: 10, padding: "2px 8px", borderRadius: 4, background: `${plan.accentColor}0.12)`, border: `1px solid ${plan.accentColor}0.3)` }}>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: plan.badgeColor, letterSpacing: "0.1em" }}>{plan.badge}</span>
               </div>
 
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--text)", letterSpacing: "0.08em", marginBottom: 4 }}>{plan.name}</div>
-              <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--muted)", marginBottom: 14, lineHeight: 1.5 }}>{plan.tagline}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--text)", letterSpacing: "0.06em", marginBottom: 2 }}>{plan.name}</div>
+              <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--muted)", marginBottom: 10, lineHeight: 1.4 }}>{plan.tagline}</div>
 
-              <div style={{ display: "flex", alignItems: "flex-end", gap: 5, marginBottom: plan.id === "pulse" ? 8 : 16 }}>
-                {plan.price === 0
-                  ? <span style={{ fontFamily: "var(--font-display)", fontSize: 46, color: plan.badgeColor, lineHeight: 1 }}>FREE</span>
-                  : <>
-                      <span style={{ fontFamily: "var(--font-display)", fontSize: 46, color: plan.badgeColor, lineHeight: 1 }}>
-                        ${plan.price}
-                      </span>
-                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", marginBottom: 8 }}>/mo</span>
-                    </>
-                }
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 4, marginBottom: 12 }}>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: 40, color: plan.badgeColor, lineHeight: 1 }}>{plan.price}</span>
+                {plan.price !== "FREE" && <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", marginBottom: 7 }}>/mo</span>}
               </div>
 
-              {/* ROI framing for PULSE */}
               {plan.id === "pulse" && (
-                <div style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(16,185,129,0.07)", border: "1px solid rgba(16,185,129,0.2)", marginBottom: 14 }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", letterSpacing: "0.1em" }}>
-                    💡 AVG USER RECOVERS $2,100/MO — PAYS FOR ITSELF IN 19 HOURS
-                  </span>
+                <div style={{ padding: "6px 10px", borderRadius: 6, background: "rgba(16,185,129,0.07)", border: "1px solid rgba(16,185,129,0.2)", marginBottom: 10 }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#10b981", letterSpacing: "0.08em" }}>Avg user recovers $2,100/mo. Pays back in 19 hours.</span>
                 </div>
               )}
 
-              <div style={{ height: 1, background: `${plan.accentColor}0.15)`, marginBottom: 16 }} />
+              <div style={{ height: 1, background: `${plan.accentColor}0.15)`, marginBottom: 12 }} />
 
-              {/* Feature list — inherited features shown lighter, new features highlighted */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 0, flex: 1, marginBottom: 18 }}>
-
-                {/* For PULSE and SCALE: show "Everything in X, plus:" divider */}
-                {plan.inheritedLabel && (() => {
-                  const inherited = (plan.features as Array<{icon:string;text:string;inherited?:boolean}>).filter(f => f.inherited);
-                  const own = (plan.features as Array<{icon:string;text:string;inherited?:boolean}>).filter(f => !f.inherited);
-                  return (
-                    <>
-                      {/* Inherited features */}
-                      {inherited.map(({ icon, text }) => (
-                        <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "6px 0", opacity: 0.6 }}>
-                          <span style={{ fontSize: 12, flexShrink: 0 }}>✓</span>
-                          <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--muted)", lineHeight: 1.4 }}>{text}</span>
-                        </div>
-                      ))}
-                      {/* Divider */}
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "10px 0 8px" }}>
-                        <div style={{ flex: 1, height: 1, background: `${plan.accentColor}0.25)` }} />
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: plan.badgeColor, letterSpacing: "0.12em", whiteSpace: "nowrap" }}>
-                          {plan.inheritedLabel}
-                        </span>
-                        <div style={{ flex: 1, height: 1, background: `${plan.accentColor}0.25)` }} />
-                      </div>
-                      {/* Own (new) features */}
-                      {own.map(({ icon, text }) => (
-                        <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "7px 0" }}>
-                          <span style={{ fontSize: 13, flexShrink: 0 }}>{icon}</span>
-                          <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.45 }}>{text}</span>
-                        </div>
-                      ))}
-                    </>
-                  );
-                })()}
-
-                {/* For SCOUT: plain features + locked items */}
-                {!plan.inheritedLabel && (
-                  <>
-                    {(plan.features as Array<{icon:string;text:string}>).map(({ icon, text }) => (
-                      <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "7px 0" }}>
-                        <span style={{ fontSize: 13, flexShrink: 0 }}>{icon}</span>
-                        <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.45 }}>{text}</span>
-                      </div>
-                    ))}
-                    {plan.locked && plan.locked.length > 0 && (
-                      <>
-                        <div style={{ height: 1, background: "rgba(74,96,128,0.2)", margin: "8px 0" }} />
-                        {plan.locked.map(text => (
-                          <div key={text} style={{ display: "flex", gap: 9, alignItems: "flex-start", padding: "6px 0", opacity: 0.32 }}>
-                            <span style={{ fontSize: 12, flexShrink: 0 }}>🔒</span>
-                            <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--muted)", lineHeight: 1.4, textDecoration: "line-through" }}>{text}</span>
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </>
-                )}
+              <div style={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, marginBottom: 14 }}>
+                {plan.features.map(text => (
+                  <div key={text} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "5px 0" }}>
+                    <span style={{ color: "#10b981", fontSize: 12, flexShrink: 0, marginTop: 1 }}>✓</span>
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: text === "Everything in Scout" || text === "Everything in Pulse" ? "var(--muted)" : "var(--text2)", lineHeight: 1.4 }}>{text}</span>
+                  </div>
+                ))}
+                {plan.locked.map(text => (
+                  <div key={text} style={{ display: "flex", gap: 8, alignItems: "flex-start", padding: "4px 0", opacity: 0.3 }}>
+                    <span style={{ fontSize: 10, flexShrink: 0, marginTop: 2 }}>—</span>
+                    <span style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--muted)", lineHeight: 1.4, textDecoration: "line-through" }}>{text}</span>
+                  </div>
+                ))}
               </div>
 
               <motion.button onClick={() => handleCheckout(plan)} whileTap={{ scale: 0.98 }}
-                style={{ width: "100%", padding: "15px", borderRadius: 10, background: plan.ctaBg, color: plan.ctaColor, fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.12em", border: "none", cursor: "pointer", boxShadow: plan.popular ? "0 0 28px rgba(167,139,250,0.4)" : "none", marginBottom: 10, display: "block", position: "relative", zIndex: 1 }}>
+                style={{ width: "100%", padding: "13px", borderRadius: 9, background: plan.ctaBg, color: plan.ctaColor, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.1em", border: "none", cursor: "pointer", boxShadow: plan.popular ? "0 0 24px rgba(167,139,250,0.4)" : "none", marginBottom: 8, position: "relative", zIndex: 1 }}>
                 {plan.cta} →
               </motion.button>
-              <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center" }}>{plan.guarantee}</p>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", textAlign: "center" }}>{plan.guarantee}</p>
             </motion.div>
           ))}
         </div>
 
-        {/* Feature comparison toggle */}
-        <div style={{ marginBottom: 52 }}>
+        {/* FAQ — collapsed by default */}
+        <div style={{ maxWidth: 680, margin: "0 auto 32px" }}>
           <button onClick={() => setShowTable(p => !p)}
-            style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 auto 20px", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text2)", letterSpacing: "0.1em" }}>
+            style={{ display: "flex", alignItems: "center", gap: 8, margin: "0 auto 0", background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.1em", padding: "8px 0" }}>
             <motion.span animate={{ rotate: showTable ? 180 : 0 }} style={{ display: "inline-block" }}>▼</motion.span>
-            {showTable ? "HIDE" : "SHOW"} FULL FEATURE COMPARISON
+            {showTable ? "HIDE" : "SHOW"} FREQUENTLY ASKED QUESTIONS
           </button>
           <AnimatePresence>
             {showTable && (
-              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} style={{ overflow: "hidden" }}>
-                <div className="feat-table-scroll" style={{ borderRadius: 14, border: "1px solid var(--border)", overflow: "hidden" }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 100px 100px 100px", background: "var(--surface2)", padding: "12px 16px", borderBottom: "1px solid var(--border)" }}>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.1em" }}>FEATURE</span>
-                    {["SCOUT", "PULSE", "SCALE"].map((n, i) => (
-                      <span key={n} style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: ["var(--muted)", "#a78bfa", "#e8341a"][i], letterSpacing: "0.1em", textAlign: "center" }}>{n}</span>
-                    ))}
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} style={{ overflow: "hidden", marginTop: 12 }}>
+                {FAQ.map((f, i) => (
+                  <div key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                    <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                      style={{ width: "100%", padding: "13px 0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", textAlign: "left", minHeight: 50 }}>
+                      <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text)", fontWeight: 500, paddingRight: 14, lineHeight: 1.4 }}>{f.q}</span>
+                      <motion.span animate={{ rotate: openFaq === i ? 180 : 0 }} style={{ color: "var(--muted)", fontSize: 11, flexShrink: 0 }}>▼</motion.span>
+                    </button>
+                    <AnimatePresence>
+                      {openFaq === i && (
+                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} style={{ overflow: "hidden" }}>
+                          <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.7, paddingBottom: 14 }}>{f.a}</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
-                  {COMPARISON.map((row, i) => (
-                    <div key={row.label} style={{ display: "grid", gridTemplateColumns: "1fr 100px 100px 100px", padding: "11px 16px", borderBottom: i < COMPARISON.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "transparent" : "rgba(14,30,53,0.3)" }}>
-                      <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)" }}>{row.label}</span>
-                      <div style={{ textAlign: "center" }}><CellCheck value={row.free} /></div>
-                      <div style={{ textAlign: "center" }}><CellCheck value={row.pulse} /></div>
-                      <div style={{ textAlign: "center" }}><CellCheck value={row.scale} /></div>
-                    </div>
-                  ))}
-                </div>
+                ))}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* What we audit — 4 pillars */}
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ marginBottom: 52 }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", textAlign: "center", marginBottom: 10 }}>WHAT WE AUDIT</p>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", textAlign: "center", maxWidth: 440, margin: "0 auto 26px", lineHeight: 1.65 }}>
-            Every scan checks all 4 pillars and converts raw data into plain-English dollar impact.
-          </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 12 }}>
-            {[
-              { icon: "⚡", name: "Performance", color: "#e8341a", checks: "LCP, TBT, CLS, FCP, Speed Index", impact: "Google Ads quality score penalty & bounce-rate spike" },
-              { icon: "🔍", name: "SEO", color: "#f59e0b", checks: "Crawlability, meta tags, viewport, mobile, structured data", impact: "Organic reach loss % and CTR drop from missing signals" },
-              { icon: "♿", name: "Accessibility", color: "#a78bfa", checks: "WCAG 2.1 AA — alt text, contrast, ARIA labels, form labels", impact: "ADA lawsuit risk level (High/Med/Low) and market lockout %" },
-              { icon: "🔒", name: "Security", color: "#22d3ee", checks: "Vulnerable JS libraries, HTTPS config, security headers", impact: "Browser trust warnings → checkout abandonment" },
-            ].map(p => (
-              <div key={p.name} style={{ padding: "18px", borderRadius: 12, background: "var(--surface)", border: `1px solid ${p.color}20`, borderTop: `2px solid ${p.color}` }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-                  <span style={{ fontSize: 18 }}>{p.icon}</span>
-                  <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--text)", letterSpacing: "0.06em" }}>{p.name}</span>
-                </div>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.08em", marginBottom: 4 }}>CHECKS</p>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text2)", lineHeight: 1.55, marginBottom: 10 }}>{p.checks}</p>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: p.color, letterSpacing: "0.08em", marginBottom: 4 }}>BUSINESS IMPACT</p>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text2)", lineHeight: 1.55 }}>{p.impact}</p>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Testimonials */}
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ marginBottom: 52 }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", textAlign: "center", marginBottom: 24 }}>WHAT CUSTOMERS SAY</p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(210px,1fr))", gap: 12 }}>
-            {TESTIMONIALS.map(t => (
-              <div key={t.name} style={{ padding: "18px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--border)" }}>
-                <div style={{ display: "inline-flex", padding: "3px 10px", borderRadius: 4, background: "rgba(167,139,250,0.1)", border: "1px solid rgba(167,139,250,0.2)", marginBottom: 12 }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#a78bfa" }}>{t.stat}</span>
-                </div>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.65, marginBottom: 10, fontStyle: "italic" }}>&ldquo;{t.quote}&rdquo;</p>
-                <div style={{ fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13, color: "var(--text)" }}>{t.name}</div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", marginTop: 2 }}>{t.role}</div>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* FAQ */}
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ maxWidth: 660, margin: "0 auto 52px" }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", textAlign: "center", marginBottom: 24 }}>FREQUENTLY ASKED</p>
-          {FAQ.map((f, i) => (
-            <div key={i} style={{ borderBottom: "1px solid var(--border)" }}>
-              <button onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                style={{ width: "100%", padding: "15px 0", display: "flex", alignItems: "center", justifyContent: "space-between", background: "none", border: "none", cursor: "pointer", textAlign: "left", minHeight: 54 }}>
-                <span style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text)", fontWeight: 500, paddingRight: 14, lineHeight: 1.4 }}>{f.q}</span>
-                <motion.span animate={{ rotate: openFaq === i ? 180 : 0 }} style={{ color: "var(--muted)", fontSize: 12, flexShrink: 0 }}>▼</motion.span>
-              </button>
-              <AnimatePresence>
-                {openFaq === i && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} style={{ overflow: "hidden" }}>
-                    <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.7, paddingBottom: 16 }}>{f.a}</p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+        {/* Footer legal links */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 16, paddingBottom: 32, flexWrap: "wrap" }}>
+          {[["Privacy Policy", "/legal/privacy"], ["Terms of Service", "/legal/terms"], ["Refund Policy", "/legal/refund"]].map(([l, h]) => (
+            <a key={l} href={h} style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textDecoration: "underline" }}>{l}</a>
           ))}
-        </motion.div>
-
-        {/* Bottom CTA */}
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-          style={{ padding: "40px 28px", textAlign: "center", borderRadius: 16, background: "linear-gradient(135deg,rgba(167,139,250,0.08),rgba(167,139,250,0.03))", border: "1.5px solid rgba(167,139,250,0.28)" }}>
-          <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px,5.5vw,52px)", color: "var(--text)", letterSpacing: "0.04em", marginBottom: 12, lineHeight: 1 }}>
-            START <span style={{ color: "#a78bfa", textShadow: "0 0 30px rgba(167,139,250,0.4)" }}>TODAY.</span>
-          </h2>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", marginBottom: 24, maxWidth: 360, margin: "0 auto 24px", lineHeight: 1.7 }}>
-            Your competitors are scanning you right now. Unlock your 4-pillar advantage in 60 seconds.
-          </p>
-          <button onClick={() => handleCheckout(PLANS[1])}
-            style={{ padding: "15px 44px", borderRadius: 10, background: "#a78bfa", color: "#fff", fontFamily: "var(--font-mono)", fontSize: 13, letterSpacing: "0.14em", border: "none", cursor: "pointer", boxShadow: "0 0 30px rgba(167,139,250,0.4)" }}>
-            GET INSTANT ACCESS →
-          </button>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", marginTop: 12 }}>$49/mo · 7-day money-back guarantee · Cancel anytime</p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 18, flexWrap: "wrap" }}>
-            <a href="/legal/privacy" style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textDecoration: "underline" }}>Privacy Policy</a>
-            <a href="/legal/terms" style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textDecoration: "underline" }}>Terms of Service</a>
-            <a href="/legal/refund" style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textDecoration: "underline" }}>Refund Policy</a>
-          </div>
-        </motion.div>
+        </div>
 
       </div>
     </main>

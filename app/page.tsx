@@ -50,28 +50,28 @@ function LiveCount() {
 
 // ─── Social proof popup ───────────────────────────────────────────────────────
 
-// ─── URL Input (URL only — email is captured AFTER the scan) ─────────────────
+// ─── URL Input ────────────────────────────────────────────────────────────────
 function UrlInput({ onScan, size = "lg" }: { onScan: (url: string) => void; size?: "lg" | "sm" }) {
   const [url, setUrl] = useState("");
   const [err, setErr] = useState("");
   const [focused, setFocused] = useState(false);
   const go = useCallback(() => {
     const t = url.trim();
-    if (!t) { setErr("Enter a website URL to scan."); return; }
+    if (!t) { setErr("Enter your website URL to scan."); return; }
     setErr(""); onScan(t);
   }, [url, onScan]);
   const isLg = size === "lg";
   return (
     <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 8 }}>
       <div style={{
-        display: "flex", borderRadius: isLg ? 12 : 8, overflow: "hidden",
-        border: `1px solid ${err ? "rgba(232,52,26,0.6)" : focused ? "rgba(232,52,26,0.5)" : "var(--border2)"}`,
+        display: "flex", borderRadius: isLg ? 14 : 8, overflow: "hidden",
+        border: `1.5px solid ${err ? "rgba(232,52,26,0.7)" : focused ? "rgba(232,52,26,0.6)" : "rgba(232,52,26,0.3)"}`,
         background: "var(--surface)",
-        boxShadow: focused ? "0 0 0 3px rgba(232,52,26,0.1), 0 8px 32px rgba(0,0,0,0.3)" : "0 4px 16px rgba(0,0,0,0.2)",
+        boxShadow: focused ? "0 0 0 4px rgba(232,52,26,0.12), 0 8px 40px rgba(0,0,0,0.35)" : "0 0 0 0px rgba(232,52,26,0), 0 4px 20px rgba(0,0,0,0.25)",
         transition: "all 0.25s",
       }}>
-        <div style={{ display: "flex", alignItems: "center", paddingLeft: isLg ? 18 : 12, flexShrink: 0 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: isLg ? 12 : 10, color: "var(--muted)", letterSpacing: "0.04em" }}>https://</span>
+        <div style={{ display: "flex", alignItems: "center", paddingLeft: isLg ? 20 : 12, flexShrink: 0 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: isLg ? 13 : 10, color: "var(--muted)", letterSpacing: "0.04em" }}>https://</span>
         </div>
         <input type="text" value={url}
           onChange={e => { setUrl(e.target.value); setErr(""); }}
@@ -79,19 +79,20 @@ function UrlInput({ onScan, size = "lg" }: { onScan: (url: string) => void; size
           onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
           placeholder="yourwebsite.com"
           style={{ flex: 1, background: "transparent", border: "none", outline: "none",
-            padding: isLg ? "18px 12px 18px 4px" : "13px 8px 13px 4px",
-            color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: isLg ? 16 : 13, minWidth: 0 }}
+            padding: isLg ? "20px 14px 20px 6px" : "13px 8px 13px 4px",
+            color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: isLg ? 17 : 13, minWidth: 0 }}
         />
         <button onClick={go} className="btn-primary"
-          style={{ borderRadius: 0, padding: isLg ? "18px 26px" : "13px 18px",
-            fontSize: isLg ? 13 : 11, letterSpacing: "0.14em", flexShrink: 0,
-            borderLeft: "1px solid rgba(232,52,26,0.25)" }}>
+          style={{ borderRadius: 0, padding: isLg ? "20px 32px" : "13px 18px",
+            fontSize: isLg ? 14 : 11, letterSpacing: "0.14em", flexShrink: 0,
+            borderLeft: "1px solid rgba(232,52,26,0.25)",
+            boxShadow: "0 0 30px rgba(232,52,26,0.4)" }}>
           REVEAL MY LEAK →
         </button>
       </div>
       {err && <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
         style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", marginTop: 2, letterSpacing: "0.08em" }}>⚠ {err}</motion.p>}
-      <p style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", textAlign: "center" }}>No credit card · No signup required · Full report in 60 seconds</p>
+      <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center", letterSpacing: "0.06em" }}>No credit card. No signup. Full report in 60 seconds.</p>
     </div>
   );
 }
@@ -176,117 +177,81 @@ export default function Home() {
       `}</style>
 
       {/* ── STICKY NAV ── */}
-      <NavBar page="home" maxWidth={1020} />
+      <NavBar page="home" maxWidth={1280} />
 
       {/* ── HERO ── */}
-      <section style={{ maxWidth: 1020, margin: "0 auto", padding: "clamp(60px,10vw,100px) 20px clamp(50px,7vw,80px)" }}>
+      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(60px,10vw,100px) 20px clamp(50px,7vw,80px)" }}>
 
-        {/* Top bar — ticker + counter */}
+        {/* Live ticker bar */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
-          style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32, flexWrap: "wrap", gap: 10 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 14px", borderRadius: 8, background: "rgba(14,30,53,0.7)", border: "1px solid var(--border)", flex: 1, minWidth: 0, maxWidth: 420, overflow: "hidden" }}>
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, marginBottom: 40, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 16px", borderRadius: 8, background: "rgba(14,30,53,0.7)", border: "1px solid var(--border)", minWidth: 0, maxWidth: 480, overflow: "hidden" }}>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", letterSpacing: "0.1em", flexShrink: 0 }}>LIVE:</span>
             <LiveTicker />
           </div>
           <LiveCount />
         </motion.div>
 
-        {/* Headline */}
-        <div className="hero-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center" }}>
-          <div>
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 100, background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.22)", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.12em", marginBottom: 22 }}>
-              <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--accent)" }} className="animate-pulse" />
-              FREE REVENUE LEAK AUDIT — 60 SECONDS
-            </motion.div>
+        {/* Centered headline */}
+        <div style={{ textAlign: "center", maxWidth: 820, margin: "0 auto" }}>
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 18px", borderRadius: 100, background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.25)", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.12em", marginBottom: 28 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)" }} className="animate-pulse" />
+            FREE REVENUE LEAK AUDIT
+          </motion.div>
 
-            <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
-              style={{ fontFamily: "var(--font-display)", fontSize: "clamp(48px,8vw,94px)", lineHeight: 0.9, letterSpacing: "0.02em", marginBottom: 24 }} className="flicker">
-              YOUR WEBSITE<br />
-              IS <span style={{ color: "var(--accent)", textShadow: "0 0 80px rgba(232,52,26,0.5)" }}>BLEEDING</span><br />
-              MONEY.
-            </motion.h1>
+          <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.14 }}
+            style={{ fontFamily: "var(--font-display)", fontSize: "clamp(60px,11vw,120px)", lineHeight: 0.88, letterSpacing: "0.02em", marginBottom: 30 }} className="flicker">
+            YOUR WEBSITE<br />
+            IS <span style={{ color: "var(--accent)", textShadow: "0 0 80px rgba(232,52,26,0.5)" }}>BLEEDING</span><br />
+            MONEY.
+          </motion.h1>
 
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
-              style={{ fontFamily: "var(--font-body)", fontSize: "clamp(14px,2vw,17px)", color: "var(--text2)", maxWidth: 480, lineHeight: 1.75, marginBottom: 32 }}>
-              Most founders never find out — until they scan. Nexus runs a 60-second deep audit and returns <strong style={{ color: "var(--text)" }}>your exact monthly revenue leak in dollars</strong>, plus a step-by-step fix plan ordered by ROI.
-            </motion.p>
+          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}
+            style={{ fontFamily: "var(--font-body)", fontSize: "clamp(15px,2.2vw,19px)", color: "var(--text2)", maxWidth: 560, margin: "0 auto 38px", lineHeight: 1.7 }}>
+            Most founders never know until they scan. Nexus runs a 60-second deep audit and tells you <strong style={{ color: "var(--text)" }}>exactly how many dollars your site is costing you every month</strong>, with a fix plan ordered by revenue impact.
+          </motion.p>
 
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }} style={{ maxWidth: 580, marginBottom: 16 }}>
-              <UrlInput onScan={handleScan} />
-            </motion.div>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }} style={{ maxWidth: 620, margin: "0 auto 20px" }}>
+            <UrlInput onScan={handleScan} />
+          </motion.div>
 
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.32 }}
-              style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-              {["🔒 Zero signup", "⚡ Real Google data", "📋 ROI-ordered fix plan", "💸 Dollar impact per finding"].map(t => (
-                <span key={t} style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.05em" }}>{t}</span>
-              ))}
-            </motion.div>
-          </div>
-
-          {/* Hero visual — live audit preview */}
-          <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
-            style={{ minWidth: 200, maxWidth: 240 }}
-            className="hero-stats-panel">
-            {/* Score card */}
-            <div style={{ padding: "16px", borderRadius: 14, background: "var(--surface)", border: "1px solid var(--border2)", marginBottom: 8, position: "relative", overflow: "hidden" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg, #e8341a, #f59e0b)" }} />
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted)", letterSpacing: "0.14em", marginBottom: 10 }}>SITE HEALTH SCORE</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginBottom: 10 }}>
-                {[
-                  { label: "PERF", val: 23, color: "#e8341a" },
-                  { label: "SEO", val: 41, color: "#f59e0b" },
-                  { label: "A11Y", val: 35, color: "#a78bfa" },
-                  { label: "SEC", val: 62, color: "#22d3ee" },
-                ].map(({ label, val, color }) => (
-                  <div key={label} style={{ textAlign: "center", padding: "8px 6px", background: "var(--bg)", borderRadius: 8, border: `1px solid ${color}25`, borderTop: `2px solid ${color}` }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontSize: 26, color, lineHeight: 1 }}>{val}</div>
-                    <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--muted)", marginTop: 3, letterSpacing: "0.1em" }}>{label}</div>
-                  </div>
-                ))}
-              </div>
-              <div style={{ padding: "8px 10px", borderRadius: 7, background: "rgba(232,52,26,0.06)", border: "1px solid rgba(232,52,26,0.2)" }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.1em" }}>⚠ TOP FINDING</div>
-                <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text2)", marginTop: 4, lineHeight: 1.5 }}>LCP 4.2s → $1,840/mo in lost ad spend</div>
-              </div>
-            </div>
-            {/* Revenue leak card */}
-            <div style={{ padding: "14px 16px", borderRadius: 12, background: "linear-gradient(135deg,rgba(232,52,26,0.08),rgba(232,52,26,0.03))", border: "1px solid rgba(232,52,26,0.25)" }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted)", letterSpacing: "0.12em", marginBottom: 6 }}>ESTIMATED MONTHLY LEAK</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 36, color: "var(--accent)", letterSpacing: "0.04em", lineHeight: 1 }}>$3,240</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted)", letterSpacing: "0.08em", marginTop: 4 }}>$38,880 / YEAR</div>
-            </div>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.32 }}
+            style={{ display: "flex", gap: 24, flexWrap: "wrap", justifyContent: "center" }}>
+            {["🔒 Zero signup", "⚡ Real Google data", "📋 ROI fix plan", "💸 Dollar impact per finding"].map(t => (
+              <span key={t} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.05em" }}>{t}</span>
+            ))}
           </motion.div>
         </div>
       </section>
 
       {/* ── URGENCY STRIP ── */}
       <div style={{ background: "rgba(232,52,26,0.04)", borderTop: "1px solid rgba(232,52,26,0.12)", borderBottom: "1px solid rgba(232,52,26,0.12)", padding: "14px 20px" }}>
-        <div style={{ maxWidth: 1020, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.12em", background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.25)", padding: "3px 8px", borderRadius: 4, flexShrink: 0 }}>⚠ THE HIDDEN DRAIN</span>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.5 }}>
-            Most founders spend $2k–$10k/mo on ads and never fix the slow page that&rsquo;s eating every conversion. The damage is invisible until you measure it.
+            Most founders pour $2k–$10k/mo into ads without ever fixing the slow page that eats every conversion. The damage stays invisible until you actually measure it.
           </p>
         </div>
       </div>
 
       {/* ── 4 PILLARS ── */}
-      <section style={{ maxWidth: 1020, margin: "0 auto", padding: "clamp(60px,8vw,96px) 20px" }}>
+      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(60px,8vw,96px) 20px" }}>
         <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
           style={{ textAlign: "center", marginBottom: 44 }}>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", marginBottom: 12 }}>WHAT WE SCAN</p>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(32px,5.5vw,58px)", color: "var(--text)", letterSpacing: "0.03em", lineHeight: 1 }}>
             4 PILLARS. ONE <span style={{ color: "var(--accent)" }}>LEAK NUMBER.</span>
           </h2>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", maxWidth: 460, margin: "14px auto 0", lineHeight: 1.7 }}>
-            Every finding is translated into plain English and a dollar amount. No charts. No jargon. Just your monthly leak.
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", maxWidth: 500, margin: "16px auto 0", lineHeight: 1.75 }}>
+            Every finding is explained in plain English with a dollar impact. No charts, no jargon. Just your monthly leak and a prioritised fix list.
           </p>
         </motion.div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-          <PillarBlock i={0} icon="⚡" name="PERFORMANCE" color="#e8341a" metric="Up to -60%" hook="Slow LCP kills your Google Ads quality score. You pay up to 60% more per click than faster competitors. That&rsquo;s pure tax." />
-          <PillarBlock i={1} icon="🔍" name="SEO" color="#f59e0b" metric="43% reach lost" hook="Missing meta tags, no viewport, blocked crawlers — Google is actively hiding you from your own potential customers every day." />
-          <PillarBlock i={2} icon="♿" name="ACCESSIBILITY" color="#a78bfa" metric="$50k exposure" hook="WCAG violations lock out disabled users and expose you to ADA lawsuits. US settlements average $25k–$90k per case." />
-          <PillarBlock i={3} icon="🔒" name="SECURITY" color="#22d3ee" metric="17% cart abandon" hook="Outdated JS libraries trigger browser security warnings at checkout. One red banner and you&rsquo;ve lost the sale permanently." />
+          <PillarBlock i={0} icon="⚡" name="PERFORMANCE" color="#e8341a" metric="Slow = expensive" hook="A slow site forces Google to charge you more per ad click. Fix your LCP and watch your cost-per-conversion drop within days." />
+          <PillarBlock i={1} icon="🔍" name="SEO" color="#f59e0b" metric="Invisible to Google" hook="Missing tags, blocked crawlers, no viewport. Google is actively hiding you from your own customers. This is fixable in hours, not months." />
+          <PillarBlock i={2} icon="♿" name="ACCESSIBILITY" color="#a78bfa" metric="Legal exposure" hook="WCAG violations lock out 15% of users and expose you to ADA lawsuits. US demand letters arrive without warning. Average settlement: $50k." />
+          <PillarBlock i={3} icon="🔒" name="SECURITY" color="#22d3ee" metric="Trust killers" hook="Outdated JavaScript libraries trigger browser security warnings at checkout. One red banner and the sale is gone. Permanently." />
         </div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -300,7 +265,7 @@ export default function Home() {
 
       {/* ── HOW IT WORKS ── */}
       <section style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "clamp(56px,8vw,96px) 20px" }}>
-        <div style={{ maxWidth: 1020, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             style={{ textAlign: "center", marginBottom: 40 }}>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", marginBottom: 12 }}>HOW IT WORKS</p>
@@ -327,29 +292,10 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── STATS SECTION ── */}
-      <section style={{ maxWidth: 1020, margin: "0 auto", padding: "clamp(60px,8vw,96px) 20px" }}>
-        <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 1, border: "1px solid var(--border)", borderRadius: 16, overflow: "hidden" }}>
-          {[
-            { n: 2100, prefix: "$", suffix: "/mo", label: "avg ad overspend from slow sites", color: "var(--accent)" },
-            { n: 43, prefix: "", suffix: "%", label: "of SEO reach lost to technical gaps", color: "#f59e0b" },
-            { n: 50000, prefix: "$", suffix: "", label: "average ADA lawsuit settlement", color: "#a78bfa" },
-            { n: 500, prefix: "", suffix: "+", label: "sites improved with Nexus audits", color: "#10b981" },
-          ].map(({ n, prefix, suffix, label, color }) => (
-            <motion.div key={label} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-              style={{ padding: "32px 24px", background: "var(--surface)", textAlign: "center" }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(36px,5vw,52px)", color, letterSpacing: "0.03em", marginBottom: 10 }}>
-                <CountUp to={n} prefix={prefix} suffix={suffix} />
-              </div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.08em", lineHeight: 1.6 }}>{label}</div>
-            </motion.div>
-          ))}
-        </div>
-      </section>
 
       {/* ── TESTIMONIALS ── */}
       <section style={{ background: "var(--surface)", borderTop: "1px solid var(--border)", borderBottom: "1px solid var(--border)", padding: "clamp(56px,8vw,96px) 20px" }}>
-        <div style={{ maxWidth: 1020, margin: "0 auto" }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto" }}>
           <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: "center", marginBottom: 36 }}>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", marginBottom: 12 }}>WHAT HAPPENS AFTER THE SCAN</p>
             <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px,4.5vw,50px)", color: "var(--text)", letterSpacing: "0.04em", lineHeight: 1 }}>
@@ -374,7 +320,7 @@ export default function Home() {
       </section>
 
       {/* ── VS COMPARISON ── */}
-      <section style={{ maxWidth: 1020, margin: "0 auto", padding: "clamp(60px,8vw,96px) 20px" }}>
+      <section style={{ maxWidth: 1280, margin: "0 auto", padding: "clamp(60px,8vw,96px) 20px" }}>
         <motion.div initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} style={{ textAlign: "center", marginBottom: 36 }}>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", marginBottom: 12 }}>THE NEXUS EDGE</p>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px,4.5vw,50px)", color: "var(--text)", letterSpacing: "0.04em", lineHeight: 1.1 }}>
@@ -433,7 +379,7 @@ export default function Home() {
 
       {/* ── FOOTER ── */}
       <footer style={{ borderTop: "1px solid var(--border)", padding: "22px 20px" }}>
-        <div style={{ maxWidth: 1020, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
           <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--muted)", letterSpacing: "0.1em" }}>NEXUS</span>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             {[["PRICING", "/subscribe"], ["DASHBOARD", "/dashboard"], ["FREE AUDIT", "/funnel"], ["PRIVACY", "/legal/privacy"], ["TERMS", "/legal/terms"]].map(([l, h]) => (

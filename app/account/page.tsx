@@ -80,7 +80,7 @@ export default function Account() {
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)", color: "var(--text)" }}>
-      <NavBar page="dashboard" />
+      <NavBar page="account" />
 
       <div style={{ maxWidth: 600, margin: "0 auto", padding: "48px 20px" }}>
 
@@ -133,18 +133,50 @@ export default function Account() {
             </div>
           </div>
 
+          {/* Free user upsell card */}
+          {!isPaid && (
+            <div style={{ borderRadius: 14, overflow: "hidden", border: "1.5px solid rgba(167,139,250,0.35)", background: "linear-gradient(135deg,rgba(167,139,250,0.07),rgba(167,139,250,0.02))", marginBottom: 6 }}>
+              <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(167,139,250,0.18)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#a78bfa", letterSpacing: "0.18em" }}>LOCKED — SCOUT PLAN</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", padding: "2px 7px", borderRadius: 3, letterSpacing: "0.1em" }}>7-DAY FREE TRIAL</span>
+                </div>
+                <p style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--text)", letterSpacing: "0.05em", marginBottom: 4 }}>YOU&apos;RE MISSING CRITICAL INTEL</p>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6, margin: 0 }}>
+                  Your free audit gave you a snapshot. Pulse watches your site — and your competitors — every single week.
+                </p>
+              </div>
+              <div style={{ padding: "14px 22px", display: "flex", flexDirection: "column", gap: 8 }}>
+                {[
+                  ["🔒", "Weekly re-audit", "Catch regressions before they cost you"],
+                  ["🔒", "Competitor tracking (3 URLs)", "See when they overtake you in Google"],
+                  ["🔒", "Slack & email alerts", "Notified the moment scores drop"],
+                  ["🔒", "ADA compliance watch", "Avoid legal exposure automatically"],
+                ].map(([icon, label, sub]) => (
+                  <div key={label} style={{ display: "flex", gap: 10, alignItems: "center", opacity: 0.7 }}>
+                    <span style={{ fontSize: 14, flexShrink: 0, filter: "grayscale(1)" }}>{icon}</span>
+                    <div>
+                      <span style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", fontWeight: 500 }}>{label}</span>
+                      <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", display: "block", letterSpacing: "0.05em", marginTop: 1 }}>{sub}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: "14px 22px" }}>
+                <a href="/subscribe" style={{ display: "block", padding: "14px 20px", borderRadius: 10, background: "#a78bfa", fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", textDecoration: "none", letterSpacing: "0.1em", textAlign: "center" as const, boxShadow: "0 0 28px rgba(167,139,250,0.4)" }}>
+                  UNLOCK PULSE — START FREE TRIAL →
+                </a>
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center" as const, marginTop: 8 }}>$49/mo after trial · cancel anytime</p>
+              </div>
+            </div>
+          )}
+
           {/* Actions */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {isPaid && (
               <a href={`https://nexus-diagnostics.lemonsqueezy.com/billing?prefilled_email=${encodeURIComponent(profile?.email ?? user.email ?? "")}`} target="_blank" rel="noopener"
                 style={{ display: "block", padding: "14px 20px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text2)", textDecoration: "none", letterSpacing: "0.08em", textAlign: "center" }}>
                 MANAGE BILLING (LEMON SQUEEZY) ↗
-              </a>
-            )}
-            {!isPaid && (
-              <a href="/subscribe"
-                style={{ display: "block", padding: "14px 20px", borderRadius: 10, background: "#a78bfa", fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", textDecoration: "none", letterSpacing: "0.1em", textAlign: "center", boxShadow: "0 0 24px rgba(167,139,250,0.35)" }}>
-                UPGRADE TO PULSE — $49/MO →
               </a>
             )}
             <button onClick={signOut}

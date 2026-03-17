@@ -15,10 +15,25 @@ const NexusLogo = ({ size = 22 }: { size?: number }) => (
 
 interface NavBarProps {
   maxWidth?: number;
-  page?: "home" | "funnel" | "subscribe" | "dashboard" | "login" | "account";
+  page?: "home" | "funnel" | "subscribe" | "dashboard" | "login" | "account" | "about";
 }
 
-export function NavBar({ maxWidth = 860, page }: NavBarProps) {
+const NAV_LINK: React.CSSProperties = {
+  fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.1em",
+  textDecoration: "none", padding: "7px 14px", borderRadius: 6,
+  border: "1px solid var(--border2)", background: "var(--surface)",
+  color: "var(--text2)", transition: "all 0.15s", whiteSpace: "nowrap" as const,
+};
+
+const NAV_PRIMARY: React.CSSProperties = {
+  fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.1em",
+  textDecoration: "none", padding: "7px 18px", borderRadius: 6,
+  background: "var(--accent)", color: "#fff",
+  boxShadow: "0 0 18px rgba(232,52,26,0.35)", transition: "all 0.15s",
+  border: "none", whiteSpace: "nowrap" as const,
+};
+
+export function NavBar({ maxWidth = 1280, page }: NavBarProps) {
   const { user, profile, plan, loading, signOut } = useAuth();
   const planConfig = PLAN_CONFIG[plan as keyof typeof PLAN_CONFIG];
 
@@ -31,18 +46,23 @@ export function NavBar({ maxWidth = 860, page }: NavBarProps) {
       position: "sticky",
       top: 0, zIndex: 100,
     }}>
-      <div style={{ maxWidth, margin: "0 auto", padding: "0 20px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ maxWidth, margin: "0 auto", padding: "0 24px", height: 58, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <a href="/" style={{ textDecoration: "none" }}><NexusLogo size={20} /></a>
 
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <a href="/subscribe" className="nav-pricing-link"
-            style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: page === "subscribe" ? "#a78bfa" : "var(--muted)", letterSpacing: "0.1em", textDecoration: "none", padding: "6px 11px", borderRadius: 5 }}>
+        {/* Centre links */}
+        <div className="nav-centre-links" style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <a href="/subscribe" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: page === "subscribe" ? "#a78bfa" : "var(--muted)", letterSpacing: "0.1em", textDecoration: "none", padding: "6px 12px", borderRadius: 5, transition: "color 0.15s" }}>
             PRICING
           </a>
+          <a href="/about" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: page === "about" ? "var(--text)" : "var(--muted)", letterSpacing: "0.1em", textDecoration: "none", padding: "6px 12px", borderRadius: 5, transition: "color 0.15s" }}>
+            ABOUT
+          </a>
+        </div>
 
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {loading && (
             <motion.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5 }}
-              style={{ width: 90, height: 32, background: "var(--border)", borderRadius: 5 }} />
+              style={{ width: 90, height: 34, background: "var(--border)", borderRadius: 6 }} />
           )}
 
           {!loading && user ? (
@@ -55,44 +75,24 @@ export function NavBar({ maxWidth = 860, page }: NavBarProps) {
                 border: `1px solid ${plan === "scale" ? "rgba(16,185,129,0.2)" : plan === "pulse" ? "rgba(167,139,250,0.2)" : "var(--border)"}`,
               }}>{planConfig?.label?.toUpperCase() ?? "SCOUT"}</span>
 
-              {/* Dashboard button */}
-              <a href="/dashboard" className="nav-action-link" style={{
-                fontFamily: "var(--font-mono)", fontSize: 11, color: page === "dashboard" ? "#fff" : "var(--text)",
-                textDecoration: "none",
-                background: page === "dashboard" ? "var(--accent)" : "var(--surface)",
-                border: `1px solid ${page === "dashboard" ? "rgba(232,52,26,0.5)" : "var(--border2)"}`,
-                padding: "6px 14px", borderRadius: 6, letterSpacing: "0.1em",
-                boxShadow: page === "dashboard" ? "0 0 14px rgba(232,52,26,0.25)" : "none",
-                transition: "all 0.15s",
-              }}>DASHBOARD</a>
-
-              {/* Account link — shows email prefix, links to /account */}
-              <a href="/account" className="nav-account-link" style={{
-                fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", background: "none",
-                border: "1px solid var(--border)", padding: "6px 11px", borderRadius: 6,
-                letterSpacing: "0.08em", display: "flex", alignItems: "center", gap: 5,
-                textDecoration: "none", transition: "all 0.15s",
-              }}>
-                <span style={{ maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {(profile?.email ?? user.email ?? "").split("@")[0].substring(0, 12)}
-                </span>
-                <span style={{ color: "var(--accent)", fontSize: 11 }}>↗</span>
+              {/* Account link */}
+              <a href="/account" className="nav-account-link" style={{ ...NAV_LINK, color: page === "account" ? "var(--text)" : "var(--muted)" }}>
+                ACCOUNT
               </a>
+
+              {/* Dashboard — primary action */}
+              <a href="/dashboard" className="nav-action-link" style={{
+                ...NAV_PRIMARY,
+                background: page === "dashboard" ? "var(--accent)" : "var(--surface)",
+                color: page === "dashboard" ? "#fff" : "var(--text)",
+                border: `1px solid ${page === "dashboard" ? "rgba(232,52,26,0.5)" : "var(--border2)"}`,
+                boxShadow: page === "dashboard" ? "0 0 18px rgba(232,52,26,0.35)" : "none",
+              }}>DASHBOARD</a>
             </div>
           ) : !loading && (
             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <a href="/login" className="nav-action-link" style={{
-                fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text)",
-                textDecoration: "none", border: "1px solid var(--border2)",
-                padding: "7px 14px", borderRadius: 6, letterSpacing: "0.1em",
-                background: "var(--surface)", transition: "all 0.15s",
-              }}>SIGN IN</a>
-              <a href="/funnel" className="nav-action-link" style={{
-                fontFamily: "var(--font-mono)", fontSize: 11, color: "#fff",
-                textDecoration: "none", background: "var(--accent)",
-                padding: "7px 16px", borderRadius: 6, letterSpacing: "0.1em",
-                boxShadow: "0 0 16px rgba(232,52,26,0.3)", transition: "all 0.15s",
-              }}>FREE AUDIT →</a>
+              <a href="/login" className="nav-action-link" style={NAV_LINK}>SIGN IN</a>
+              <a href="/funnel" className="nav-action-link" style={NAV_PRIMARY}>FREE AUDIT →</a>
             </div>
           )}
         </div>

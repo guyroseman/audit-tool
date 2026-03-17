@@ -477,6 +477,7 @@ function FunnelInner() {
   const [urlInput, setUrlInput] = useState("");
   const [urlError, setUrlError] = useState("");
   const [emailInput, setEmailInput] = useState("");
+  const [emailConsent, setEmailConsent] = useState(false);
   const [phoneInput, setPhoneInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [showIntelligence, setShowIntelligence] = useState(true);
@@ -659,8 +660,9 @@ function FunnelInner() {
                 </div>
                 <div style={{ marginBottom: 10 }}>
                   <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
-                    <input type="checkbox" id="email-consent" required
-                      style={{ marginTop: 3, accentColor: "var(--accent)", flexShrink: 0 }} />
+                    <input type="checkbox" id="email-consent" checked={emailConsent}
+                      onChange={e => setEmailConsent(e.target.checked)}
+                      style={{ marginTop: 3, accentColor: "var(--accent)", flexShrink: 0, width: 16, height: 16 }} />
                     <span style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text2)", lineHeight: 1.5 }}>
                       I agree to receive my report and occasional product updates by email. Unsubscribe anytime.{" "}
                       <a href="/legal/privacy" target="_blank" style={{ color: "var(--accent)", textDecoration: "none" }}>Privacy Policy</a>
@@ -673,10 +675,15 @@ function FunnelInner() {
                   placeholder="your@email.com" autoFocus
                   style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "13px 14px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 16, marginBottom: 10 }}
                 />
-                <button onClick={submitEmail} disabled={submitting || !emailInput.trim()} className="btn-primary"
-                  style={{ width: "100%", padding: "15px", borderRadius: 8, fontSize: 12, letterSpacing: "0.14em" }}>
+                <button onClick={submitEmail} disabled={submitting || !emailInput.trim() || !emailConsent} className="btn-primary"
+                  style={{ width: "100%", padding: "15px", borderRadius: 8, fontSize: 12, letterSpacing: "0.14em", opacity: (!emailInput.trim() || !emailConsent) ? 0.5 : 1 }}>
                   {submitting ? "UNLOCKING..." : "UNLOCK MY FULL REPORT →"}
                 </button>
+                {!emailConsent && emailInput.trim() && (
+                  <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--warn)", textAlign: "center", marginTop: 6, letterSpacing: "0.06em" }}>
+                    ⚠ Please tick the box above to continue
+                  </p>
+                )}
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", textAlign: "center", marginTop: 10 }}>
                   No spam ·{" "}
                   <a href="/legal/privacy" style={{ color: "var(--muted2)", textDecoration: "underline" }}>Privacy Policy</a>
