@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website", locale: "en_GB",
     title: "Is Your Website Bleeding Revenue? Find Out Free in 60 Seconds",
-    description: "Free 4-pillar diagnostic: Speed · SEO · Accessibility · Security. See the exact £ cost and how to fix it.",
+    description: "Free 4-pillar diagnostic: Speed · SEO · Accessibility · Security. See the exact $ cost and how to fix it.",
     siteName: "Nexus Performance Agency",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Nexus Free Website Revenue Audit" }],
   },

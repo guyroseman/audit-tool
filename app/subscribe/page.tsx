@@ -131,10 +131,10 @@ const COMPARISON = [
 ];
 
 const TESTIMONIALS = [
-  { name: "James H.", role: "SaaS Founder · Manchester", stat: "£2,400/mo recovered", quote: "Found out my competitor dropped from 81 to 47 overnight. Called 3 of their prospects that week. Pulse paid for itself in 20 minutes." },
+  { name: "James H.", role: "SaaS Founder · Manchester", stat: "$2,400/mo recovered", quote: "Found out my competitor dropped from 81 to 47 overnight. Called 3 of their prospects that week. Pulse paid for itself in 20 minutes." },
   { name: "Asha P.", role: "E-commerce Director · Sydney", stat: "$12k recovered", quote: "Weekly scan caught a third-party script that added 3.2s to every load. Fixed in a day." },
   { name: "Marcus T.", role: "Law Firm Partner · Chicago", stat: "$50k lawsuit avoided", quote: "Nexus flagged HIGH ADA risk before a law firm letter did. Fixed in a week, compliance cert on file." },
-  { name: "Tom W.", role: "Agency Owner · London", stat: "12 clients on Scale", quote: "White-label PDF goes straight to clients. It's a recurring revenue stream that runs itself." },
+  { name: "Tom W.", role: "Agency Owner · London", stat: "12 clients on Scale", quote: "The 4-pillar report goes straight to clients. It's a recurring deliverable that practically sells itself." },
 ];
 
 const FAQ = [
@@ -172,10 +172,9 @@ function UpgradeBanner() {
 function SubscribeInner() {
   const searchParams = useSearchParams();
   const reason = searchParams?.get("reason");
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [showTable, setShowTable] = useState(false);
-  const discount = billing === "annual" ? 0.17 : 0;
+
   const { user, plan: currentPlan, loading: authLoading } = useAuth();
 
   function handleCheckout(p: typeof PLANS[0]) {
@@ -196,10 +195,11 @@ function SubscribeInner() {
       return;
     }
 
-    // Logged in + checkout URL exists → go pay, pre-fill email
+    // Logged in + checkout URL exists → go pay, pre-fill email + success redirect
     try {
       const url = new URL(lsUrl);
       if (user.email) url.searchParams.set("checkout[email]", user.email);
+      url.searchParams.set("checkout[success_url]", `${window.location.origin}/dashboard?refresh=plan`);
       window.location.href = url.toString();
     } catch {
       window.location.href = lsUrl;
@@ -261,17 +261,17 @@ function SubscribeInner() {
           <p style={{ fontFamily: "var(--font-body)", fontSize: "clamp(14px,2.5vw,16px)", color: "var(--text2)", maxWidth: 480, margin: "0 auto 24px", lineHeight: 1.75 }}>
             Nexus monitors your full digital health automatically. You get alerted the moment anything changes — before your competitor capitalises on it.
           </p>
-          {/* Billing toggle */}
+          {/* Billing toggle — annual pricing coming soon */}
           <div style={{ display: "inline-flex", alignItems: "center", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, padding: 4, gap: 2 }}>
-            {(["monthly", "annual"] as const).map(b => (
-              <button key={b} onClick={() => setBilling(b)}
-                style={{ padding: "7px 18px", borderRadius: 6, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.08em", cursor: "pointer", border: "none", background: billing === b ? "#a78bfa" : "transparent", color: billing === b ? "#fff" : "var(--muted)", transition: "all 0.2s", position: "relative" }}>
-                {b.toUpperCase()}
-                {b === "annual" && billing !== "annual" && (
-                  <span style={{ position: "absolute", top: -8, right: -8, fontFamily: "var(--font-mono)", fontSize: 8, color: "#10b981", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)", padding: "1px 5px", borderRadius: 4 }}>-17%</span>
-                )}
-              </button>
-            ))}
+            <button
+              style={{ padding: "7px 18px", borderRadius: 6, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.08em", cursor: "default", border: "none", background: "#a78bfa", color: "#fff", transition: "all 0.2s" }}>
+              MONTHLY
+            </button>
+            <button disabled
+              style={{ padding: "7px 18px", borderRadius: 6, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: "0.08em", cursor: "not-allowed", border: "none", background: "transparent", color: "var(--muted)", position: "relative", opacity: 0.6 }}>
+              ANNUAL
+              <span style={{ position: "absolute", top: -8, right: -8, fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--muted)", background: "var(--bg)", border: "1px solid var(--border)", padding: "1px 5px", borderRadius: 4, whiteSpace: "nowrap" }}>SOON</span>
+            </button>
           </div>
         </motion.div>
 
@@ -314,18 +314,12 @@ function SubscribeInner() {
                   ? <span style={{ fontFamily: "var(--font-display)", fontSize: 46, color: plan.badgeColor, lineHeight: 1 }}>FREE</span>
                   : <>
                       <span style={{ fontFamily: "var(--font-display)", fontSize: 46, color: plan.badgeColor, lineHeight: 1 }}>
-                        ${billing === "annual" ? Math.round(plan.price * (1 - discount)) : plan.price}
+                        ${plan.price}
                       </span>
                       <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", marginBottom: 8 }}>/mo</span>
-                      {billing === "annual" && (
-                        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", textDecoration: "line-through", marginBottom: 8 }}>${plan.price}</span>
-                      )}
                     </>
                 }
               </div>
-              {billing === "annual" && plan.price > 0 && (
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#10b981", marginBottom: 8 }}>Save ${Math.round(plan.price * discount * 12)}/year</div>
-              )}
 
               {/* ROI framing for PULSE */}
               {plan.id === "pulse" && (

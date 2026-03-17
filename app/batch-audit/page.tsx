@@ -140,7 +140,7 @@ function buildEmailContent(row: BatchRow): { subject: string; body: string } {
   } else if (perf >= 60) {
     perfSection = `Performance (${perf}/100) — room to improve. Your site is functional but slower than Google's preferred threshold. This is likely adding ~${adLoss}% to your cost-per-click on paid campaigns, because Google charges more to advertise slow sites.${renderBlocking ? " Render-blocking resources are the likely culprit — these are scripts that force the browser to pause before displaying anything." : ""}${unusedJS ? " There's also unused JavaScript loading on every page visit that isn't needed." : ""}`;
   } else {
-    perfSection = `Performance (${perf}/100) — this is the main issue. At this score, Google classifies your site as slow and applies a direct penalty to your ad campaigns — inflating your cost-per-click by approximately ${adLoss}%. That's an estimated £${r.monthlyAdOverspend.toLocaleString()}/month in ad overspend.${renderBlocking ? " Render-blocking scripts are preventing the page from loading." : ""}${unusedJS ? " Unused JavaScript is adding unnecessary weight to every page load." : ""}${noCache ? " Browser caching isn't configured, so returning visitors re-download the full site every time." : ""}${noCompression ? " Files aren't being compressed before being sent to the browser." : ""}`;
+    perfSection = `Performance (${perf}/100) — this is the main issue. At this score, Google classifies your site as slow and applies a direct penalty to your ad campaigns — inflating your cost-per-click by approximately ${adLoss}%. That's an estimated $${r.monthlyAdOverspend.toLocaleString()}/month in ad overspend.${renderBlocking ? " Render-blocking scripts are preventing the page from loading." : ""}${unusedJS ? " Unused JavaScript is adding unnecessary weight to every page load." : ""}${noCache ? " Browser caching isn't configured, so returning visitors re-download the full site every time." : ""}${noCompression ? " Files aren't being compressed before being sent to the browser." : ""}`;
   }
 
   // SEO
@@ -195,7 +195,7 @@ ${secSection}
 
 ---
 
-Overall, the site is estimated to be losing around £${leak.toLocaleString()}/month (£${annualLoss.toLocaleString()}/year) in recoverable revenue from these combined issues.
+Overall, the site is estimated to be losing around $${leak.toLocaleString()}/month ($${annualLoss.toLocaleString()}/year) in recoverable revenue from these combined issues.
 
 ${cta}
 
@@ -267,7 +267,7 @@ function ResultRow({ row, idx }: { row: BatchRow; idx: number }) {
         </div>
 
         <div style={{ textAlign: "center" }}>
-          {r ? <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#e8341a" }}>£{r.totalMonthlyCost.toLocaleString()}</span> : <span style={{ color: "var(--muted2)", fontSize: 10 }}>—</span>}
+          {r ? <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#e8341a" }}>${r.totalMonthlyCost.toLocaleString()}</span> : <span style={{ color: "var(--muted2)", fontSize: 10 }}>—</span>}
         </div>
 
         <div style={{ textAlign: "center" }}>
@@ -352,7 +352,7 @@ function ResultRow({ row, idx }: { row: BatchRow; idx: number }) {
               { label: "A11Y", val: `${r.accessibility?.estimatedA11yScore ?? 0}/100` },
               { label: "SECURITY", val: `${r.security?.estimatedBestPracticesScore ?? 0}/100` },
               { label: "VULN LIBS", val: `${r.security?.vulnerableLibraryCount ?? 0}` },
-              { label: "ANNUAL LOSS", val: `£${Math.round(r.totalMonthlyCost * 12).toLocaleString()}` },
+              { label: "ANNUAL LOSS", val: `$${Math.round(r.totalMonthlyCost * 12).toLocaleString()}` },
             ].map(({ label, val }) => (
               <div key={label} style={{ padding: "5px 10px", borderRadius: 6, background: "var(--surface)", border: "1px solid var(--border)" }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--muted)", marginBottom: 2 }}>{label}</div>
@@ -462,7 +462,7 @@ export default function BatchAudit() {
   const withEmail = done.filter(r => r.email).length;
 
   function exportCsv() {
-    const headers = ["Name", "Email", "Company", "Domain", "Perf Score", "Monthly Leak (£)", "Ad Loss %", "ADA Risk", "Severity", "Gmail Link"];
+    const headers = ["Name", "Email", "Company", "Domain", "Perf Score", "Monthly Leak ($)", "Ad Loss %", "ADA Risk", "Severity", "Gmail Link"];
     const rows2 = done.map(r => {
       const res = r.result!;
       return [
@@ -584,7 +584,7 @@ export default function BatchAudit() {
             {[
               { label: "SCANNED", val: `${done.length}/${rows.length}`, color: "var(--text)" },
               { label: "CRITICAL", val: criticalCount, color: criticalCount > 0 ? "#e8341a" : "var(--muted)" },
-              { label: "TOTAL MONTHLY LEAK", val: `£${totalLeak.toLocaleString()}`, color: "#e8341a" },
+              { label: "TOTAL MONTHLY LEAK", val: `$${totalLeak.toLocaleString()}`, color: "#e8341a" },
               { label: "AVG SCORE", val: `${Math.round(done.reduce((a, r) => a + (r.result?.metrics.performanceScore ?? 0), 0) / done.length)}/100`, color: "var(--text)" },
               { label: "EMAILS READY TO SEND", val: withEmail, color: withEmail > 0 ? "#10b981" : "var(--muted)" },
             ].map(({ label, val, color }) => (

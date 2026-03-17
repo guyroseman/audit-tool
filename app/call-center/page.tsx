@@ -23,9 +23,14 @@ function CallCenterContent() {
           </p>
         </motion.div>
 
-        {/* Embed your Calendly or booking iframe here */}
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="w-full h-[600px] bg-[#080d17] border border-[#1e293b] rounded-xl flex items-center justify-center">
-            <p className="text-[#64748b] font-mono text-sm">[ Replace this div with your Calendly iframe ]</p>
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }} className="w-full bg-[#080d17] border border-[#1e293b] rounded-xl flex flex-col items-center justify-center gap-4 p-12">
+          <div className="text-4xl">📅</div>
+          <p className="text-[#0ea5e9] font-mono text-xs tracking-widest uppercase">Booking — Coming Soon</p>
+          <p className="text-[#64748b] font-mono text-sm text-center max-w-sm leading-relaxed">
+            One-to-one sessions will be available here shortly. In the meantime, email us at{" "}
+            <a href="mailto:hello@nexus-diagnostics.com" className="text-[#0ea5e9] underline">hello@nexus-diagnostics.com</a>
+            {" "}to book a call.
+          </p>
         </motion.div>
       </div>
     </main>

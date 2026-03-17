@@ -177,20 +177,20 @@ export function NexusPulsePitch({ result }: { result: AuditResult }) {
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5, flexWrap: "wrap" }}>
               <span style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "var(--text)", letterSpacing: "0.05em" }}>NEXUS PULSE</span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#a78bfa", background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.3)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.1em" }}>£49/MO</span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#a78bfa", background: "rgba(167,139,250,0.14)", border: "1px solid rgba(167,139,250,0.3)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.1em" }}>$49/MO</span>
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#10b981", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", padding: "2px 8px", borderRadius: 4, letterSpacing: "0.1em" }}>7-DAY FREE TRIAL</span>
             </div>
             {/* Revenue warning — the hook */}
             <div style={{ padding: "10px 14px", borderRadius: 9, background: "rgba(232,52,26,0.07)", border: "1px solid rgba(232,52,26,0.2)", marginBottom: 12 }}>
               <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#e8341a", lineHeight: 1.6, margin: 0 }}>
-                ⚠ Your site is leaking <strong>£{leak.toLocaleString()}/mo</strong> right now.
+                ⚠ Your site is leaking <strong>${leak.toLocaleString()}/mo</strong> right now.
                 {score < 50
                   ? ` At ${score}/100, every competitor above 75 is actively stealing your Google traffic and paying less per ad click.`
                   : ` A competitor at 90+ already gets preferential ranking treatment — and you won't know until your traffic drops.`}
               </p>
             </div>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6, margin: 0 }}>
-              Pulse monitors your 4 pillars weekly, tracks competitors, and alerts you the moment anything changes — before the damage compounds to <strong style={{ color: "var(--text)" }}>£{annual.toLocaleString()}/yr</strong>.
+              Pulse monitors your 4 pillars weekly, tracks competitors, and alerts you the moment anything changes — before the damage compounds to <strong style={{ color: "var(--text)" }}>${annual.toLocaleString()}/yr</strong>.
             </p>
           </div>
         </div>
@@ -235,7 +235,7 @@ export function NexusPulsePitch({ result }: { result: AuditResult }) {
           START FREE 7-DAY TRIAL →
         </a>
         <div style={{ textAlign: "center" }}>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#a78bfa", lineHeight: 1 }}>£49/mo</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#a78bfa", lineHeight: 1 }}>$49/mo</div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", marginTop: 2 }}>after trial · cancel anytime</div>
         </div>
       </div>
@@ -389,7 +389,7 @@ export function ResultsPanel({ result, onDiscover }: {
         </span>
       </motion.div>
 
-      {/* ── Executive Summary: Total £ Leakage ── */}
+      {/* ── Executive Summary: Total $ Leakage ── */}
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
         style={{ marginBottom: 14, padding: "22px 24px", borderRadius: 14, background: "linear-gradient(135deg,rgba(232,52,26,0.08),rgba(232,52,26,0.03))", border: "1px solid rgba(232,52,26,0.25)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -399,10 +399,10 @@ export function ResultsPanel({ result, onDiscover }: {
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "center" }}>
           <div>
             <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(44px,7vw,70px)", color: "var(--accent)", lineHeight: 1, letterSpacing: "0.01em", textShadow: "0 0 50px rgba(232,52,26,0.35)" }}>
-              {animated ? <>£<AnimatedNumber value={totalMonthlyCost} />/mo</> : "£0/mo"}
+              {animated ? <>$<AnimatedNumber value={totalMonthlyCost} />/mo</> : "$0/mo"}
             </div>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", marginTop: 6, lineHeight: 1.6, maxWidth: 480 }}>
-              Cumulative cost across performance penalties, lost organic traffic, security-driven cart abandonment, and inaccessible market segments. <strong style={{ color: "var(--text)" }}>That's £{annualLoss.toLocaleString()} this year alone.</strong>
+              Cumulative cost across performance penalties, lost organic traffic, security-driven cart abandonment, and inaccessible market segments. <strong style={{ color: "var(--text)" }}>That's ${annualLoss.toLocaleString()} this year alone.</strong>
             </p>
             {/* Scroll CTA — urgent */}
             {onDiscover && (
@@ -475,7 +475,7 @@ export function ResultsPanel({ result, onDiscover }: {
             style={{ width: "100%", padding: "28px 22px", borderRadius: 13, background: "linear-gradient(135deg,rgba(232,52,26,0.14),rgba(232,52,26,0.06))", border: "1.5px solid rgba(232,52,26,0.4)", cursor: "pointer", textAlign: "center", boxShadow: "0 0 40px rgba(232,52,26,0.1)", transition: "box-shadow 0.2s" }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.2em", marginBottom: 10 }}>YOUR PERSONALISED FIX PLAN — 30 SECONDS</div>
             <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px,4vw,32px)", color: "var(--text)", letterSpacing: "0.05em", marginBottom: 8 }}>
-              How do I recover £{totalMonthlyCost.toLocaleString()}/mo?
+              How do I recover ${totalMonthlyCost.toLocaleString()}/mo?
             </div>
             <div style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.6, maxWidth: 500, margin: "0 auto 16px" }}>
               Tell us about your business — we&apos;ll order fixes by ROI and tell you exactly what each one recovers.

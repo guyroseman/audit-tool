@@ -13,7 +13,7 @@ interface TrackedSite { id: string; url: string; label: string; isOwn: boolean; 
 interface UserSettings { smsPhone: string; smsAlerts: boolean; webhookUrl: string; weeklyDigest: boolean; criticalAlerts: boolean; }
 type Tab = "overview"|"vitals"|"blueprint"|"matrix"|"settings";
 type BlueprintFilter = Task["pillar"]|"all"|"verifying";
-const MAX_COMPETITORS = 3;
+// maxCompetitors is set per-plan in the component (see PLAN_CONFIG in supabase.ts)
 
 // ─── Enhanced Toggle Switch ───────────────────────────────────────────────────
 function ToggleSwitch({ value, onChange, color = "#10b981" }: { value: boolean; onChange: (v: boolean) => void; color?: string }) {
@@ -137,7 +137,7 @@ function HistoryChart({ history }: { history: HistoryPoint[] }) {
           {hov!==null && <line x1={PX+(hov/(history.length-1))*cW} x2={PX+(hov/(history.length-1))*cW} y1={PY} y2={PY+cH} stroke="rgba(255,255,255,0.12)" strokeWidth={1}/>}
         </svg>
         {hov!==null && (
-          <div style={{ position:"absolute", top:0, left:`${(hov/(history.length-1))*100}%`, transform:"translateX(-50%)", background:"var(--surface2)", border:"1px solid var(--border2)", borderRadius:8, padding:"8px 12px", pointerEvents:"none", zIndex:10, minWidth:100 }}>
+          <div style={{ position:"absolute", top:0, left:`clamp(50px, ${(hov/(history.length-1))*100}%, calc(100% - 50px))`, transform:"translateX(-50%)", background:"var(--surface2)", border:"1px solid var(--border2)", borderRadius:8, padding:"8px 12px", pointerEvents:"none", zIndex:10, minWidth:100 }}>
             <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", marginBottom:5 }}>{new Date(history[hov].ts).toLocaleDateString()}</p>
             {LINES.map(({ key, label, color }) => (
               <div key={key} style={{ display:"flex", justifyContent:"space-between", gap:10 }}>
@@ -148,7 +148,7 @@ function HistoryChart({ history }: { history: HistoryPoint[] }) {
             <div style={{ borderTop:"1px solid var(--border)", marginTop:4, paddingTop:4 }}>
               <div style={{ display:"flex", justifyContent:"space-between", gap:10 }}>
                 <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--accent)" }}>LEAK</span>
-                <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--text)" }}>£{history[hov].leak?.toLocaleString()}/mo</span>
+                <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--text)" }}>${history[hov].leak?.toLocaleString()}/mo</span>
               </div>
             </div>
           </div>
@@ -216,9 +216,9 @@ function RecoveryTracker({ tasks }: { tasks: Task[] }) {
       </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
         {[
-          { label:"POTENTIAL", val:`£${total}k/yr`, color:"var(--muted)" },
-          { label:"VERIFYING", val:verifying>0?`£${verifying}k/yr`:"—", color:"#f59e0b" },
-          { label:"RECOVERED", val:recovered>0?`£${recovered}k/yr`:"—", color:"#10b981" },
+          { label:"POTENTIAL", val:`$${total}k/yr`, color:"var(--muted)" },
+          { label:"VERIFYING", val:verifying>0?`$${verifying}k/yr`:"—", color:"#f59e0b" },
+          { label:"RECOVERED", val:recovered>0?`$${recovered}k/yr`:"—", color:"#10b981" },
         ].map(({ label, val, color }) => (
           <div key={label} style={{ textAlign:"center" }}>
             <div style={{ fontFamily:"var(--font-display)", fontSize:15, color, marginBottom:2 }}>{val}</div>
@@ -340,7 +340,7 @@ function ScanDigest({ history }: { history: HistoryPoint[] }) {
         <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#a78bfa", letterSpacing:"0.14em" }}>SINCE LAST SCAN — {new Date(prev.ts).toLocaleDateString()}</p>
         {leakDelta!==0 && (
           <span style={{ marginLeft:"auto", fontFamily:"var(--font-mono)", fontSize:8, color:leakDelta>0?"#e8341a":"#10b981" }}>
-            Revenue leak {leakDelta>0?"↑":"↓"} £{Math.abs(leakDelta).toLocaleString()}/mo
+            Revenue leak {leakDelta>0?"↑":"↓"} ${Math.abs(leakDelta).toLocaleString()}/mo
           </span>
         )}
       </div>
@@ -391,6 +391,7 @@ export default function Dashboard() {
   const [loaded, setLoaded] = useState(false);
   const [userId, setUserId] = useState<string|null>(null);
   const [plan, setPlan] = useState<"pulse"|"scale">("pulse");
+  const maxCompetitors = plan === "scale" ? 10 : 3;
   const [tab, setTab] = useState<Tab>("overview");
   const [sites, setSites] = useState<TrackedSite[]>([]);
   const [settings, setSettings] = useState<UserSettings>({ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true });
@@ -450,7 +451,7 @@ export default function Dashboard() {
   }, [sites]);
 
   function addComp(url: string) {
-    if (competitors.length>=MAX_COMPETITORS) { log("Competitor limit reached — upgrade to Scale for up to 10.", "bad"); return; }
+    if (competitors.length>=maxCompetitors) { log("Competitor limit reached — upgrade to Scale for up to 10.", "bad"); return; }
     if (!url.trim()) return;
     const id=`comp-${Date.now()}`, label=url.replace(/https?:\/\//,"").split(".")[0].toUpperCase();
     setSites(p=>[...p,{ id, url:url.trim(), label, isOwn:false, result:null, history:[], tasks:[], loading:false, error:"" }]);
@@ -513,7 +514,7 @@ export default function Dashboard() {
           </a>
           <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.2)", padding:"2px 7px", borderRadius:3, flexShrink:0 }}>● LIVE</span>
           <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:plan==="scale"?"#e8341a":"#a78bfa", background:plan==="scale"?"rgba(232,52,26,0.1)":"rgba(167,139,250,0.1)", border:`1px solid ${plan==="scale"?"rgba(232,52,26,0.25)":"rgba(167,139,250,0.25)"}`, padding:"2px 8px", borderRadius:3, flexShrink:0 }}>{plan.toUpperCase()}</span>
-          {totalRecovered>0 && <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", padding:"2px 8px", borderRadius:3, flexShrink:0 }}>↑ £{totalRecovered}k RECOVERED</span>}
+          {totalRecovered>0 && <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.2)", padding:"2px 8px", borderRadius:3, flexShrink:0 }}>↑ ${totalRecovered}k RECOVERED</span>}
           <div style={{ display:"flex", overflowX:"auto", marginLeft:4, flex:1 }} className="hide-scrollbar dash-tabs-scroll">
             {TABS.map(t=>(
               <button key={t.id} onClick={()=>setTab(t.id)} style={{ padding:"6px 14px", background:"none", border:"none", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, letterSpacing:"0.1em", color:tab===t.id?"var(--text)":"var(--muted)", borderBottom:`2px solid ${tab===t.id?"var(--accent)":"transparent"}`, transition:"all 0.15s", whiteSpace:"nowrap", position:"relative" }}>
@@ -562,12 +563,12 @@ export default function Dashboard() {
                   </div>
                   <div style={{ padding:"17px 19px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
                     <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:7 }}>MONTHLY REVENUE LEAK</p>
-                    <div style={{ fontFamily:"var(--font-display)", fontSize:34, color:own.result?"var(--accent)":"var(--muted)", lineHeight:1, marginBottom:3 }}>{own.result?<AnimatedNumber value={own.result.totalMonthlyCost} prefix="£"/>:"—"}</div>
+                    <div style={{ fontFamily:"var(--font-display)", fontSize:34, color:own.result?"var(--accent)":"var(--muted)", lineHeight:1, marginBottom:3 }}>{own.result?<AnimatedNumber value={own.result.totalMonthlyCost} prefix="$"/>:"—"}</div>
                     {own.result && <>
-                      <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>£{Math.round(own.result.totalMonthlyCost*12).toLocaleString()}/yr annualised</p>
+                      <p style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>${Math.round(own.result.totalMonthlyCost*12).toLocaleString()}/yr annualised</p>
                       <div style={{ marginTop:8, display:"flex", gap:12 }}>
-                        <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>AD WASTE</div><div style={{ fontFamily:"var(--font-display)", fontSize:14, color:"#f59e0b" }}>£{own.result.monthlyAdOverspend}/mo</div></div>
-                        <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>SEO LOSS</div><div style={{ fontFamily:"var(--font-display)", fontSize:14, color:"#f59e0b" }}>£{own.result.monthlyOrganicLoss}/mo</div></div>
+                        <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>AD WASTE</div><div style={{ fontFamily:"var(--font-display)", fontSize:14, color:"#f59e0b" }}>${own.result.monthlyAdOverspend}/mo</div></div>
+                        <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)" }}>SEO LOSS</div><div style={{ fontFamily:"var(--font-display)", fontSize:14, color:"#f59e0b" }}>${own.result.monthlyOrganicLoss}/mo</div></div>
                       </div>
                     </>}
                   </div>
@@ -678,7 +679,7 @@ export default function Dashboard() {
                       { label:"SEO SCORE", val:own.result.seo.estimatedSeoScore, color:scoreColor(own.result.seo.estimatedSeoScore) },
                       { label:"REACH LOST", val:`${own.result.seo.seoReachLossPercent}%`, color:own.result.seo.seoReachLossPercent>30?"#e8341a":"#f59e0b" },
                       { label:"CTR LOSS", val:`${own.result.seo.ctrLoss}%`, color:own.result.seo.ctrLoss>20?"#e8341a":"#f59e0b" },
-                      { label:"ORGANIC LOSS/MO", val:`£${own.result.monthlyOrganicLoss.toLocaleString()}`, color:"var(--accent)" },
+                      { label:"ORGANIC LOSS/MO", val:`$${own.result.monthlyOrganicLoss.toLocaleString()}`, color:"var(--accent)" },
                     ].map(({ label, val, color })=>(
                       <div key={label} style={{ textAlign:"center" }}>
                         <div style={{ fontFamily:"var(--font-display)", fontSize:18, color, marginBottom:1 }}>{val}</div>
@@ -822,7 +823,7 @@ export default function Dashboard() {
                                 <h4 style={{ fontFamily:"var(--font-body)", fontSize:15, fontWeight:600, color:t.status==="verifying"?"var(--muted)":"var(--text)", margin:0 }}>{t.title}</h4>
                               </div>
                               <div style={{ display:"flex", gap:5, alignItems:"center", flexWrap:"wrap" }}>
-                                {t.val>0 && <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#10b981", background:"rgba(16,185,129,0.1)", padding:"2px 8px", borderRadius:4, border:"1px solid rgba(16,185,129,0.2)" }}>~£{t.val}k/yr recoverable</span>}
+                                {t.val>0 && <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#10b981", background:"rgba(16,185,129,0.1)", padding:"2px 8px", borderRadius:4, border:"1px solid rgba(16,185,129,0.2)" }}>~${t.val}k/yr recoverable</span>}
                                 {timeEst[t.id] && <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", background:"var(--bg)", padding:"2px 8px", borderRadius:4, border:"1px solid var(--border)" }}>⏱ {timeEst[t.id]}</span>}
                               </div>
                             </div>
@@ -884,8 +885,8 @@ export default function Dashboard() {
                   <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>4-pillar competitor intelligence. Know where rivals beat you — and where they're exposed.</p>
                 </div>
                 <div style={{ display:"flex", gap:7 }}>
-                  <input type="text" value={newUrl} onChange={e=>setNewUrl(e.target.value)} placeholder="https://competitor.com" onKeyDown={e=>{ if(e.key==="Enter"){ addComp(newUrl); setNewUrl(""); }}} disabled={competitors.length>=MAX_COMPETITORS} style={{ background:"var(--surface)", border:"1px solid var(--border2)", borderRadius:7, padding:"8px 12px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:10, width:180, opacity:competitors.length>=MAX_COMPETITORS?0.5:1 }}/>
-                  <button onClick={()=>{ addComp(newUrl); setNewUrl(""); }} disabled={competitors.length>=MAX_COMPETITORS||!newUrl} style={{ background:"var(--surface2)", border:"1px solid var(--border2)", color:"var(--text)", padding:"8px 12px", borderRadius:7, cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:9 }}>+ ADD</button>
+                  <input type="text" value={newUrl} onChange={e=>setNewUrl(e.target.value)} placeholder="https://competitor.com" onKeyDown={e=>{ if(e.key==="Enter"){ addComp(newUrl); setNewUrl(""); }}} disabled={competitors.length>=maxCompetitors} style={{ background:"var(--surface)", border:"1px solid var(--border2)", borderRadius:7, padding:"8px 12px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:10, width:180, opacity:competitors.length>=maxCompetitors?0.5:1 }}/>
+                  <button onClick={()=>{ addComp(newUrl); setNewUrl(""); }} disabled={competitors.length>=maxCompetitors||!newUrl} style={{ background:"var(--surface2)", border:"1px solid var(--border2)", color:"var(--text)", padding:"8px 12px", borderRadius:7, cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:9 }}>+ ADD</button>
                 </div>
               </div>
               {competitors.length===0 ? (
@@ -1032,7 +1033,7 @@ export default function Dashboard() {
                   <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:9 }}>💳 YOUR PLAN</p>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
                     <span style={{ fontFamily:"var(--font-display)", fontSize:22, color:plan==="scale"?"#e8341a":"#a78bfa" }}>{plan.toUpperCase()}</span>
-                    <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", background:"var(--bg)", padding:"2px 9px", borderRadius:4, border:"1px solid var(--border)" }}>{plan==="scale"?"£149/mo":"£49/mo"}</span>
+                    <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", background:"var(--bg)", padding:"2px 9px", borderRadius:4, border:"1px solid var(--border)" }}>{plan==="scale"?"$149/mo":"$49/mo"}</span>
                   </div>
                   {plan==="pulse" && (
                     <a href="/subscribe" style={{ display:"block", padding:"10px", borderRadius:8, textAlign:"center", background:"rgba(232,52,26,0.08)", border:"1px solid rgba(232,52,26,0.2)", fontFamily:"var(--font-mono)", fontSize:9, color:"var(--accent)", textDecoration:"none", marginBottom:12 }}>Upgrade to Scale — 10 competitors + daily scans →</a>

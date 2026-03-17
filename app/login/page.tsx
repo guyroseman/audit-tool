@@ -24,7 +24,7 @@ function LoginInner() {
     setLoading(true); setError("");
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/login`,
+        redirectTo: `${window.location.origin}/login?type=recovery`,
       });
       if (error) throw error;
       setNotice("Password reset email sent — check your inbox.");
@@ -38,9 +38,9 @@ function LoginInner() {
 
   // Detect password reset token OR error from Supabase redirect
   useEffect(() => {
-    const hash = window.location.hash;
     const params = new URLSearchParams(window.location.search);
-    
+    const hash = window.location.hash;
+
     // Handle error in query string (expired link etc)
     const errorCode = params.get("error_code");
     const errorDesc = params.get("error_description");
@@ -55,18 +55,25 @@ function LoginInner() {
       return;
     }
 
+    // isRecovery: true when arriving via a password reset email link.
+    // Works for both PKCE (type=recovery query param) and legacy implicit flow (hash).
+    const isRecovery =
+      params.get("type") === "recovery" ||
+      hash.includes("type=recovery") ||
+      hash.includes("access_token");
+
     // Listen for Supabase auth events — catches PASSWORD_RECOVERY event
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "PASSWORD_RECOVERY") {
         setIsReset(true);
         window.history.replaceState({}, "", "/login");
-      } else if (event === "SIGNED_IN" && session && !hash.includes("type=recovery")) {
+      } else if (event === "SIGNED_IN" && session && !isRecovery) {
         window.location.href = redirectTo;
       }
     });
 
-    // Also check hash directly for recovery token
-    if (hash.includes("type=recovery") || hash.includes("access_token")) {
+    // Also check session directly for recovery token (handles fast client init)
+    if (isRecovery) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session) setIsReset(true);
       });

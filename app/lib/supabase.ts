@@ -23,14 +23,9 @@ export const PLAN_CONFIG: Record<SubscriptionPlan, {
   scale: { label: "Nexus Scale", maxSites: 11, maxCompetitors: 10, monthlyPriceGBP: 149 },
 };
 
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-}
-
-// Lazy singleton — only instantiated when first used at runtime, not at build time
+// Lazy singleton — only instantiated when first used at runtime, not at build time.
+// All callers (auth-context, login page, etc.) share the same instance so auth
+// state change listeners are consistent.
 let _client: ReturnType<typeof createBrowserClient> | null = null;
 function getClient() {
   if (!_client) {
@@ -42,7 +37,12 @@ function getClient() {
   return _client;
 }
 
-// Legacy named export — wraps lazy getter so it works as a drop-in replacement
+// createClient() returns the singleton — safe to call multiple times.
+export function createClient() {
+  return getClient();
+}
+
+// Legacy named export — thin proxy over the singleton.
 export const supabase = {
   get auth() { return getClient().auth; },
   from: (...args: Parameters<ReturnType<typeof createBrowserClient>["from"]>) =>

@@ -7,9 +7,9 @@ import { NavBar } from "./components/nav";
 
 // ─── Live scan ticker ─────────────────────────────────────────────────────────
 const TICKER = [
-  { url: "shopify-store.com", finding: "LCP 4.2s → £1,840/mo leaking", color: "#e8341a" },
+  { url: "shopify-store.com", finding: "LCP 4.2s → $1,840/mo leaking", color: "#e8341a" },
   { url: "dental-clinic.co.uk", finding: "ADA Risk HIGH → $50k lawsuit exposure", color: "#f59e0b" },
-  { url: "ecom-brand.io", finding: "Google Ad Tax 34% → £920 wasted/mo", color: "#e8341a" },
+  { url: "ecom-brand.io", finding: "Google Ad Tax 34% → $920 wasted/mo", color: "#e8341a" },
   { url: "local-law-firm.com", finding: "3 vulnerable JS libs → trust risk HIGH", color: "#f59e0b" },
   { url: "saas-startup.app", finding: "SEO Score 29 → 61% organic reach lost", color: "#e8341a" },
   { url: "hotel-booking.co", finding: "Security headers missing → checkout FAIL", color: "#f59e0b" },
@@ -37,69 +37,18 @@ function LiveTicker() {
 
 // ─── Live visitor counter ─────────────────────────────────────────────────────
 function LiveCount() {
-  const [n, setN] = useState(65); // fixed SSR-safe initial value
-  useEffect(() => {
-    // Randomise only after hydration to avoid SSR mismatch
-    setN(47 + Math.floor(Math.random() * 20));
-    const iv = setInterval(() => setN(p => Math.max(31, Math.min(88, p + (Math.random() > 0.5 ? 1 : -1)))), 3500);
-    return () => clearInterval(iv);
-  }, []);
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
       <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", display: "inline-block",
         animation: "livePulse 2s ease infinite" }} />
       <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#10b981", letterSpacing: "0.08em" }}>
-        {n} sites scanning now
+        Live audit engine active
       </span>
     </span>
   );
 }
 
 // ─── Social proof popup ───────────────────────────────────────────────────────
-const PROOFS = [
-  { name: "James H.", loc: "Manchester", msg: "found £2,400/mo leak", icon: "💸" },
-  { name: "Sarah M.", loc: "Austin TX", msg: "ADA HIGH risk flagged", icon: "⚖️" },
-  { name: "Tom W.", loc: "London", msg: "competitor dropped 34pts", icon: "📉" },
-  { name: "Asha P.", loc: "Sydney", msg: "$12k ad spend recovered", icon: "🎯" },
-  { name: "Marcus D.", loc: "New York", msg: "3 vuln libraries patched", icon: "🔒" },
-];
-function SocialProof() {
-  const [popup, setPopup] = useState<typeof PROOFS[0] | null>(null);
-  const [vis, setVis] = useState(false);
-  useEffect(() => {
-    let t1: ReturnType<typeof setTimeout>, t2: ReturnType<typeof setTimeout>;
-    const show = () => {
-      setPopup(PROOFS[Math.floor(Math.random() * PROOFS.length)]);
-      setVis(true);
-      t1 = setTimeout(() => setVis(false), 4500);
-      t2 = setTimeout(() => setPopup(null), 5100);
-    };
-    const init = setTimeout(show, 5000);
-    const iv = setInterval(show, 16000 + Math.random() * 8000);
-    return () => { clearTimeout(init); clearTimeout(t1); clearTimeout(t2); clearInterval(iv); };
-  }, []);
-  if (!popup) return null;
-  return (
-    <motion.div initial={{ x: -110, opacity: 0 }} animate={{ x: vis ? 0 : -110, opacity: vis ? 1 : 0 }}
-      transition={{ type: "spring", stiffness: 280, damping: 28 }}
-      style={{ position: "fixed", bottom: 24, left: 16, zIndex: 9000,
-        background: "rgba(8,15,28,0.97)", backdropFilter: "blur(20px)",
-        border: "1px solid var(--border2)", borderLeft: "3px solid #10b981",
-        borderRadius: 12, padding: "12px 16px", maxWidth: 280,
-        boxShadow: "0 16px 48px rgba(0,0,0,0.4)" }}>
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-        <span style={{ fontSize: 22 }}>{popup.icon}</span>
-        <div>
-          <div style={{ fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13, color: "var(--text)" }}>
-            {popup.name} <span style={{ fontWeight: 400, color: "var(--muted)", fontSize: 11 }}>from {popup.loc}</span>
-          </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#10b981", marginTop: 1 }}>{popup.msg}</div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)", marginTop: 1 }}>via NEXUS · just now ✓</div>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 // ─── URL Input (URL only — email is captured AFTER the scan) ─────────────────
 function UrlInput({ onScan, size = "lg" }: { onScan: (url: string) => void; size?: "lg" | "sm" }) {
@@ -298,14 +247,14 @@ export default function Home() {
               </div>
               <div style={{ padding: "8px 10px", borderRadius: 7, background: "rgba(232,52,26,0.06)", border: "1px solid rgba(232,52,26,0.2)" }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.1em" }}>⚠ TOP FINDING</div>
-                <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text2)", marginTop: 4, lineHeight: 1.5 }}>LCP 4.2s → £1,840/mo in lost ad spend</div>
+                <div style={{ fontFamily: "var(--font-body)", fontSize: 11, color: "var(--text2)", marginTop: 4, lineHeight: 1.5 }}>LCP 4.2s → $1,840/mo in lost ad spend</div>
               </div>
             </div>
             {/* Revenue leak card */}
             <div style={{ padding: "14px 16px", borderRadius: 12, background: "linear-gradient(135deg,rgba(232,52,26,0.08),rgba(232,52,26,0.03))", border: "1px solid rgba(232,52,26,0.25)" }}>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted)", letterSpacing: "0.12em", marginBottom: 6 }}>ESTIMATED MONTHLY LEAK</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 36, color: "var(--accent)", letterSpacing: "0.04em", lineHeight: 1 }}>£3,240</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted)", letterSpacing: "0.08em", marginTop: 4 }}>£38,880 / YEAR</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 36, color: "var(--accent)", letterSpacing: "0.04em", lineHeight: 1 }}>$3,240</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted)", letterSpacing: "0.08em", marginTop: 4 }}>$38,880 / YEAR</div>
             </div>
           </motion.div>
         </div>
@@ -363,7 +312,7 @@ export default function Home() {
             {[
               { n: "01", icon: "🔗", title: "Paste your URL", body: "No account. No credit card. Just your domain. Nexus calls Google Lighthouse in real time.", color: "var(--accent)" },
               { n: "02", icon: "⚡", title: "Watch the 4-pillar scan", body: "A terminal-style audit checks all 4 pillars live. You see what we&rsquo;re testing as we test it.", color: "#f59e0b" },
-              { n: "03", icon: "💸", title: "Get your leak number", body: "Every finding is translated into £/$ per month. One terrifying number. No guesswork.", color: "#a78bfa" },
+              { n: "03", icon: "💸", title: "Get your leak number", body: "Every finding is translated into $ per month. One terrifying number. No guesswork.", color: "#a78bfa" },
               { n: "04", icon: "📋", title: "Get the fix blueprint", body: "A prioritised developer task list ordered by dollar ROI. Forward it to your dev today.", color: "#10b981" },
             ].map((s, i) => (
               <motion.div key={s.n} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.08 }}
@@ -408,7 +357,7 @@ export default function Home() {
             </h2>
           </motion.div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
-            <Testimonial i={0} stat="£2,400/mo recovered"
+            <Testimonial i={0} stat="$2,400/mo recovered"
               quote="Found out our hero image was 8MB. One fix. Google Ads CPC dropped 28% the next week. Nexus paid for 4 years of subscription in that one afternoon."
               name="James H." role="SaaS Founder · Manchester" />
             <Testimonial i={1} stat="$50k lawsuit avoided"
@@ -436,7 +385,7 @@ export default function Home() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, maxWidth: 760, margin: "0 auto" }}>
           {[
             { label: "GTmetrix / Pingdom", type: "other" as const, points: ["Engineers read it", "No dollar translation", "Charts. Just dry charts.", "No SEO or accessibility pillar", "No fix blueprint"] },
-            { label: "NEXUS", type: "us" as const, points: ["Founders read it instantly", "£/$ per month, per finding", "Plain-English business impact", "Full 4-pillar engine", "Prioritised fix plan + webhooks"] },
+            { label: "NEXUS", type: "us" as const, points: ["Founders read it instantly", "$ per month, per finding", "Plain-English business impact", "Full 4-pillar engine", "Prioritised fix plan + webhooks"] },
           ].map(card => (
             <motion.div key={card.label} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               style={{ padding: "24px 20px", borderRadius: 14, background: card.type === "us" ? "linear-gradient(135deg,rgba(232,52,26,0.07),rgba(232,52,26,0.03))" : "var(--surface)", border: `1.5px solid ${card.type === "us" ? "rgba(232,52,26,0.35)" : "var(--border)"}` }}>
@@ -495,7 +444,6 @@ export default function Home() {
         </div>
       </footer>
 
-      <SocialProof />
     </main>
   );
 }

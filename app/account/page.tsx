@@ -13,13 +13,11 @@ function DeleteAccount() {
   const handleDelete = async () => {
     setDeleting(true);
     try {
+      const res = await fetch("/api/account/delete", { method: "DELETE" });
+      if (!res.ok) throw new Error("Server error");
+      // Sign out locally — auth user is already gone on the server
       const { createClient } = await import("../lib/supabase");
-      const sb = createClient();
-      const { data: { user } } = await sb.auth.getUser();
-      if (user) {
-        await sb.from("profiles").delete().eq("id", user.id);
-        await sb.auth.signOut();
-      }
+      await createClient().auth.signOut();
       window.location.href = "/";
     } catch {
       setDeleting(false);
@@ -146,7 +144,7 @@ export default function Account() {
             {!isPaid && (
               <a href="/subscribe"
                 style={{ display: "block", padding: "14px 20px", borderRadius: 10, background: "#a78bfa", fontFamily: "var(--font-mono)", fontSize: 12, color: "#fff", textDecoration: "none", letterSpacing: "0.1em", textAlign: "center", boxShadow: "0 0 24px rgba(167,139,250,0.35)" }}>
-                UPGRADE TO PULSE — £49/MO →
+                UPGRADE TO PULSE — $49/MO →
               </a>
             )}
             <button onClick={signOut}

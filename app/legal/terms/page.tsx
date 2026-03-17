@@ -62,7 +62,7 @@ export default function TermsOfService() {
 
         <Section title="4. Subscriptions and Billing">
           <p style={{ marginBottom: 8 }}><strong style={{ color: "var(--text)" }}>Free tier:</strong> Available to all registered users. Limited to manual audits as specified on the pricing page. No credit card required.</p>
-          <p style={{ marginBottom: 8 }}><strong style={{ color: "var(--text)" }}>Paid plans:</strong> Pulse (£49/mo) and Scale (£149/mo) are billed monthly or annually through Lemon Squeezy. Subscriptions renew automatically unless cancelled.</p>
+          <p style={{ marginBottom: 8 }}><strong style={{ color: "var(--text)" }}>Paid plans:</strong> Pulse ($49/mo) and Scale ($149/mo) are billed monthly or annually through Lemon Squeezy. Subscriptions renew automatically unless cancelled.</p>
           <p style={{ marginBottom: 8 }}><strong style={{ color: "var(--text)" }}>Price changes:</strong> We will notify you at least 30 days before any price increase. Continued use after the effective date constitutes acceptance.</p>
           <p><strong style={{ color: "var(--text)" }}>Taxes:</strong> Prices are exclusive of applicable taxes. You are responsible for any sales tax, VAT, or other taxes applicable in your jurisdiction.</p>
         </Section>

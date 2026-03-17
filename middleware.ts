@@ -10,7 +10,8 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 const PUBLIC_PREFIXES = ["/", "/funnel", "/subscribe", "/legal", "/api"];
 const LOGIN_PATH      = "/login";
-const AUTH_PATHS      = ["/dashboard", "/call-center"];
+const AUTH_PATHS      = ["/dashboard", "/call-center", "/account"];
+const ADMIN_PATHS     = ["/batch-audit"];
 
 function isPaid(plan: string | null | undefined): boolean {
   return plan === "pulse" || plan === "scale";
@@ -66,16 +67,29 @@ export async function middleware(request: NextRequest) {
     return res;
   }
 
-  // Logged in — check plan for dashboard access
-  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+  // /batch-audit — admin only (email must be in ADMIN_EMAILS env var)
+  if (ADMIN_PATHS.some(p => pathname === p || pathname.startsWith(p + "/"))) {
+    const adminEmails = (process.env.ADMIN_EMAILS ?? "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+    const userEmail = session.user.email?.toLowerCase() ?? "";
+    if (!adminEmails.includes(userEmail)) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+    return res;
+  }
+
+  // Logged in — check plan for gated routes
+  const needsPlanCheck =
+    pathname === "/dashboard" || pathname.startsWith("/dashboard/");
+
+  if (needsPlanCheck) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("tier")
       .eq("id", session.user.id)
       .single();
 
+    // /dashboard requires any paid plan
     if (!isPaid(profile?.tier)) {
-      // Has account but no paid plan → pricing page with context
       const url = new URL("/subscribe", request.url);
       url.searchParams.set("reason", "upgrade");
       return NextResponse.redirect(url);

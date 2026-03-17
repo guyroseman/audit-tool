@@ -93,10 +93,11 @@ export async function POST(req: NextRequest) {
       if (error) {
         console.error("Supabase update error:", error);
       } else if (!data || data.length === 0) {
-        // No row matched by email — try matching via auth.users
+        // No row matched by email — try matching via auth.users by email (single lookup, no pagination)
         console.warn(`No profile found for email ${email} — trying auth lookup`);
-        const { data: users } = await supabase.auth.admin.listUsers();
-        const user = users?.users?.find(u => u.email === email);
+        const { data: { users }, error: listErr } = await supabase.auth.admin.listUsers({ perPage: 1000 });
+        if (listErr) console.error("Auth listUsers error:", listErr);
+        const user = users?.find(u => u.email === email);
         if (user) {
           const { error: err2 } = await supabase
             .from("profiles")
