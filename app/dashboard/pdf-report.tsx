@@ -69,8 +69,8 @@ const S = StyleSheet.create({
 function ScoreRing({ score, label }) {
   const r = 22;
   const circ = 2 * Math.PI * r;
-  const fill = (score / 100) * circ;
-  const gap = circ - fill;
+  const fill = Math.max((score / 100) * circ, 0.001);
+  const gap = Math.max(circ - fill, 0.001); // react-pdf rejects gap of exactly 0
   const offset = circ / 4; // start from 12 o'clock
   const color = sc(score);
 

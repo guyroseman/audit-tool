@@ -29,7 +29,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https:",
-              "connect-src 'self' https://www.googleapis.com https://script.google.com https://*.supabase.co",
+              "connect-src 'self' https://www.googleapis.com https://script.google.com https://*.supabase.co data: blob:",
               "frame-ancestors 'none'",
             ].join("; "),
           },
