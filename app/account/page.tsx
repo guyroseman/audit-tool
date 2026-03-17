@@ -60,7 +60,7 @@ export default function Account() {
   // Not logged in → redirect to login
   useEffect(() => {
     if (!loading && !user) {
-      window.location.href = "/login?redirect=/account";
+      window.location.href = "/login";
     }
   }, [loading, user]);
 
@@ -136,7 +136,7 @@ export default function Account() {
           {/* Actions */}
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             {isPaid && (
-              <a href="https://nexus-diagnostics.lemonsqueezy.com/billing" target="_blank" rel="noopener"
+              <a href={`https://nexus-diagnostics.lemonsqueezy.com/billing?prefilled_email=${encodeURIComponent(profile?.email ?? user.email ?? "")}`} target="_blank" rel="noopener"
                 style={{ display: "block", padding: "14px 20px", borderRadius: 10, border: "1px solid var(--border)", background: "var(--surface)", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text2)", textDecoration: "none", letterSpacing: "0.08em", textAlign: "center" }}>
                 MANAGE BILLING (LEMON SQUEEZY) ↗
               </a>
