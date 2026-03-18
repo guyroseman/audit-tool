@@ -2,7 +2,6 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { createClient } from "@supabase/supabase-js";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 interface Lead {
@@ -28,7 +27,8 @@ interface Lead {
 type SortKey = "created_at" | "score" | "status" | "tier";
 type FilterStatus = "all" | Lead["status"];
 
-const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "").split(",").map(e => e.trim().toLowerCase()).filter(Boolean);
+const ADMIN_PASSWORD = "@Nexusr3355";
+const SESSION_KEY = "nexus_admin_authed";
 
 const STATUS_COLORS: Record<string, string> = {
   new: "#22d3ee",
@@ -90,6 +90,8 @@ export default function AdminLeadsPage() {
   const [error, setError] = useState<string | null>(null);
   const [authed, setAuthed] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [pwInput, setPwInput] = useState("");
+  const [pwError, setPwError] = useState(false);
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
   const [filterTier, setFilterTier] = useState<string>("all");
@@ -99,20 +101,23 @@ export default function AdminLeadsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
-  // ── Auth Check ──────────────────────────────────────────────────────────────
+  // ── Auth Check — password gate with sessionStorage persistence ──────────────
   useEffect(() => {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data?.user?.email?.toLowerCase() ?? "";
-      if (ADMIN_EMAILS.length === 0 || ADMIN_EMAILS.includes(email)) {
-        setAuthed(true);
-      }
-      setCheckingAuth(false);
-    });
+    if (sessionStorage.getItem(SESSION_KEY) === "1") setAuthed(true);
+    setCheckingAuth(false);
   }, []);
+
+  function submitPassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (pwInput === ADMIN_PASSWORD) {
+      sessionStorage.setItem(SESSION_KEY, "1");
+      setAuthed(true);
+      setPwError(false);
+    } else {
+      setPwError(true);
+      setPwInput("");
+    }
+  }
 
   // ── Fetch Leads ─────────────────────────────────────────────────────────────
   const fetchLeads = useCallback(async () => {
@@ -198,18 +203,42 @@ export default function AdminLeadsPage() {
   // ── Loading / Auth Guard ────────────────────────────────────────────────────
   if (checkingAuth) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg, #060d1a)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontFamily: "var(--font-mono, monospace)", color: "#6888a8", fontSize: 13 }}>CHECKING ACCESS...</div>
+      <div style={{ minHeight: "100vh", background: "#060d1a", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ fontFamily: "monospace", color: "#6888a8", fontSize: 13 }}>...</div>
       </div>
     );
   }
 
   if (!authed) {
     return (
-      <div style={{ minHeight: "100vh", background: "var(--bg, #060d1a)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, padding: 32 }}>
-        <div style={{ fontFamily: "var(--font-mono, monospace)", color: "#ef4444", fontSize: 13, letterSpacing: "0.1em" }}>ACCESS DENIED</div>
-        <div style={{ fontFamily: "var(--font-mono, monospace)", color: "#6888a8", fontSize: 11 }}>Admin access only. Sign in with an authorised account.</div>
-        <a href="/dashboard" style={{ color: "#a78bfa", fontFamily: "var(--font-mono, monospace)", fontSize: 11 }}>← Back to Dashboard</a>
+      <div style={{ minHeight: "100vh", background: "#060d1a", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          style={{ width: "100%", maxWidth: 360, background: "#0a1628", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 16, padding: 36, textAlign: "center" }}
+        >
+          <div style={{ fontSize: 28, marginBottom: 16 }}>⬡</div>
+          <div style={{ fontFamily: "monospace", fontSize: 13, fontWeight: 700, color: "#a78bfa", letterSpacing: "0.14em", marginBottom: 6 }}>NEXUS ADMIN</div>
+          <div style={{ fontFamily: "monospace", fontSize: 10, color: "#6888a8", marginBottom: 28 }}>Lead Intelligence — restricted access</div>
+          <form onSubmit={submitPassword} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <input
+              type="password"
+              value={pwInput}
+              onChange={e => { setPwInput(e.target.value); setPwError(false); }}
+              placeholder="Enter password"
+              autoFocus
+              style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${pwError ? "#ef4444" : "rgba(167,139,250,0.25)"}`, borderRadius: 8, padding: "12px 14px", color: "#c9d8e8", fontFamily: "monospace", fontSize: 13, outline: "none", textAlign: "center", letterSpacing: "0.1em" }}
+            />
+            {pwError && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ fontFamily: "monospace", fontSize: 10, color: "#ef4444" }}>
+                INCORRECT PASSWORD
+              </motion.div>
+            )}
+            <button type="submit" style={{ background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.35)", borderRadius: 8, padding: "12px", color: "#a78bfa", fontFamily: "monospace", fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", cursor: "pointer" }}>
+              ENTER →
+            </button>
+          </form>
+          <a href="/" style={{ display: "block", marginTop: 20, fontFamily: "monospace", fontSize: 10, color: "#6888a8", textDecoration: "none" }}>← Back to home</a>
+        </motion.div>
       </div>
     );
   }
