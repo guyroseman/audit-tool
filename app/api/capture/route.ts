@@ -105,10 +105,13 @@ export async function POST(req: NextRequest) {
   // ── 2. Supabase leads table ────────────────────────────────────────────────
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  // Fall back to anon key so captures work even without a service role key.
+  // The leads table RLS should allow INSERT for anon role (see supabase/leads_table.sql).
+  const supabaseKey = serviceRoleKey ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (supabaseUrl && serviceRoleKey) {
+  if (supabaseUrl && supabaseKey) {
     try {
-      const admin = createClient(supabaseUrl, serviceRoleKey, {
+      const admin = createClient(supabaseUrl, supabaseKey, {
         auth: { persistSession: false },
       });
 

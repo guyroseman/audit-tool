@@ -1311,9 +1311,12 @@ export default function Dashboard() {
           {/* ══════════════ SITE VIEW ══════════════ */}
           {tab==="siteview" && (
             <motion.div key="siteview" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
-              <div style={{ marginBottom:20 }}>
-                <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,30px)", color:"var(--text)", letterSpacing:"0.05em", marginBottom:5 }}>SITE VIEW</h2>
-                <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Live screenshot captured during your last audit — rendered at native mobile resolution.</p>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:20, flexWrap:"wrap", gap:10 }}>
+                <div>
+                  <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,30px)", color:"var(--text)", letterSpacing:"0.05em", marginBottom:5 }}>SITE VIEW</h2>
+                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Live screenshot with annotated issue markers — shareable with your dev team.</p>
+                </div>
+                {own?.result && <button onClick={()=>own&&scan(own.id)} style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", background:"var(--surface)", border:"1px solid var(--border)", padding:"6px 12px", borderRadius:6, cursor:"pointer" }}>↺ REFRESH SCREENSHOT</button>}
               </div>
               {!own?.result?.screenshot ? (
                 <div style={{ padding:"44px", textAlign:"center", border:"1px dashed var(--border)", borderRadius:13 }}>
@@ -1321,117 +1324,134 @@ export default function Dashboard() {
                   <p style={{ fontFamily:"var(--font-mono)", fontSize:12, color:"var(--muted)", marginBottom:6 }}>No screenshot yet.</p>
                   <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--muted2)" }}>Run an audit on Overview — the screenshot is captured automatically by Google Lighthouse.</p>
                 </div>
-              ) : (
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:24, alignItems:"start" }}>
-                  {/* Phone frame */}
-                  <div style={{ display:"flex", justifyContent:"center" }}>
-                    <motion.div initial={{ opacity:0, y:16, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.4, ease:"easeOut" }}
-                      style={{ position:"relative", width:300 }}>
-                      {/* Outer phone shell */}
-                      <div style={{ background:"linear-gradient(160deg,#1a2440 0%,#0d1829 100%)", borderRadius:44, padding:"14px 10px", border:"2px solid rgba(167,139,250,0.3)", boxShadow:"0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)", position:"relative" }}>
-                        {/* Camera notch */}
-                        <div style={{ position:"absolute", top:18, left:"50%", transform:"translateX(-50%)", width:70, height:20, background:"#060d1a", borderRadius:12, zIndex:3, display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
-                          <div style={{ width:7, height:7, borderRadius:"50%", background:"rgba(167,139,250,0.25)", border:"1px solid rgba(167,139,250,0.15)" }}/>
-                          <div style={{ width:32, height:6, borderRadius:3, background:"rgba(167,139,250,0.12)" }}/>
-                        </div>
-                        {/* Screen bezel */}
-                        <div style={{ borderRadius:32, overflow:"hidden", background:"#000", marginTop:8 }}>
-                          <img
-                            src={own.result.screenshot}
-                            alt={`Screenshot of ${own.url}`}
-                            style={{ width:"100%", display:"block", imageRendering:"auto" }}
-                          />
-                        </div>
-                        {/* Home indicator */}
-                        <div style={{ display:"flex", justifyContent:"center", marginTop:8 }}>
-                          <div style={{ width:44, height:4, borderRadius:2, background:"rgba(167,139,250,0.2)" }}/>
-                        </div>
-                      </div>
-                      {/* Glow */}
-                      <div style={{ position:"absolute", inset:-2, borderRadius:46, background:"rgba(167,139,250,0.04)", filter:"blur(20px)", zIndex:-1 }}/>
-                      {/* Timestamp badge */}
-                      <div style={{ marginTop:12, textAlign:"center" }}>
-                        <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted2)", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:4, padding:"2px 8px" }}>
-                          CAPTURED {new Date(own.result.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                    </motion.div>
-                  </div>
-
-                  {/* Issue breakdown */}
-                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                    {/* Score summary */}
-                    <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.12 }}
-                      style={{ padding:"16px 20px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                      <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:12 }}>SCORES AT CAPTURE TIME</p>
-                      <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
-                        {[
-                          { label:"PERFORMANCE", val:own.result.metrics.performanceScore, color:scoreColor(own.result.metrics.performanceScore) },
-                          { label:"SEO", val:own.result.seo?.estimatedSeoScore??0, color:scoreColor(own.result.seo?.estimatedSeoScore??0) },
-                          { label:"ACCESSIBILITY", val:own.result.accessibility?.estimatedA11yScore??0, color:scoreColor(own.result.accessibility?.estimatedA11yScore??0) },
-                          { label:"SECURITY", val:own.result.security?.estimatedBestPracticesScore??0, color:scoreColor(own.result.security?.estimatedBestPracticesScore??0) },
-                        ].map(({ label, val, color })=>(
-                          <div key={label} style={{ padding:"10px 12px", borderRadius:9, background:"var(--bg)", border:`1px solid ${color}25` }}>
-                            <div style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", marginBottom:3, letterSpacing:"0.1em" }}>{label}</div>
-                            <div style={{ fontFamily:"var(--font-display)", fontSize:24, color, lineHeight:1 }}>{val}</div>
-                            <div style={{ marginTop:5, height:3, borderRadius:2, background:"var(--border)", overflow:"hidden" }}>
-                              <div style={{ height:"100%", width:`${val}%`, background:color, borderRadius:2, transition:"width 0.6s ease" }}/>
-                            </div>
+              ) : (()=>{
+                const r = own.result;
+                // Build issue annotations
+                const annots: { label:string; short:string; color:string; x:string; y:string; fix:string }[] = [];
+                if (r.metrics.lcp > 2500) annots.push({ label:"Slow LCP", short:"SLOW LOAD", color:"#e8341a", x:"62%", y:"18%", fix:`LCP ${(r.metrics.lcp/1000).toFixed(1)}s — preload hero, switch to WebP` });
+                if (r.metrics.cls > 0.1) annots.push({ label:"Layout Shift", short:"CLS", color:"#f59e0b", x:"30%", y:"52%", fix:`CLS ${r.metrics.cls.toFixed(2)} — set image dimensions explicitly` });
+                if (!r.seo?.hasMeta) annots.push({ label:"Missing Meta", short:"NO META", color:"#f59e0b", x:"50%", y:"5%", fix:"Add <meta name='description'> to <head>" });
+                if ((r.security?.vulnerableLibraryCount??0)>0) annots.push({ label:"Vuln. Library", short:"VULN JS", color:"#e8341a", x:"16%", y:"75%", fix:`${r.security.vulnerableLibraryCount} CVE found — run npm audit fix` });
+                if (r.accessibility?.missingAltText) annots.push({ label:"Missing Alt Text", short:"NO ALT", color:"#a78bfa", x:"78%", y:"45%", fix:"Add alt attributes to all images" });
+                if (!r.seo?.mobileViewport) annots.push({ label:"No Viewport Tag", short:"VIEWPORT", color:"#f59e0b", x:"50%", y:"2%", fix:"Add <meta name='viewport'> to <head>" });
+                if (!r.security?.hasSecurityHeaders) annots.push({ label:"Missing Headers", short:"HEADERS", color:"#22d3ee", x:"15%", y:"90%", fix:"Add CSP, HSTS, X-Frame-Options to server" });
+                const [activePin, setActivePin] = React.useState<number|null>(null);
+                return (
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:28, alignItems:"start" }}>
+                    {/* Annotated phone */}
+                    <div style={{ display:"flex", justifyContent:"center" }}>
+                      <motion.div initial={{ opacity:0, y:16, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.4, ease:"easeOut" }}
+                        style={{ position:"relative", width:300 }}>
+                        {/* Phone shell */}
+                        <div style={{ background:"linear-gradient(160deg,#1a2440 0%,#0d1829 100%)", borderRadius:44, padding:"14px 10px", border:"2px solid rgba(167,139,250,0.3)", boxShadow:"0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+                          {/* Notch */}
+                          <div style={{ position:"absolute", top:18, left:"50%", transform:"translateX(-50%)", width:70, height:20, background:"#060d1a", borderRadius:12, zIndex:3, display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                            <div style={{ width:7, height:7, borderRadius:"50%", background:"rgba(167,139,250,0.25)", border:"1px solid rgba(167,139,250,0.15)" }}/>
+                            <div style={{ width:32, height:6, borderRadius:3, background:"rgba(167,139,250,0.12)" }}/>
                           </div>
-                        ))}
-                      </div>
-                    </motion.div>
+                          {/* Screen with annotations */}
+                          <div style={{ borderRadius:32, overflow:"hidden", background:"#000", marginTop:8, position:"relative" }}>
+                            <img src={r.screenshot} alt={`Screenshot of ${own.url}`} style={{ width:"100%", display:"block" }}/>
+                            {/* Annotation pins overlaid on screenshot */}
+                            {annots.map((ann, i)=>(
+                              <motion.div key={i} initial={{ scale:0, opacity:0 }} animate={{ scale:1, opacity:1 }} transition={{ delay:0.3+i*0.12, type:"spring", stiffness:280, damping:20 }}
+                                style={{ position:"absolute", left:ann.x, top:ann.y, transform:"translate(-50%,-50%)", zIndex:10, cursor:"pointer" }}
+                                onClick={()=>setActivePin(activePin===i?null:i)}>
+                                {/* Pin circle */}
+                                <div style={{ width:24, height:24, borderRadius:"50%", background:ann.color, border:"2.5px solid rgba(255,255,255,0.9)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-mono)", fontSize:9, fontWeight:"bold", color:"#fff", boxShadow:`0 0 0 3px ${ann.color}40, 0 0 20px ${ann.color}80, 0 2px 8px rgba(0,0,0,0.5)` }}>
+                                  {i+1}
+                                </div>
+                                {/* Pulsing ring */}
+                                <motion.div animate={{ scale:[1,1.6,1], opacity:[0.6,0,0.6] }} transition={{ repeat:Infinity, duration:2, delay:i*0.4 }}
+                                  style={{ position:"absolute", inset:-4, borderRadius:"50%", border:`1.5px solid ${ann.color}`, pointerEvents:"none" }}/>
+                                {/* Callout bubble — appears on click */}
+                                {activePin===i && (
+                                  <motion.div initial={{ opacity:0, scale:0.85, y:4 }} animate={{ opacity:1, scale:1, y:0 }}
+                                    style={{ position:"absolute", bottom:"calc(100% + 8px)", left:"50%", transform:"translateX(-50%)", background:"rgba(6,13,26,0.97)", border:`1.5px solid ${ann.color}`, borderRadius:8, padding:"8px 10px", minWidth:140, maxWidth:180, zIndex:20, boxShadow:`0 4px 20px rgba(0,0,0,0.6), 0 0 12px ${ann.color}30`, pointerEvents:"none" }}>
+                                    {/* Arrow */}
+                                    <div style={{ position:"absolute", top:"100%", left:"50%", transform:"translateX(-50%)", width:0, height:0, borderLeft:"6px solid transparent", borderRight:"6px solid transparent", borderTop:`6px solid ${ann.color}` }}/>
+                                    <div style={{ fontFamily:"var(--font-mono)", fontSize:8, color:ann.color, letterSpacing:"0.1em", marginBottom:4 }}>#{i+1} {ann.short}</div>
+                                    <div style={{ fontFamily:"var(--font-body)", fontSize:10, color:"#c9d8e8", lineHeight:1.4 }}>{ann.fix}</div>
+                                  </motion.div>
+                                )}
+                              </motion.div>
+                            ))}
+                            {/* Scan line overlay */}
+                            <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, transparent 60%, rgba(3,7,15,0.7) 100%)", pointerEvents:"none" }}/>
+                          </div>
+                          {/* Home bar */}
+                          <div style={{ display:"flex", justifyContent:"center", marginTop:8 }}>
+                            <div style={{ width:44, height:4, borderRadius:2, background:"rgba(167,139,250,0.2)" }}/>
+                          </div>
+                        </div>
+                        {/* Glow */}
+                        <div style={{ position:"absolute", inset:-2, borderRadius:46, background:"rgba(167,139,250,0.04)", filter:"blur(20px)", zIndex:-1 }}/>
+                        <div style={{ marginTop:10, textAlign:"center" }}>
+                          <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:4, padding:"2px 8px" }}>CAPTURED {new Date(r.timestamp).toLocaleString()}</span>
+                        </div>
+                        {annots.length>0 && <div style={{ marginTop:8, textAlign:"center" }}><span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>Tap a pin to see the issue</span></div>}
+                      </motion.div>
+                    </div>
 
-                    {/* Visual issues detected */}
-                    <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.2 }}
-                      style={{ padding:"16px 20px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                      <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:12 }}>ISSUES DETECTED</p>
-                      {(()=>{
-                        const r = own.result;
-                        const issues = [];
-                        if (r.metrics.lcp > 4000) issues.push({ label:"Slow LCP — page loads too slowly", color:"#e8341a", fix:"Preload hero image, use WebP" });
-                        if (r.metrics.cls > 0.1) issues.push({ label:"Layout shift detected (CLS > 0.1)", color:"#f59e0b", fix:"Set explicit dimensions on all images" });
-                        if (!r.seo?.hasMeta) issues.push({ label:"Missing meta description", color:"#f59e0b", fix:"Add <meta name='description'> to every page" });
-                        if ((r.security?.vulnerableLibraryCount??0) > 0) issues.push({ label:`${r.security.vulnerableLibraryCount} vulnerable JS librar${r.security.vulnerableLibraryCount===1?"y":"ies"}`, color:"#e8341a", fix:"Run npm audit fix" });
-                        if (r.accessibility?.missingAltText) issues.push({ label:"Images missing alt text", color:"#a78bfa", fix:"Add descriptive alt attributes" });
-                        if (!r.seo?.mobileViewport) issues.push({ label:"Missing mobile viewport tag", color:"#f59e0b", fix:"Add viewport meta tag to <head>" });
-                        if (!r.security?.hasSecurityHeaders) issues.push({ label:"Missing security headers", color:"#22d3ee", fix:"Add CSP, HSTS, X-Frame-Options" });
-                        if (issues.length===0) return <div style={{ padding:"16px", borderRadius:9, background:"rgba(16,185,129,0.06)", border:"1px solid rgba(16,185,129,0.2)", textAlign:"center" }}><p style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"#10b981" }}>✓ No critical issues detected</p></div>;
-                        return (
+                    {/* Right panel */}
+                    <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                      {/* Scores */}
+                      <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.12 }}
+                        style={{ padding:"16px 20px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:12 }}>SCORES AT CAPTURE TIME</p>
+                        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
+                          {[
+                            { label:"PERFORMANCE", val:r.metrics.performanceScore, color:scoreColor(r.metrics.performanceScore) },
+                            { label:"SEO", val:r.seo?.estimatedSeoScore??0, color:scoreColor(r.seo?.estimatedSeoScore??0) },
+                            { label:"ACCESSIBILITY", val:r.accessibility?.estimatedA11yScore??0, color:scoreColor(r.accessibility?.estimatedA11yScore??0) },
+                            { label:"SECURITY", val:r.security?.estimatedBestPracticesScore??0, color:scoreColor(r.security?.estimatedBestPracticesScore??0) },
+                          ].map(({ label, val, color })=>(
+                            <div key={label} style={{ padding:"10px 12px", borderRadius:9, background:"var(--bg)", border:`1px solid ${color}25` }}>
+                              <div style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", marginBottom:3, letterSpacing:"0.1em" }}>{label}</div>
+                              <div style={{ fontFamily:"var(--font-display)", fontSize:24, color, lineHeight:1 }}>{val}</div>
+                              <div style={{ marginTop:5, height:3, borderRadius:2, background:"var(--border)", overflow:"hidden" }}>
+                                <div style={{ height:"100%", width:`${val}%`, background:color, borderRadius:2, transition:"width 0.6s ease" }}/>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+
+                      {/* Issue legend — tapping highlights the pin */}
+                      <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.2 }}
+                        style={{ padding:"16px 20px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:12 }}>ANNOTATION LEGEND</p>
+                        {annots.length===0 ? (
+                          <div style={{ padding:"14px", borderRadius:9, background:"rgba(16,185,129,0.06)", border:"1px solid rgba(16,185,129,0.2)", textAlign:"center" }}>
+                            <p style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"#10b981" }}>✓ No critical issues detected</p>
+                          </div>
+                        ) : (
                           <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                            {issues.map((iss,i)=>(
+                            {annots.map((ann, i)=>(
                               <motion.div key={i} initial={{ opacity:0, x:8 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.25+i*0.07 }}
-                                style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:9, background:`${iss.color}08`, border:`1px solid ${iss.color}30` }}>
-                                <div style={{ width:6, height:6, borderRadius:"50%", background:iss.color, flexShrink:0, marginTop:4 }}/>
-                                <div style={{ flex:1 }}>
-                                  <div style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text)", marginBottom:2 }}>{iss.label}</div>
-                                  <div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>Fix: {iss.fix}</div>
+                                onClick={()=>setActivePin(activePin===i?null:i)}
+                                style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:9, background:activePin===i?`${ann.color}14`:`${ann.color}06`, border:`1px solid ${activePin===i?ann.color:ann.color+"30"}`, cursor:"pointer", transition:"all 0.15s" }}>
+                                <div style={{ width:22, height:22, borderRadius:"50%", background:ann.color, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-mono)", fontSize:9, fontWeight:"bold", color:"#fff", boxShadow:`0 0 8px ${ann.color}60` }}>{i+1}</div>
+                                <div style={{ flex:1, minWidth:0 }}>
+                                  <div style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text)", marginBottom:2 }}>{ann.label}</div>
+                                  <div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>{ann.fix}</div>
                                 </div>
                               </motion.div>
                             ))}
                           </div>
-                        );
-                      })()}
-                    </motion.div>
+                        )}
+                      </motion.div>
 
-                    {/* CTA to blueprint */}
-                    <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.28 }}>
-                      <button onClick={()=>setTab("blueprint")}
-                        style={{ width:"100%", padding:"14px 20px", borderRadius:10, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.3)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:11, color:"var(--accent)", letterSpacing:"0.1em" }}>
-                        VIEW RECOVERY BLUEPRINT →
-                      </button>
-                    </motion.div>
-
-                    {/* Rescan CTA */}
-                    <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.32 }}>
-                      <button onClick={()=>own&&scan(own.id)}
-                        style={{ width:"100%", padding:"12px 20px", borderRadius:10, background:"rgba(167,139,250,0.06)", border:"1px solid rgba(167,139,250,0.2)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.08em" }}>
-                        ↺ RESCAN TO REFRESH SCREENSHOT
-                      </button>
-                    </motion.div>
+                      {/* CTAs */}
+                      <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.3 }}>
+                        <button onClick={()=>setTab("blueprint")} style={{ width:"100%", padding:"14px 20px", borderRadius:10, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.3)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:11, color:"var(--accent)", letterSpacing:"0.1em", marginBottom:8 }}>
+                          VIEW RECOVERY BLUEPRINT →
+                        </button>
+                      </motion.div>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </motion.div>
           )}
 
