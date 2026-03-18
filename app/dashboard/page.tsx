@@ -11,7 +11,7 @@ interface Task { id: string; title: string; desc: string; impact: "High"|"Medium
 interface HistoryPoint { ts: number; perf: number; seo: number; a11y: number; sec: number; leak: number; }
 interface TrackedSite { id: string; url: string; label: string; isOwn: boolean; result: AuditResult|null; history: HistoryPoint[]; tasks: Task[]; loading: boolean; error: string; }
 interface UserSettings { smsPhone: string; smsAlerts: boolean; webhookUrl: string; weeklyDigest: boolean; criticalAlerts: boolean; emailTo: string; }
-type Tab = "overview"|"vitals"|"blueprint"|"matrix"|"settings";
+type Tab = "overview"|"vitals"|"blueprint"|"matrix"|"siteview"|"settings";
 type BlueprintFilter = Task["pillar"]|"all"|"verifying";
 // maxCompetitors is set per-plan in the component (see PLAN_CONFIG in supabase.ts)
 
@@ -150,7 +150,7 @@ function CompositeScore({ result, simpleMode }: { result: AuditResult; simpleMod
 }
 
 // ─── Site Screenshot ──────────────────────────────────────────────────────────
-function SiteScreenshot({ url, result }: { url: string; result: AuditResult }) {
+function SiteScreenshot({ url, result, onViewFull }: { url: string; result: AuditResult; onViewFull?: () => void }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
   const cleanUrl = url.startsWith("http") ? url : `https://${url}`;
@@ -160,7 +160,7 @@ function SiteScreenshot({ url, result }: { url: string; result: AuditResult }) {
   if (result.metrics.cls > 0.1) issues.push({ label: "Layout shift", color: "#f59e0b", x: "35%", y: "55%" });
   if (!result.seo?.hasMeta) issues.push({ label: "Missing meta tag", color: "#f59e0b", x: "50%", y: "6%" });
   if ((result.security?.vulnerableLibraryCount ?? 0) > 0) issues.push({ label: "Vuln. JS lib", color: "#e8341a", x: "18%", y: "78%" });
-  if (!result.accessibility?.missingAltText === false) issues.push({ label: "Missing alt text", color: "#a78bfa", x: "80%", y: "50%" });
+  if (result.accessibility?.missingAltText === true) issues.push({ label: "Missing alt text", color: "#a78bfa", x: "80%", y: "50%" });
   const visibleIssues = issues.slice(0, 4);
   if (errored || !screenshotUrl) return null;
   return (
@@ -171,7 +171,10 @@ function SiteScreenshot({ url, result }: { url: string; result: AuditResult }) {
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#10b981", display: "inline-block" }} className="animate-pulse"/>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.14em" }}>SITE SNAPSHOT — CAPTURED DURING AUDIT</span>
         </div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>{cleanUrl.replace(/https?:\/\//, "").substring(0, 44)}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>{cleanUrl.replace(/https?:\/\//, "").substring(0, 36)}</span>
+          {onViewFull && <button onClick={onViewFull} style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#a78bfa", background: "rgba(167,139,250,0.08)", border: "1px solid rgba(167,139,250,0.2)", borderRadius: 4, padding: "2px 8px", cursor: "pointer", letterSpacing: "0.08em" }}>FULL VIEW ↗</button>}
+        </div>
       </div>
       <div style={{ position: "relative", overflow: "hidden", maxHeight: 300, minHeight: loaded ? undefined : 180 }}>
         {!loaded && (
@@ -711,6 +714,7 @@ export default function Dashboard() {
     { id:"vitals", label:"VITALS" },
     { id:"blueprint", label:"BLUEPRINT" },
     { id:"matrix", label:"MATRIX" },
+    { id:"siteview", label:"SITE VIEW" },
     { id:"settings", label:"SETTINGS" },
   ];
 
@@ -786,7 +790,7 @@ export default function Dashboard() {
                   <button key={t.id} onClick={()=>{ setTab(t.id); setMenuOpen(false); }}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"18px 20px", borderRadius:12, background:active?"rgba(232,52,26,0.08)":"var(--surface)", border:`1px solid ${active?"rgba(232,52,26,0.3)":"var(--border)"}`, cursor:"pointer", transition:"all 0.15s", position:"relative" }}>
                     <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                      <span style={{ fontSize:16 }}>{ {overview:"📊",vitals:"⚡",blueprint:"📋",matrix:"🎯",settings:"⚙️"}[t.id] }</span>
+                      <span style={{ fontSize:16 }}>{ {overview:"📊",vitals:"⚡",blueprint:"📋",matrix:"🎯",siteview:"🖥",settings:"⚙️"}[t.id] }</span>
                       <span style={{ fontFamily:"var(--font-mono)", fontSize:13, letterSpacing:"0.1em", color:active?"var(--text)":"var(--text2)" }}>{t.label}</span>
                     </div>
                     <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -911,7 +915,7 @@ export default function Dashboard() {
                   </motion.div>
                 )}
                 {/* ── Site Screenshot ── */}
-                {own.result && <SiteScreenshot url={own.url} result={own.result}/>}
+                {own.result && <SiteScreenshot url={own.url} result={own.result} onViewFull={()=>setTab("siteview")}/>}
 
                 {(own.history?.length??0)>=1 && (
                   <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.12 }}
@@ -1062,7 +1066,7 @@ export default function Dashboard() {
               {own?.result && (
                 <div style={{ display:"flex", gap:5, marginBottom:13, flexWrap:"wrap" }}>
                   {([
-                    { id:"all" as const, label:"All", count:allTasks.filter(t=>t.status==="pending").length },
+                    { id:"all" as const, label:"All", count:allTasks.filter(t=>t.status!=="recovered").length },
                     { id:"verifying" as const, label:"⏳ Verifying", count:allTasks.filter(t=>t.status==="verifying").length, color:"#f59e0b" },
                     ...Object.entries(PM).map(([id,m])=>({ id:id as Task["pillar"], label:m.label, count:allTasks.filter(t=>t.pillar===id&&t.status!=="recovered").length, color:m.color }))
                   ]).map(item=>(
@@ -1299,6 +1303,133 @@ export default function Dashboard() {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* ══════════════ SITE VIEW ══════════════ */}
+          {tab==="siteview" && (
+            <motion.div key="siteview" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}>
+              <div style={{ marginBottom:20 }}>
+                <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,30px)", color:"var(--text)", letterSpacing:"0.05em", marginBottom:5 }}>SITE VIEW</h2>
+                <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Live screenshot captured during your last audit — rendered at native mobile resolution.</p>
+              </div>
+              {!own?.result?.screenshot ? (
+                <div style={{ padding:"44px", textAlign:"center", border:"1px dashed var(--border)", borderRadius:13 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>🖥</div>
+                  <p style={{ fontFamily:"var(--font-mono)", fontSize:12, color:"var(--muted)", marginBottom:6 }}>No screenshot yet.</p>
+                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--muted2)" }}>Run an audit on Overview — the screenshot is captured automatically by Google Lighthouse.</p>
+                </div>
+              ) : (
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:24, alignItems:"start" }}>
+                  {/* Phone frame */}
+                  <div style={{ display:"flex", justifyContent:"center" }}>
+                    <motion.div initial={{ opacity:0, y:16, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.4, ease:"easeOut" }}
+                      style={{ position:"relative", width:300 }}>
+                      {/* Outer phone shell */}
+                      <div style={{ background:"linear-gradient(160deg,#1a2440 0%,#0d1829 100%)", borderRadius:44, padding:"14px 10px", border:"2px solid rgba(167,139,250,0.3)", boxShadow:"0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)", position:"relative" }}>
+                        {/* Camera notch */}
+                        <div style={{ position:"absolute", top:18, left:"50%", transform:"translateX(-50%)", width:70, height:20, background:"#060d1a", borderRadius:12, zIndex:3, display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                          <div style={{ width:7, height:7, borderRadius:"50%", background:"rgba(167,139,250,0.25)", border:"1px solid rgba(167,139,250,0.15)" }}/>
+                          <div style={{ width:32, height:6, borderRadius:3, background:"rgba(167,139,250,0.12)" }}/>
+                        </div>
+                        {/* Screen bezel */}
+                        <div style={{ borderRadius:32, overflow:"hidden", background:"#000", marginTop:8 }}>
+                          <img
+                            src={own.result.screenshot}
+                            alt={`Screenshot of ${own.url}`}
+                            style={{ width:"100%", display:"block", imageRendering:"auto" }}
+                          />
+                        </div>
+                        {/* Home indicator */}
+                        <div style={{ display:"flex", justifyContent:"center", marginTop:8 }}>
+                          <div style={{ width:44, height:4, borderRadius:2, background:"rgba(167,139,250,0.2)" }}/>
+                        </div>
+                      </div>
+                      {/* Glow */}
+                      <div style={{ position:"absolute", inset:-2, borderRadius:46, background:"rgba(167,139,250,0.04)", filter:"blur(20px)", zIndex:-1 }}/>
+                      {/* Timestamp badge */}
+                      <div style={{ marginTop:12, textAlign:"center" }}>
+                        <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted2)", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:4, padding:"2px 8px" }}>
+                          CAPTURED {new Date(own.result.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                    </motion.div>
+                  </div>
+
+                  {/* Issue breakdown */}
+                  <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                    {/* Score summary */}
+                    <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.12 }}
+                      style={{ padding:"16px 20px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
+                      <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:12 }}>SCORES AT CAPTURE TIME</p>
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
+                        {[
+                          { label:"PERFORMANCE", val:own.result.metrics.performanceScore, color:scoreColor(own.result.metrics.performanceScore) },
+                          { label:"SEO", val:own.result.seo?.estimatedSeoScore??0, color:scoreColor(own.result.seo?.estimatedSeoScore??0) },
+                          { label:"ACCESSIBILITY", val:own.result.accessibility?.estimatedA11yScore??0, color:scoreColor(own.result.accessibility?.estimatedA11yScore??0) },
+                          { label:"SECURITY", val:own.result.security?.estimatedBestPracticesScore??0, color:scoreColor(own.result.security?.estimatedBestPracticesScore??0) },
+                        ].map(({ label, val, color })=>(
+                          <div key={label} style={{ padding:"10px 12px", borderRadius:9, background:"var(--bg)", border:`1px solid ${color}25` }}>
+                            <div style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", marginBottom:3, letterSpacing:"0.1em" }}>{label}</div>
+                            <div style={{ fontFamily:"var(--font-display)", fontSize:24, color, lineHeight:1 }}>{val}</div>
+                            <div style={{ marginTop:5, height:3, borderRadius:2, background:"var(--border)", overflow:"hidden" }}>
+                              <div style={{ height:"100%", width:`${val}%`, background:color, borderRadius:2, transition:"width 0.6s ease" }}/>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+
+                    {/* Visual issues detected */}
+                    <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.2 }}
+                      style={{ padding:"16px 20px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
+                      <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:12 }}>ISSUES DETECTED</p>
+                      {(()=>{
+                        const r = own.result;
+                        const issues = [];
+                        if (r.metrics.lcp > 4000) issues.push({ label:"Slow LCP — page loads too slowly", color:"#e8341a", fix:"Preload hero image, use WebP" });
+                        if (r.metrics.cls > 0.1) issues.push({ label:"Layout shift detected (CLS > 0.1)", color:"#f59e0b", fix:"Set explicit dimensions on all images" });
+                        if (!r.seo?.hasMeta) issues.push({ label:"Missing meta description", color:"#f59e0b", fix:"Add <meta name='description'> to every page" });
+                        if ((r.security?.vulnerableLibraryCount??0) > 0) issues.push({ label:`${r.security.vulnerableLibraryCount} vulnerable JS librar${r.security.vulnerableLibraryCount===1?"y":"ies"}`, color:"#e8341a", fix:"Run npm audit fix" });
+                        if (r.accessibility?.missingAltText) issues.push({ label:"Images missing alt text", color:"#a78bfa", fix:"Add descriptive alt attributes" });
+                        if (!r.seo?.mobileViewport) issues.push({ label:"Missing mobile viewport tag", color:"#f59e0b", fix:"Add viewport meta tag to <head>" });
+                        if (!r.security?.hasSecurityHeaders) issues.push({ label:"Missing security headers", color:"#22d3ee", fix:"Add CSP, HSTS, X-Frame-Options" });
+                        if (issues.length===0) return <div style={{ padding:"16px", borderRadius:9, background:"rgba(16,185,129,0.06)", border:"1px solid rgba(16,185,129,0.2)", textAlign:"center" }}><p style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"#10b981" }}>✓ No critical issues detected</p></div>;
+                        return (
+                          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                            {issues.map((iss,i)=>(
+                              <motion.div key={i} initial={{ opacity:0, x:8 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.25+i*0.07 }}
+                                style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:9, background:`${iss.color}08`, border:`1px solid ${iss.color}30` }}>
+                                <div style={{ width:6, height:6, borderRadius:"50%", background:iss.color, flexShrink:0, marginTop:4 }}/>
+                                <div style={{ flex:1 }}>
+                                  <div style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text)", marginBottom:2 }}>{iss.label}</div>
+                                  <div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>Fix: {iss.fix}</div>
+                                </div>
+                              </motion.div>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </motion.div>
+
+                    {/* CTA to blueprint */}
+                    <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.28 }}>
+                      <button onClick={()=>setTab("blueprint")}
+                        style={{ width:"100%", padding:"14px 20px", borderRadius:10, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.3)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:11, color:"var(--accent)", letterSpacing:"0.1em" }}>
+                        VIEW RECOVERY BLUEPRINT →
+                      </button>
+                    </motion.div>
+
+                    {/* Rescan CTA */}
+                    <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.32 }}>
+                      <button onClick={()=>own&&scan(own.id)}
+                        style={{ width:"100%", padding:"12px 20px", borderRadius:10, background:"rgba(167,139,250,0.06)", border:"1px solid rgba(167,139,250,0.2)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.08em" }}>
+                        ↺ RESCAN TO REFRESH SCREENSHOT
+                      </button>
+                    </motion.div>
+                  </div>
                 </div>
               )}
             </motion.div>
