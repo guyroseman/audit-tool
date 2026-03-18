@@ -530,6 +530,7 @@ export default function Dashboard() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scoreToast, setScoreToast] = useState<string|null>(null);
   const [scanStartedAt, setScanStartedAt] = useState<number|null>(null);
+  const [activePin, setActivePin] = useState<number|null>(null);
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
@@ -1335,7 +1336,6 @@ export default function Dashboard() {
                 if (r.accessibility?.missingAltText) annots.push({ label:"Missing Alt Text", short:"NO ALT", color:"#a78bfa", x:"78%", y:"45%", fix:"Add alt attributes to all images" });
                 if (!r.seo?.mobileViewport) annots.push({ label:"No Viewport Tag", short:"VIEWPORT", color:"#f59e0b", x:"50%", y:"2%", fix:"Add <meta name='viewport'> to <head>" });
                 if (!r.security?.hasSecurityHeaders) annots.push({ label:"Missing Headers", short:"HEADERS", color:"#22d3ee", x:"15%", y:"90%", fix:"Add CSP, HSTS, X-Frame-Options to server" });
-                const [activePin, setActivePin] = React.useState<number|null>(null);
                 return (
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:28, alignItems:"start" }}>
                     {/* Annotated phone */}

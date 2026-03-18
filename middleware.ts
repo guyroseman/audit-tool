@@ -10,7 +10,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
 const PUBLIC_PREFIXES = ["/", "/funnel", "/subscribe", "/legal", "/api"];
 const LOGIN_PATH      = "/login";
-const AUTH_PATHS      = ["/dashboard", "/call-center"];
+const AUTH_PATHS      = ["/dashboard"];
 const ADMIN_PATHS     = ["/batch-audit"];
 
 function isPaid(plan: string | null | undefined): boolean {
