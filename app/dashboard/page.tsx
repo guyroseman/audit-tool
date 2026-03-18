@@ -1424,6 +1424,11 @@ export default function Dashboard() {
                     style={{ padding:"11px 20px", borderRadius:9, background:"rgba(232,52,26,0.08)", border:"1px solid rgba(232,52,26,0.25)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:10, color:"var(--accent)" }}>
                     LOG OUT →
                   </button>
+                  {(process.env.NEXT_PUBLIC_ADMIN_EMAILS ?? "").split(",").map(e=>e.trim().toLowerCase()).filter(Boolean).includes(userEmail.toLowerCase()) && (
+                    <a href="/admin/leads" style={{ padding:"11px 20px", borderRadius:9, background:"rgba(167,139,250,0.08)", border:"1px solid rgba(167,139,250,0.25)", fontFamily:"var(--font-mono)", fontSize:10, color:"#a78bfa", textDecoration:"none" }}>
+                      ⬡ LEAD INTELLIGENCE →
+                    </a>
+                  )}
                 </div>
               </div>
 

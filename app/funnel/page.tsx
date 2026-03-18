@@ -774,34 +774,52 @@ function FunnelInner() {
 
           {step === "phone" && (
             <motion.div key="phone" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-              style={{ width: "100%", maxWidth: 440, margin: "0 auto" }}>
-              <div style={{ padding: "28px 24px", background: "var(--surface)", border: "1px solid var(--border2)", borderRadius: 16, textAlign: "center" }}>
-                <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.18em", marginBottom: 10 }}>FREE 20-MIN CALL</p>
-                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px,5vw,30px)", color: "var(--text)", letterSpacing: "0.04em", lineHeight: 1.05, marginBottom: 10 }}>WE&apos;LL CALL WITHIN 2 HOURS</h3>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", marginBottom: 18, lineHeight: 1.6 }}>No pitch. Just a live walkthrough of your results and the highest-ROI fix.</p>
+              style={{ width: "100%", maxWidth: 480, margin: "0 auto" }}>
+              <div style={{ padding: "32px 28px", background: "var(--surface)", border: "1px solid rgba(167,139,250,0.35)", borderRadius: 16, textAlign: "center", boxShadow: "0 0 60px rgba(167,139,250,0.08)" }}>
+                {/* Coming soon badge */}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", marginBottom: 18 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} className="animate-pulse"/>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#f59e0b", letterSpacing: "0.14em" }}>LIVE CALLS — LAUNCHING SOON</span>
+                </div>
+                <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(22px,5vw,32px)", color: "var(--text)", letterSpacing: "0.04em", lineHeight: 1.05, marginBottom: 12 }}>WE&apos;RE GETTING READY FOR YOU</h3>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", marginBottom: 22, lineHeight: 1.65, maxWidth: 360, margin: "0 auto 22px" }}>
+                  Our live strategy calls are launching very soon. Until then, join <strong style={{ color: "#a78bfa" }}>Nexus Pulse</strong> — you&apos;ll get the same results automatically, and we&apos;ll personally reach out to you as soon as calls go live.
+                </p>
+                {/* Phone capture — still collect for priority list */}
+                <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.1em", marginBottom: 8 }}>LEAVE YOUR NUMBER — WE&apos;LL CALL YOU FIRST</p>
                 <input type="tel" inputMode="tel" autoComplete="tel"
                   value={phoneInput} onChange={e => setPhoneInput(e.target.value)}
-                  onKeyDown={e => e.key === "Enter" && phoneInput.trim() && setStep("booked")}
-                  placeholder="+1 (555) 000-0000" autoFocus
+                  onKeyDown={e => { if (e.key === "Enter") setStep("booked"); }}
+                  placeholder="+1 (555) 000-0000"
                   style={{ width: "100%", background: "var(--bg)", border: "1px solid var(--border2)", borderRadius: 8, padding: "13px 14px", color: "var(--text)", fontFamily: "var(--font-mono)", fontSize: 16, marginBottom: 10 }}
                 />
-                <button onClick={() => phoneInput.trim() && setStep("booked")} disabled={!phoneInput.trim()} className="btn-primary"
-                  style={{ width: "100%", padding: "15px", borderRadius: 8, fontSize: 12, letterSpacing: "0.14em" }}>
-                  BOOK MY FREE CALL →
+                <button onClick={() => setStep("booked")} className="btn-primary"
+                  style={{ width: "100%", padding: "15px", borderRadius: 8, fontSize: 12, letterSpacing: "0.14em", marginBottom: 10 }}>
+                  NOTIFY ME WHEN LIVE →
+                </button>
+                <button onClick={() => setStep("booked")} style={{ background: "none", border: "none", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: 3 }}>
+                  Skip — take me to Pulse
                 </button>
               </div>
             </motion.div>
           )}
 
           {step === "booked" && (
-            <motion.div key="booked" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-              style={{ textAlign: "center", maxWidth: 460, margin: "0 auto", padding: "20px 16px" }}>
-              <div style={{ fontSize: 48, marginBottom: 14 }}>✅</div>
-              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px,6vw,46px)", color: "var(--text)", letterSpacing: "0.04em", marginBottom: 10 }}>YOU&apos;RE BOOKED.</h2>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", lineHeight: 1.7, marginBottom: 24 }}>We&apos;ll call within 2 hours. Have your site open — we&apos;ll walk through the exact fixes live.</p>
-              <a href="/subscribe" className="btn-primary" style={{ display: "inline-block", padding: "14px 36px", borderRadius: 10, textDecoration: "none", fontSize: 12, letterSpacing: "0.14em" }}>
-                EXPLORE NEXUS PULSE →
+            <motion.div key="booked" initial={{ opacity: 0, scale: 0.92 }} animate={{ opacity: 1, scale: 1 }}
+              style={{ textAlign: "center", maxWidth: 500, margin: "0 auto", padding: "20px 16px" }}>
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.15, type: "spring", stiffness: 200 }}
+                style={{ fontSize: 52, marginBottom: 16 }}>🎉</motion.div>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(26px,5vw,42px)", color: "var(--text)", letterSpacing: "0.04em", marginBottom: 10, lineHeight: 1 }}>YOU&apos;RE ON THE LIST.</h2>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", lineHeight: 1.7, marginBottom: 6, maxWidth: 400, margin: "0 auto 6px" }}>
+                {phoneInput ? "We've got your number — you'll be the first to know when live calls launch." : "We'll reach out as soon as live strategy calls are available."}
+              </p>
+              <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.65, marginBottom: 28, maxWidth: 400, margin: "6px auto 28px" }}>
+                In the meantime, <strong style={{ color: "#a78bfa" }}>Nexus Pulse</strong> gives you everything automatically — weekly re-scans, competitor tracking, and alerts the moment your score drops.
+              </p>
+              <a href="/subscribe" style={{ display: "inline-block", padding: "16px 40px", borderRadius: 10, textDecoration: "none", fontSize: 12, letterSpacing: "0.14em", fontFamily: "var(--font-mono)", background: "#a78bfa", color: "#fff", boxShadow: "0 0 40px rgba(167,139,250,0.4)" }}>
+                JOIN NEXUS PULSE — START FREE TRIAL →
               </a>
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", marginTop: 12, letterSpacing: "0.08em" }}>7-day free trial · $49/mo after · cancel anytime</p>
             </motion.div>
           )}
 

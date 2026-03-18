@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -16,12 +17,26 @@ interface CapturePayload {
   revenuePotential?: string;
   lastAudit?: string;
   source?: string;
+  // Extended funnel answers
+  phone?: string;
+  q1?: string; // business type / goal question 1
+  q2?: string; // pain point question 2
+  q3?: string; // revenue question 3
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+// Derive tier from funnel answers / score
+function deriveTier(payload: CapturePayload): string {
+  const rev = payload.revenuePotential ?? "";
+  if (rev.includes("500k") || rev.includes("1m") || rev.includes("million")) return "scale";
+  if (rev.includes("100k") || rev.includes("250k")) return "pulse";
+  if ((payload.score ?? 100) < 50) return "pulse";
+  return "free";
 }
 
 // ─── Route Handler ────────────────────────────────────────────────────────────
@@ -39,6 +54,7 @@ export async function POST(req: NextRequest) {
     adLossPercent, bounceRateIncrease, annualRevenueLoss,
     severity, timestamp,
     painPoint, revenuePotential, lastAudit, source,
+    phone, q1, q2, q3,
   } = body;
 
   if (!email || !isValidEmail(email)) {
@@ -51,43 +67,85 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid score" }, { status: 400 });
   }
 
-  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  const submittedAt = timestamp ? new Date(timestamp).toISOString() : new Date().toISOString();
+  const resolvedSource = source ?? req.headers.get("referer") ?? "direct";
 
+  // ── 1. Google Sheets webhook ───────────────────────────────────────────────
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
   if (webhookUrl) {
     try {
       const sheetPayload = {
-        email,
-        url,
-        score,
+        email, url, score,
         adLossPercent: adLossPercent ?? null,
         bounceRateIncrease: bounceRateIncrease ?? null,
         annualRevenueLoss: annualRevenueLoss ?? null,
         severity: severity ?? null,
-        timestamp: timestamp ? new Date(timestamp).toISOString() : new Date().toISOString(),
+        timestamp: submittedAt,
         painPoint: painPoint ?? null,
         revenuePotential: revenuePotential ?? null,
         lastAudit: lastAudit ?? null,
-        source: source ?? req.headers.get("referer") ?? "direct",
-        submittedAt: new Date().toISOString(),
+        source: resolvedSource,
+        submittedAt,
       };
-
       const webhookRes = await fetch(webhookUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sheetPayload),
         signal: AbortSignal.timeout(10000),
       });
-
-      if (!webhookRes.ok) {
-        console.error(`Google Sheets webhook failed: ${webhookRes.status}`);
-      } else {
-        console.log("Lead captured to Google Sheets:", email, url, score);
-      }
+      if (!webhookRes.ok) console.error(`Google Sheets webhook failed: ${webhookRes.status}`);
+      else console.log("Lead captured to Google Sheets:", email, url, score);
     } catch (err) {
       console.error("Failed to push to Google Sheets:", err);
     }
   } else {
-    console.warn("GOOGLE_SHEETS_WEBHOOK_URL not set - lead NOT saved");
+    console.warn("GOOGLE_SHEETS_WEBHOOK_URL not set - Google Sheets lead NOT saved");
+  }
+
+  // ── 2. Supabase leads table ────────────────────────────────────────────────
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (supabaseUrl && serviceRoleKey) {
+    try {
+      const admin = createClient(supabaseUrl, serviceRoleKey, {
+        auth: { persistSession: false },
+      });
+
+      const tier = deriveTier(body);
+
+      const { error } = await admin.from("leads").insert({
+        email,
+        url,
+        score,
+        severity: severity ?? null,
+        ad_loss_percent: adLossPercent ?? null,
+        bounce_rate_increase: bounceRateIncrease ?? null,
+        annual_revenue_loss: annualRevenueLoss ?? null,
+        pain_point: painPoint ?? null,
+        revenue_potential: revenuePotential ?? null,
+        last_audit: lastAudit ?? null,
+        source: resolvedSource,
+        phone: phone ?? null,
+        q1: q1 ?? null,
+        q2: q2 ?? null,
+        q3: q3 ?? null,
+        tier,
+        status: "new",
+        created_at: submittedAt,
+      });
+
+      if (error) {
+        // Table may not exist yet — log but don't fail the request
+        console.error("Supabase leads insert error:", error.message);
+      } else {
+        console.log("Lead captured to Supabase:", email, url, tier);
+      }
+    } catch (err) {
+      console.error("Failed to push to Supabase leads:", err);
+    }
+  } else {
+    console.warn("SUPABASE_SERVICE_ROLE_KEY not set - Supabase lead NOT saved");
   }
 
   return NextResponse.json({ success: true }, { status: 200 });
