@@ -1315,139 +1315,171 @@ export default function Dashboard() {
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:20, flexWrap:"wrap", gap:10 }}>
                 <div>
                   <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,30px)", color:"var(--text)", letterSpacing:"0.05em", marginBottom:5 }}>SITE VIEW</h2>
-                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Live screenshot with annotated issue markers — shareable with your dev team.</p>
+                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Annotated audit screenshot — shareable with your dev team.</p>
                 </div>
-                {own?.result && <button onClick={()=>own&&scan(own.id)} style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", background:"var(--surface)", border:"1px solid var(--border)", padding:"6px 12px", borderRadius:6, cursor:"pointer" }}>↺ REFRESH SCREENSHOT</button>}
+                <div style={{ display:"flex", gap:8 }}>
+                  {own?.result && <button onClick={()=>{ const txt=own.result&&(()=>{const r=own.result;const lines=[`NEXUS SITE AUDIT — ${own.url}`,`Captured: ${new Date(r.timestamp).toLocaleString()}`,`Composite Score: ${Math.round((r.metrics.performanceScore+(r.seo?.estimatedSeoScore??0)+(r.accessibility?.estimatedA11yScore??0)+(r.security?.estimatedBestPracticesScore??0))/4)}/100`,`Revenue Leak: $${r.totalMonthlyCost?.toLocaleString()}/mo`,``,`ISSUES:`];if(r.metrics.lcp>2500)lines.push(`  #1 SLOW LCP — ${(r.metrics.lcp/1000).toFixed(1)}s (fix: preload hero, use WebP)`);if(!r.seo?.hasMeta)lines.push(`  #2 MISSING META DESCRIPTION (fix: add <meta name='description'>)`);if(!r.seo?.mobileViewport)lines.push(`  #3 NO VIEWPORT TAG (fix: add viewport meta to <head>)`);if(r.metrics.cls>0.1)lines.push(`  #4 LAYOUT SHIFT CLS ${r.metrics.cls.toFixed(2)} (fix: set img dimensions)`);if((r.security?.vulnerableLibraryCount??0)>0)lines.push(`  #5 ${r.security.vulnerableLibraryCount} VULNERABLE LIBRARIES (fix: npm audit fix)`);if(r.accessibility?.missingAltText)lines.push(`  #6 MISSING ALT TEXT (fix: add alt attributes to images)`);if(!r.security?.hasSecurityHeaders)lines.push(`  #7 MISSING SECURITY HEADERS (fix: add CSP, HSTS, X-Frame-Options)`);return lines.join('\n');})();txt&&navigator.clipboard.writeText(txt).then(()=>alert("Dev brief copied to clipboard!"));}} style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"#10b981", background:"rgba(16,185,129,0.08)", border:"1px solid rgba(16,185,129,0.25)", padding:"6px 12px", borderRadius:6, cursor:"pointer" }}>📋 COPY DEV BRIEF</button>}
+                  {own?.result && <button onClick={()=>own&&scan(own.id)} style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", background:"var(--surface)", border:"1px solid var(--border)", padding:"6px 12px", borderRadius:6, cursor:"pointer" }}>↺ REFRESH</button>}
+                </div>
               </div>
               {!own?.result?.screenshot ? (
                 <div style={{ padding:"44px", textAlign:"center", border:"1px dashed var(--border)", borderRadius:13 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>🖥</div>
                   <p style={{ fontFamily:"var(--font-mono)", fontSize:12, color:"var(--muted)", marginBottom:6 }}>No screenshot yet.</p>
-                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--muted2)" }}>Run an audit on Overview — the screenshot is captured automatically by Google Lighthouse.</p>
+                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--muted2)" }}>Run an audit on Overview — captured automatically by Google Lighthouse.</p>
                 </div>
               ) : (()=>{
                 const r = own.result;
-                // Build issue annotations
-                const annots: { label:string; short:string; color:string; x:string; y:string; fix:string }[] = [];
-                if (r.metrics.lcp > 2500) annots.push({ label:"Slow LCP", short:"SLOW LOAD", color:"#e8341a", x:"62%", y:"18%", fix:`LCP ${(r.metrics.lcp/1000).toFixed(1)}s — preload hero, switch to WebP` });
-                if (r.metrics.cls > 0.1) annots.push({ label:"Layout Shift", short:"CLS", color:"#f59e0b", x:"30%", y:"52%", fix:`CLS ${r.metrics.cls.toFixed(2)} — set image dimensions explicitly` });
-                if (!r.seo?.hasMeta) annots.push({ label:"Missing Meta", short:"NO META", color:"#f59e0b", x:"50%", y:"5%", fix:"Add <meta name='description'> to <head>" });
-                if ((r.security?.vulnerableLibraryCount??0)>0) annots.push({ label:"Vuln. Library", short:"VULN JS", color:"#e8341a", x:"16%", y:"75%", fix:`${r.security.vulnerableLibraryCount} CVE found — run npm audit fix` });
-                if (r.accessibility?.missingAltText) annots.push({ label:"Missing Alt Text", short:"NO ALT", color:"#a78bfa", x:"78%", y:"45%", fix:"Add alt attributes to all images" });
-                if (!r.seo?.mobileViewport) annots.push({ label:"No Viewport Tag", short:"VIEWPORT", color:"#f59e0b", x:"50%", y:"2%", fix:"Add <meta name='viewport'> to <head>" });
-                if (!r.security?.hasSecurityHeaders) annots.push({ label:"Missing Headers", short:"HEADERS", color:"#22d3ee", x:"15%", y:"90%", fix:"Add CSP, HSTS, X-Frame-Options to server" });
+                type Annot = { label:string; short:string; color:string; x:string; y:string; fix:string; impact:string; effort:string; pillar:string };
+                const annots: Annot[] = [];
+                if (r.metrics.lcp > 2500) annots.push({ label:"Slow LCP", short:"SLOW LOAD", color:"#e8341a", x:"60%", y:"22%", fix:`LCP is ${(r.metrics.lcp/1000).toFixed(1)}s (target <2.5s). Preload hero image, convert to WebP, add CDN.`, impact:"HIGH", effort:"MED", pillar:"Performance" });
+                if (!r.seo?.hasMeta) annots.push({ label:"No Meta Description", short:"NO META", color:"#f59e0b", x:"50%", y:"6%", fix:"No <meta name='description'> found. Google picks random text — CTR drops 20–35%.", impact:"HIGH", effort:"LOW", pillar:"SEO" });
+                if (!r.seo?.mobileViewport) annots.push({ label:"Missing Viewport", short:"VIEWPORT", color:"#f59e0b", x:"20%", y:"4%", fix:"Missing <meta name='viewport'>. Google treats site as desktop-only — kills mobile ranking.", impact:"HIGH", effort:"LOW", pillar:"SEO" });
+                if (r.metrics.cls > 0.1) annots.push({ label:"Layout Shift", short:"CLS", color:"#f59e0b", x:"28%", y:"55%", fix:`CLS ${r.metrics.cls.toFixed(2)} (target <0.1). Set explicit width/height on all images and embeds.`, impact:"MED", effort:"LOW", pillar:"Performance" });
+                if ((r.security?.vulnerableLibraryCount??0)>0) annots.push({ label:"Vulnerable Library", short:"VULN JS", color:"#e8341a", x:"15%", y:"78%", fix:`${r.security.vulnerableLibraryCount} CVE-flagged JS librar${r.security.vulnerableLibraryCount===1?"y":"ies"} detected. Run: npm audit fix`, impact:"HIGH", effort:"LOW", pillar:"Security" });
+                if (r.accessibility?.missingAltText) annots.push({ label:"Missing Alt Text", short:"NO ALT", color:"#a78bfa", x:"75%", y:"48%", fix:"Images without alt attributes. Screen readers fail + Google Images can't index them.", impact:"MED", effort:"LOW", pillar:"Accessibility" });
+                if (!r.security?.hasSecurityHeaders) annots.push({ label:"No Security Headers", short:"HEADERS", color:"#22d3ee", x:"14%", y:"92%", fix:"Missing CSP, HSTS, X-Frame-Options. Enterprise buyers check these — kills B2B trust.", impact:"MED", effort:"LOW", pillar:"Security" });
+                if (r.metrics.tbt > 200) annots.push({ label:"High Blocking Time", short:"HIGH TBT", color:"#e8341a", x:"82%", y:"68%", fix:`TBT ${r.metrics.tbt}ms (target <200ms). Defer 3rd-party scripts. Split large JS bundles.`, impact:"HIGH", effort:"HIGH", pillar:"Performance" });
+
+                const impactColor = (v:string) => v==="HIGH"?"#e8341a":v==="MED"?"#f59e0b":"#10b981";
+                const effortColor = (v:string) => v==="LOW"?"#10b981":v==="MED"?"#f59e0b":"#e8341a";
+
                 return (
-                  <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(320px,1fr))", gap:28, alignItems:"start" }}>
-                    {/* Annotated phone */}
-                    <div style={{ display:"flex", justifyContent:"center" }}>
-                      <motion.div initial={{ opacity:0, y:16, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.4, ease:"easeOut" }}
-                        style={{ position:"relative", width:300 }}>
-                        {/* Phone shell */}
-                        <div style={{ background:"linear-gradient(160deg,#1a2440 0%,#0d1829 100%)", borderRadius:44, padding:"14px 10px", border:"2px solid rgba(167,139,250,0.3)", boxShadow:"0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+                  <div>
+                    {/* Scores strip */}
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:20 }}>
+                      {[
+                        { label:"PERFORMANCE", val:r.metrics.performanceScore },
+                        { label:"SEO", val:r.seo?.estimatedSeoScore??0 },
+                        { label:"ACCESSIBILITY", val:r.accessibility?.estimatedA11yScore??0 },
+                        { label:"SECURITY", val:r.security?.estimatedBestPracticesScore??0 },
+                      ].map(({ label, val })=>{
+                        const c = scoreColor(val);
+                        return (
+                          <div key={label} style={{ padding:"10px 14px", borderRadius:10, background:"var(--surface)", border:`1px solid ${c}22`, display:"flex", alignItems:"center", gap:10 }}>
+                            <div style={{ fontFamily:"var(--font-display)", fontSize:22, color:c, lineHeight:1, flexShrink:0 }}>{val}</div>
+                            <div>
+                              <div style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.1em" }}>{label}</div>
+                              <div style={{ marginTop:4, height:2, width:40, borderRadius:1, background:"var(--border)", overflow:"hidden" }}>
+                                <div style={{ height:"100%", width:`${val}%`, background:c }}/>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div style={{ display:"grid", gridTemplateColumns:"minmax(260px,340px) 1fr", gap:24, alignItems:"start" }}>
+                      {/* ── Phone with pins ── */}
+                      <motion.div initial={{ opacity:0, y:16, scale:0.97 }} animate={{ opacity:1, y:0, scale:1 }} transition={{ duration:0.4 }}
+                        style={{ position:"relative" }}>
+                        {/* Phone shell — overflow visible so pins bleed outside */}
+                        <div style={{ background:"linear-gradient(160deg,#1a2440 0%,#0d1829 100%)", borderRadius:44, padding:"14px 10px 12px", border:"2px solid rgba(167,139,250,0.3)", boxShadow:"0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.06)", position:"relative", overflow:"visible" }}>
                           {/* Notch */}
-                          <div style={{ position:"absolute", top:18, left:"50%", transform:"translateX(-50%)", width:70, height:20, background:"#060d1a", borderRadius:12, zIndex:3, display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
-                            <div style={{ width:7, height:7, borderRadius:"50%", background:"rgba(167,139,250,0.25)", border:"1px solid rgba(167,139,250,0.15)" }}/>
+                          <div style={{ position:"absolute", top:18, left:"50%", transform:"translateX(-50%)", width:70, height:20, background:"#060d1a", borderRadius:12, zIndex:5, display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                            <div style={{ width:7, height:7, borderRadius:"50%", background:"rgba(167,139,250,0.25)" }}/>
                             <div style={{ width:32, height:6, borderRadius:3, background:"rgba(167,139,250,0.12)" }}/>
                           </div>
-                          {/* Screen with annotations */}
-                          <div style={{ borderRadius:32, overflow:"hidden", background:"#000", marginTop:8, position:"relative" }}>
-                            <img src={r.screenshot} alt={`Screenshot of ${own.url}`} style={{ width:"100%", display:"block" }}/>
-                            {/* Annotation pins overlaid on screenshot */}
+                          {/* Screen — clipped, but pins are siblings to this div not inside it */}
+                          <div style={{ borderRadius:32, overflow:"hidden", background:"#000", marginTop:8 }}>
+                            <img src={r.screenshot} alt={`${own.url} screenshot`} style={{ width:"100%", display:"block" }}/>
+                            {/* Bottom fade */}
+                            <div style={{ position:"absolute", bottom:0, left:0, right:0, height:60, background:"linear-gradient(transparent,rgba(3,7,15,0.6))", pointerEvents:"none", zIndex:1 }}/>
+                          </div>
+                          {/* Pins rendered outside overflow:hidden via absolute on shell */}
+                          <div style={{ position:"absolute", top:8+8, left:10, right:10, bottom:12, pointerEvents:"none" }}>
                             {annots.map((ann, i)=>(
-                              <motion.div key={i} initial={{ scale:0, opacity:0 }} animate={{ scale:1, opacity:1 }} transition={{ delay:0.3+i*0.12, type:"spring", stiffness:280, damping:20 }}
-                                style={{ position:"absolute", left:ann.x, top:ann.y, transform:"translate(-50%,-50%)", zIndex:10, cursor:"pointer" }}
+                              <motion.div key={i}
+                                initial={{ scale:0, opacity:0 }}
+                                animate={{ scale:1, opacity:1 }}
+                                transition={{ delay:0.35+i*0.1, type:"spring", stiffness:300, damping:22 }}
+                                style={{ position:"absolute", left:ann.x, top:ann.y, transform:"translate(-50%,-50%)", zIndex:10, pointerEvents:"all", cursor:"pointer" }}
                                 onClick={()=>setActivePin(activePin===i?null:i)}>
-                                {/* Pin circle */}
-                                <div style={{ width:24, height:24, borderRadius:"50%", background:ann.color, border:"2.5px solid rgba(255,255,255,0.9)", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-mono)", fontSize:9, fontWeight:"bold", color:"#fff", boxShadow:`0 0 0 3px ${ann.color}40, 0 0 20px ${ann.color}80, 0 2px 8px rgba(0,0,0,0.5)` }}>
+                                {/* Outer pulse ring */}
+                                <motion.div
+                                  animate={{ scale:activePin===i?[1,1.8,1]:[1,1.5,1], opacity:activePin===i?[1,0,1]:[0.5,0,0.5] }}
+                                  transition={{ repeat:Infinity, duration:activePin===i?1.2:2.5, delay:i*0.3 }}
+                                  style={{ position:"absolute", inset:-6, borderRadius:"50%", border:`2px solid ${ann.color}`, pointerEvents:"none" }}/>
+                                {/* Pin */}
+                                <motion.div
+                                  animate={{ scale: activePin===i?1.25:1 }}
+                                  transition={{ type:"spring", stiffness:400, damping:20 }}
+                                  style={{ width:26, height:26, borderRadius:"50%", background:activePin===i?ann.color:`rgba(6,13,26,0.9)`, border:`2.5px solid ${ann.color}`, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-mono)", fontSize:10, fontWeight:"bold", color:activePin===i?"#fff":ann.color, boxShadow:`0 0 0 2px ${ann.color}30, 0 0 ${activePin===i?24:14}px ${ann.color}${activePin===i?"aa":"55"}, 0 2px 8px rgba(0,0,0,0.6)`, transition:"all 0.2s" }}>
                                   {i+1}
+                                </motion.div>
+                                {/* Label tag to the right of pin — always visible */}
+                                <div style={{ position:"absolute", left:"calc(100% + 6px)", top:"50%", transform:"translateY(-50%)", background:"rgba(6,13,26,0.92)", border:`1px solid ${ann.color}55`, borderRadius:4, padding:"2px 6px", whiteSpace:"nowrap", fontFamily:"var(--font-mono)", fontSize:7, color:ann.color, letterSpacing:"0.08em", backdropFilter:"blur(4px)", pointerEvents:"none" }}>
+                                  {ann.short}
                                 </div>
-                                {/* Pulsing ring */}
-                                <motion.div animate={{ scale:[1,1.6,1], opacity:[0.6,0,0.6] }} transition={{ repeat:Infinity, duration:2, delay:i*0.4 }}
-                                  style={{ position:"absolute", inset:-4, borderRadius:"50%", border:`1.5px solid ${ann.color}`, pointerEvents:"none" }}/>
-                                {/* Callout bubble — appears on click */}
-                                {activePin===i && (
-                                  <motion.div initial={{ opacity:0, scale:0.85, y:4 }} animate={{ opacity:1, scale:1, y:0 }}
-                                    style={{ position:"absolute", bottom:"calc(100% + 8px)", left:"50%", transform:"translateX(-50%)", background:"rgba(6,13,26,0.97)", border:`1.5px solid ${ann.color}`, borderRadius:8, padding:"8px 10px", minWidth:140, maxWidth:180, zIndex:20, boxShadow:`0 4px 20px rgba(0,0,0,0.6), 0 0 12px ${ann.color}30`, pointerEvents:"none" }}>
-                                    {/* Arrow */}
-                                    <div style={{ position:"absolute", top:"100%", left:"50%", transform:"translateX(-50%)", width:0, height:0, borderLeft:"6px solid transparent", borderRight:"6px solid transparent", borderTop:`6px solid ${ann.color}` }}/>
-                                    <div style={{ fontFamily:"var(--font-mono)", fontSize:8, color:ann.color, letterSpacing:"0.1em", marginBottom:4 }}>#{i+1} {ann.short}</div>
-                                    <div style={{ fontFamily:"var(--font-body)", fontSize:10, color:"#c9d8e8", lineHeight:1.4 }}>{ann.fix}</div>
-                                  </motion.div>
-                                )}
                               </motion.div>
                             ))}
-                            {/* Scan line overlay */}
-                            <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, transparent 60%, rgba(3,7,15,0.7) 100%)", pointerEvents:"none" }}/>
                           </div>
                           {/* Home bar */}
-                          <div style={{ display:"flex", justifyContent:"center", marginTop:8 }}>
+                          <div style={{ display:"flex", justifyContent:"center", marginTop:10 }}>
                             <div style={{ width:44, height:4, borderRadius:2, background:"rgba(167,139,250,0.2)" }}/>
                           </div>
                         </div>
                         {/* Glow */}
-                        <div style={{ position:"absolute", inset:-2, borderRadius:46, background:"rgba(167,139,250,0.04)", filter:"blur(20px)", zIndex:-1 }}/>
+                        <div style={{ position:"absolute", inset:0, borderRadius:46, boxShadow:`0 0 60px rgba(167,139,250,0.1)`, pointerEvents:"none" }}/>
                         <div style={{ marginTop:10, textAlign:"center" }}>
-                          <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:4, padding:"2px 8px" }}>CAPTURED {new Date(r.timestamp).toLocaleString()}</span>
+                          <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", background:"var(--surface)", border:"1px solid var(--border)", borderRadius:4, padding:"2px 10px" }}>
+                            ● CAPTURED {new Date(r.timestamp).toLocaleString()}
+                          </span>
                         </div>
-                        {annots.length>0 && <div style={{ marginTop:8, textAlign:"center" }}><span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>Tap a pin to see the issue</span></div>}
                       </motion.div>
-                    </div>
 
-                    {/* Right panel */}
-                    <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                      {/* Scores */}
-                      <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.12 }}
-                        style={{ padding:"16px 20px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                        <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:12 }}>SCORES AT CAPTURE TIME</p>
-                        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:10 }}>
-                          {[
-                            { label:"PERFORMANCE", val:r.metrics.performanceScore, color:scoreColor(r.metrics.performanceScore) },
-                            { label:"SEO", val:r.seo?.estimatedSeoScore??0, color:scoreColor(r.seo?.estimatedSeoScore??0) },
-                            { label:"ACCESSIBILITY", val:r.accessibility?.estimatedA11yScore??0, color:scoreColor(r.accessibility?.estimatedA11yScore??0) },
-                            { label:"SECURITY", val:r.security?.estimatedBestPracticesScore??0, color:scoreColor(r.security?.estimatedBestPracticesScore??0) },
-                          ].map(({ label, val, color })=>(
-                            <div key={label} style={{ padding:"10px 12px", borderRadius:9, background:"var(--bg)", border:`1px solid ${color}25` }}>
-                              <div style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", marginBottom:3, letterSpacing:"0.1em" }}>{label}</div>
-                              <div style={{ fontFamily:"var(--font-display)", fontSize:24, color, lineHeight:1 }}>{val}</div>
-                              <div style={{ marginTop:5, height:3, borderRadius:2, background:"var(--border)", overflow:"hidden" }}>
-                                <div style={{ height:"100%", width:`${val}%`, background:color, borderRadius:2, transition:"width 0.6s ease" }}/>
+                      {/* ── Annotation cards ── */}
+                      <div style={{ display:"flex", flexDirection:"column", gap:9 }}>
+                        {annots.length===0 ? (
+                          <div style={{ padding:"24px", borderRadius:12, background:"rgba(16,185,129,0.06)", border:"1px solid rgba(16,185,129,0.2)", textAlign:"center" }}>
+                            <p style={{ fontFamily:"var(--font-mono)", fontSize:12, color:"#10b981" }}>✓ No critical issues detected on this snapshot</p>
+                          </div>
+                        ) : annots.map((ann, i)=>(
+                          <motion.div key={i}
+                            initial={{ opacity:0, x:20 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.15+i*0.07 }}
+                            onClick={()=>setActivePin(activePin===i?null:i)}
+                            style={{ borderRadius:11, background:activePin===i?`${ann.color}0e`:"var(--surface)", border:`1.5px solid ${activePin===i?ann.color:ann.color+"28"}`, cursor:"pointer", overflow:"hidden", transition:"all 0.18s" }}>
+                            {/* Card top bar */}
+                            <div style={{ display:"flex", alignItems:"center", gap:10, padding:"11px 14px", borderBottom:activePin===i?`1px solid ${ann.color}30`:"1px solid transparent" }}>
+                              {/* Number badge */}
+                              <div style={{ width:26, height:26, borderRadius:"50%", background:activePin===i?ann.color:`${ann.color}20`, border:`2px solid ${ann.color}`, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-mono)", fontSize:10, fontWeight:"bold", color:activePin===i?"#fff":ann.color, boxShadow:activePin===i?`0 0 12px ${ann.color}70`:undefined, transition:"all 0.2s" }}>
+                                {i+1}
+                              </div>
+                              <div style={{ flex:1, minWidth:0 }}>
+                                <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                                  <span style={{ fontFamily:"var(--font-body)", fontSize:13, fontWeight:600, color:activePin===i?ann.color:"var(--text)" }}>{ann.label}</span>
+                                  <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted2)", letterSpacing:"0.08em" }}>{ann.pillar}</span>
+                                </div>
+                              </div>
+                              <div style={{ display:"flex", gap:5, flexShrink:0 }}>
+                                <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:impactColor(ann.impact), background:`${impactColor(ann.impact)}15`, border:`1px solid ${impactColor(ann.impact)}40`, borderRadius:3, padding:"2px 5px" }}>↑ {ann.impact}</span>
+                                <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:effortColor(ann.effort), background:`${effortColor(ann.effort)}15`, border:`1px solid ${effortColor(ann.effort)}40`, borderRadius:3, padding:"2px 5px" }}>{ann.effort} EFFORT</span>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                      </motion.div>
+                            {/* Expanded fix detail */}
+                            <AnimatePresence>
+                              {activePin===i && (
+                                <motion.div initial={{ height:0, opacity:0 }} animate={{ height:"auto", opacity:1 }} exit={{ height:0, opacity:0 }} transition={{ duration:0.2 }}
+                                  style={{ overflow:"hidden" }}>
+                                  <div style={{ padding:"10px 14px 13px 50px" }}>
+                                    <p style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text2)", lineHeight:1.6, margin:"0 0 8px" }}>{ann.fix}</p>
+                                    <button onClick={e=>{ e.stopPropagation(); setTab("blueprint"); }} style={{ fontFamily:"var(--font-mono)", fontSize:9, color:ann.color, background:`${ann.color}10`, border:`1px solid ${ann.color}35`, padding:"5px 12px", borderRadius:5, cursor:"pointer", letterSpacing:"0.08em" }}>
+                                      SEE FIX IN BLUEPRINT →
+                                    </button>
+                                  </div>
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </motion.div>
+                        ))}
 
-                      {/* Issue legend — tapping highlights the pin */}
-                      <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.2 }}
-                        style={{ padding:"16px 20px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                        <p style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:12 }}>ANNOTATION LEGEND</p>
-                        {annots.length===0 ? (
-                          <div style={{ padding:"14px", borderRadius:9, background:"rgba(16,185,129,0.06)", border:"1px solid rgba(16,185,129,0.2)", textAlign:"center" }}>
-                            <p style={{ fontFamily:"var(--font-mono)", fontSize:11, color:"#10b981" }}>✓ No critical issues detected</p>
-                          </div>
-                        ) : (
-                          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                            {annots.map((ann, i)=>(
-                              <motion.div key={i} initial={{ opacity:0, x:8 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.25+i*0.07 }}
-                                onClick={()=>setActivePin(activePin===i?null:i)}
-                                style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:9, background:activePin===i?`${ann.color}14`:`${ann.color}06`, border:`1px solid ${activePin===i?ann.color:ann.color+"30"}`, cursor:"pointer", transition:"all 0.15s" }}>
-                                <div style={{ width:22, height:22, borderRadius:"50%", background:ann.color, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"var(--font-mono)", fontSize:9, fontWeight:"bold", color:"#fff", boxShadow:`0 0 8px ${ann.color}60` }}>{i+1}</div>
-                                <div style={{ flex:1, minWidth:0 }}>
-                                  <div style={{ fontFamily:"var(--font-body)", fontSize:12, color:"var(--text)", marginBottom:2 }}>{ann.label}</div>
-                                  <div style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted)" }}>{ann.fix}</div>
-                                </div>
-                              </motion.div>
-                            ))}
-                          </div>
-                        )}
-                      </motion.div>
-
-                      {/* CTAs */}
-                      <motion.div initial={{ opacity:0, x:16 }} animate={{ opacity:1, x:0 }} transition={{ delay:0.3 }}>
-                        <button onClick={()=>setTab("blueprint")} style={{ width:"100%", padding:"14px 20px", borderRadius:10, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.3)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:11, color:"var(--accent)", letterSpacing:"0.1em", marginBottom:8 }}>
-                          VIEW RECOVERY BLUEPRINT →
-                        </button>
-                      </motion.div>
+                        {/* Bottom CTA */}
+                        <motion.div initial={{ opacity:0 }} animate={{ opacity:1 }} transition={{ delay:0.6 }} style={{ marginTop:4 }}>
+                          <button onClick={()=>setTab("blueprint")} style={{ width:"100%", padding:"13px 20px", borderRadius:10, background:"rgba(232,52,26,0.1)", border:"1px solid rgba(232,52,26,0.3)", cursor:"pointer", fontFamily:"var(--font-mono)", fontSize:11, color:"var(--accent)", letterSpacing:"0.1em" }}>
+                            VIEW FULL RECOVERY BLUEPRINT →
+                          </button>
+                        </motion.div>
+                      </div>
                     </div>
                   </div>
                 );
