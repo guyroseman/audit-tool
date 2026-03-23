@@ -105,116 +105,108 @@ function buildEmailContent(row: BatchRow): { subject: string; body: string } {
   const r = row.result;
   const d = domain(row.url);
   const link = funnelLink(row.url, row.result);
-  const greeting = row.firstName ? `Hi ${row.firstName},` : "Hi,";
+  const firstName = row.firstName || null;
 
   const perf = r.metrics.performanceScore;
   const seoScore = r.seo?.estimatedSeoScore ?? 0;
-  const a11y = r.accessibility?.estimatedA11yScore ?? 0;
-  const sec = r.security?.estimatedBestPracticesScore ?? 0;
   const adLoss = r.adLossPercent;
   const seoLoss = r.seo?.seoReachLossPercent ?? 0;
-  const leak = r.totalMonthlyCost;
-  const annualLoss = Math.round(leak * 12);
   const adaRisk = r.accessibility?.adaRiskLevel ?? "low";
   const vulnLibs = r.security?.vulnerableLibraryCount ?? 0;
   const missingAlt = r.accessibility?.missingAltText;
-  const noOG = !r.seo?.hasOGTags;
   const noStructured = !r.seo?.hasStructuredData;
-  const unusedJS = r.tech?.unusedJavascript;
-  const noCache = r.tech?.noBrowserCache;
-  const noCompression = r.tech?.noCompression;
-  const renderBlocking = r.tech?.renderBlockingResources;
 
-  // Subject
-  let subject = "";
-  if (perf < 50 && adLoss > 30) subject = `Quick note about ${d}'s Google ad spend`;
-  else if (adaRisk === "high") subject = `Accessibility issue flagged on ${d}`;
-  else if (seoLoss > 40) subject = `${d} — organic traffic finding`;
-  else if (vulnLibs > 0) subject = `Security flag on ${d}`;
-  else subject = `${d} — site diagnostic results`;
+  // ── Pick the single most impactful finding ──────────────────────────────────
+  type Finding = { subject: string; opening: string; body: string };
+  const candidates: Finding[] = [];
 
-  // Performance
-  let perfSection = "";
-  if (perf >= 80) {
-    perfSection = `Performance (${perf}/100) — solid. Your site loads quickly, which means Google isn't penalising your ad campaigns and visitors aren't bouncing before the page loads. Good foundation to build on.`;
-  } else if (perf >= 60) {
-    perfSection = `Performance (${perf}/100) — room to improve. Your site is functional but slower than Google's preferred threshold. This is likely adding ~${adLoss}% to your cost-per-click on paid campaigns, because Google charges more to advertise slow sites.${renderBlocking ? " Render-blocking resources are the likely culprit — these are scripts that force the browser to pause before displaying anything." : ""}${unusedJS ? " There's also unused JavaScript loading on every page visit that isn't needed." : ""}`;
-  } else {
-    perfSection = `Performance (${perf}/100) — this is the main issue. At this score, Google classifies your site as slow and applies a direct penalty to your ad campaigns — inflating your cost-per-click by approximately ${adLoss}%. That's an estimated $${r.monthlyAdOverspend.toLocaleString()}/month in ad overspend.${renderBlocking ? " Render-blocking scripts are preventing the page from loading." : ""}${unusedJS ? " Unused JavaScript is adding unnecessary weight to every page load." : ""}${noCache ? " Browser caching isn't configured, so returning visitors re-download the full site every time." : ""}${noCompression ? " Files aren't being compressed before being sent to the browser." : ""}`;
+  if (perf < 55 && adLoss > 20) {
+    candidates.push({
+      subject: `${d} — ad spend issue`,
+      opening: firstName
+        ? `${firstName}, I ran a quick diagnostic on ${d} and noticed something worth flagging.`
+        : `I ran a quick diagnostic on ${d} and noticed something worth flagging.`,
+      body: `Google applies a direct speed penalty to paid campaigns — at a ${perf}/100 performance score, you're paying roughly ${adLoss}% more per click than a faster competitor in the same auction. That's not an estimate, it's how Google's quality scoring works. Based on the numbers, it's around $${r.monthlyAdOverspend.toLocaleString()}/month in inflated ad spend.`,
+    });
   }
 
-  // SEO
-  let seoSection = "";
-  if (seoScore >= 80) {
-    seoSection = `SEO (${seoScore}/100) — well structured. Your meta tags, headings, and crawlability look good. Google can read and index the site without issues.`;
-  } else if (seoScore >= 60) {
-    seoSection = `SEO (${seoScore}/100) — a few gaps. Technical SEO issues are suppressing an estimated ${seoLoss}% of potential organic reach.${noOG ? " Open Graph tags are missing, which affects how the site appears when shared on LinkedIn or social media." : ""}${noStructured ? " Structured data isn't present, which means you're missing out on rich snippets in Google results." : ""}`;
-  } else {
-    seoSection = `SEO (${seoScore}/100) — significant issues. Google is suppressing an estimated ${seoLoss}% of potential organic traffic due to technical gaps.${noOG ? " Open Graph tags are missing." : ""}${noStructured ? " No structured data — Google can't generate rich results for your pages." : ""} This is traffic you're currently having to pay for through ads that should be coming organically.`;
+  if (adaRisk === "high") {
+    candidates.push({
+      subject: `accessibility flag on ${d}`,
+      opening: firstName
+        ? `${firstName} — flagged something on ${d} that's worth a look.`
+        : `Flagged something on ${d} that's worth a look.`,
+      body: `The site has a high ADA accessibility risk.${missingAlt ? " Images are missing alt text, which is the most cited issue in web accessibility demand letters." : ""} Most businesses don't hear about this until a letter arrives. It's fixable, usually without a full rebuild.`,
+    });
   }
 
-  // Accessibility
-  let a11ySection = "";
-  if (a11y >= 80 && adaRisk === "low") {
-    a11ySection = `Accessibility (${a11y}/100) — good. Your site is accessible to the majority of users, including those using screen readers or assistive technology. Low legal risk.`;
-  } else if (adaRisk === "high") {
-    a11ySection = `Accessibility (${a11y}/100) — high risk flagged. ADA web accessibility lawsuits have increased significantly year over year. Businesses receive demand letters with no prior warning.${missingAlt ? " Images on the site are missing alt text, which is one of the most commonly cited issues in ADA claims." : ""} This is worth reviewing with a developer regardless of other priorities.`;
-  } else {
-    a11ySection = `Accessibility (${a11y}/100) — some issues present. An estimated ${r.accessibility?.estimatedMarketLockout ?? 0}% of potential visitors may struggle to use the site properly.${missingAlt ? " Missing image alt text affects both accessibility and SEO." : ""}`;
+  if (seoLoss > 35 && seoScore < 65) {
+    candidates.push({
+      subject: `found a visibility gap on ${d}`,
+      opening: firstName
+        ? `${firstName}, ran ${d} through our diagnostic — a few things came up on the SEO side.`
+        : `Ran ${d} through our diagnostic — a few things came up on the SEO side.`,
+      body: `Looks like around ${seoLoss}% of potential organic reach is being lost to technical issues Google is sensitive to.${noStructured ? " Structured data is missing, so rich results aren't showing in search." : ""} Traffic that should be coming in organically ends up going to paid instead.`,
+    });
   }
 
-  // Security
-  let secSection = "";
-  if (sec >= 80 && vulnLibs === 0) {
-    secSection = `Security (${sec}/100) — clean. No vulnerable libraries detected and HTTPS is properly configured. Visitor trust signals are intact.`;
-  } else if (vulnLibs > 0) {
-    secSection = `Security (${sec}/100) — ${vulnLibs} vulnerable JavaScript ${vulnLibs === 1 ? "library" : "libraries"} detected. Outdated libraries are one of the most common entry points for site compromises. This also affects how Google scores the site's trustworthiness, which has a small but measurable impact on rankings.`;
-  } else {
-    secSection = `Security (${sec}/100) — a few best practice gaps. Nothing critical, but worth tidying up to maintain visitor trust and Google's trust signals.`;
+  if (vulnLibs > 0) {
+    candidates.push({
+      subject: `security flag on ${d}`,
+      opening: firstName
+        ? `${firstName} — noticed something on ${d} worth passing along.`
+        : `Noticed something on ${d} worth passing along.`,
+      body: `Found ${vulnLibs} outdated JavaScript ${vulnLibs === 1 ? "library" : "libraries"} with known vulnerabilities. Outdated libraries are a common entry point for compromises. Whoever manages your hosting would know how to patch it.`,
+    });
   }
 
-  const cta = r.severity === "critical"
-    ? `The full report includes a prioritised developer blueprint — the fixes are ranked by revenue impact so your team knows exactly where to start. I'd suggest at least having someone take a look at the performance issues first, as those are directly inflating your ad spend right now.`
-    : `The full report includes a prioritised fix list your developer can work through. Some of these are quick wins that can be resolved in an afternoon.`;
+  if (perf < 70) {
+    candidates.push({
+      subject: `${d} performance — ${perf}/100`,
+      opening: firstName
+        ? `${firstName}, I looked at ${d} and the performance score came back lower than I'd expect.`
+        : `I looked at ${d} and the performance score came back lower than I'd expect.`,
+      body: `At ${perf}/100, the site is loading slower than Google's recommended threshold — which affects both rankings and how paid campaigns are scored. ${adLoss > 10 ? `Ad costs are likely inflated by around ${adLoss}% as a result.` : "It's usually a few targeted fixes rather than anything major."}`,
+    });
+  }
 
-  const body = `${greeting}
+  // Fallback
+  const top: Finding = candidates[0] ?? {
+    subject: `ran a diagnostic on ${d}`,
+    opening: firstName
+      ? `${firstName}, pulled a quick report on ${d}.`
+      : `Pulled a quick report on ${d}.`,
+    body: `Performance came in at ${perf}/100 — a few small things in there that are worth knowing about, mostly quick wins.`,
+  };
 
-I put together a free diagnostic report for ${d} and wanted to share the findings — figured it's more useful than keeping them to myself.
+  // ── Vary the CTA line based on domain character entropy ────────────────────
+  const entropy = d.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const ctaLines = [
+    `Full report here — no sign-up needed:`,
+    `I put the full breakdown here if you want to dig in:`,
+    `More detail in the report (no account required):`,
+  ];
+  const cta = ctaLines[entropy % ctaLines.length];
 
-Here's a plain-English breakdown across the four areas we check:
+  // ── Sign-off (rotate between 3 natural closings) ───────────────────────────
+  const signoffs = [`Let me know if any of it is useful.`, `Happy to answer questions if anything's unclear.`, `Worth a look at least.`];
+  const signoff = signoffs[entropy % signoffs.length];
 
----
+  const body = `${top.opening}
 
-${perfSection}
-
-${seoSection}
-
-${a11ySection}
-
-${secSection}
-
----
-
-Overall, the site is estimated to be losing around $${leak.toLocaleString()}/month ($${annualLoss.toLocaleString()}/year) in recoverable revenue from these combined issues.
+${top.body}
 
 ${cta}
-
-Your full report is here — no account needed:
 ${link}
 
-Happy to answer any questions if anything's unclear.
+${signoff}
 
-Best,
-[Your name]
-Nexus Diagnostics
-Website Performance & Revenue Intelligence
-https://usenexus.io
+Alex Rivera
+Nexus | usenexus.io
 
----
-This report was generated using real Google PageSpeed data. 
-To unsubscribe or opt out of future diagnostics, simply reply with "unsubscribe".`;
+P.S. If you'd rather not hear from me again, just reply "no thanks" and I won't follow up.`;
 
-  return { subject, body };
+  return { subject: top.subject, body };
 }
 
 // ─── Gmail deep link ──────────────────────────────────────────────────────────

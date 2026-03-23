@@ -59,7 +59,7 @@ function fmtDate(iso: string) {
 
 function fmtMoney(v: number | null) {
   if (!v) return "—";
-  return `£${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`;
+  return `$${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`;
 }
 
 function scoreColor(s: number | null) {
@@ -124,7 +124,9 @@ export default function AdminLeadsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/leads");
+      const res = await fetch("/api/admin/leads", {
+        headers: { "x-admin-token": ADMIN_PASSWORD },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setLeads(json.leads ?? []);
@@ -143,7 +145,7 @@ export default function AdminLeadsPage() {
     try {
       const res = await fetch("/api/admin/leads", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "x-admin-token": ADMIN_PASSWORD },
         body: JSON.stringify({ id, status }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

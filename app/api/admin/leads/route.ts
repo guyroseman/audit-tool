@@ -11,9 +11,21 @@ function getAdminClient() {
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
+// ─── Auth guard ───────────────────────────────────────────────────────────────
+
+const ADMIN_TOKEN = process.env.ADMIN_API_TOKEN ?? "@Nexusr3355";
+
+function isAuthorized(req: NextRequest): boolean {
+  return req.headers.get("x-admin-token") === ADMIN_TOKEN;
+}
+
 // ─── GET — fetch all leads ─────────────────────────────────────────────────────
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const admin = getAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "Supabase service role key not configured" }, { status: 503 });
@@ -35,6 +47,10 @@ export async function GET() {
 // ─── PATCH — update lead status ────────────────────────────────────────────────
 
 export async function PATCH(req: NextRequest) {
+  if (!isAuthorized(req)) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const admin = getAdminClient();
   if (!admin) {
     return NextResponse.json({ error: "Supabase service role key not configured" }, { status: 503 });

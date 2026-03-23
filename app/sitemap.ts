@@ -3,7 +3,7 @@ import { MetadataRoute } from "next";
 export const dynamic = "force-dynamic";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = "https://nexus-diagnostics.vercel.app";
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://usenexus.io";
   return [
     { url: base, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
     { url: `${base}/funnel`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },

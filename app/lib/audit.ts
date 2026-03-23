@@ -558,10 +558,13 @@ export async function fetchAudit(rawUrl: string): Promise<AuditResult> {
   let url = rawUrl.trim().toLowerCase();
   if (!url.startsWith("http://") && !url.startsWith("https://")) url = "https://" + url;
 
-  if (url.includes("test.com")) {
-    await new Promise(r => setTimeout(r, 2800));
-    return { ...FAKE_AUDIT_RESULT, timestamp: Date.now() };
-  }
+  try {
+    const hostname = new URL(url).hostname.replace("www.", "");
+    if (hostname === "test.com") {
+      await new Promise(r => setTimeout(r, 2800));
+      return { ...FAKE_AUDIT_RESULT, timestamp: Date.now() };
+    }
+  } catch { /* invalid URL — let the API call fail with a real error */ }
 
   const apiKey = process.env.NEXT_PUBLIC_PAGESPEED_API_KEY;
   // Request all 4 categories in one API call

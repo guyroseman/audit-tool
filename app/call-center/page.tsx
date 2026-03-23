@@ -31,7 +31,7 @@ function CallCenterContent() {
           style={{ background: "#0a1628", border: "1px solid rgba(167,139,250,0.15)", borderRadius: 18, padding: "36px 32px", marginBottom: 20 }}>
           <div style={{ fontSize: 40, marginBottom: 14 }}>📅</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 12px", borderRadius: 20, background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", marginBottom: 16 }}>
-            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#f59e0b", display: "inline-block" }} className="animate-pulse"/>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#f59e0b", display: "inline-block", animation: "dotPulse 2s ease infinite" }} />
             <span style={{ fontSize: 9, color: "#f59e0b", letterSpacing: "0.14em" }}>BOOKING — LAUNCHING SOON</span>
           </div>
           <p style={{ fontSize: 13, color: "#6888a8", lineHeight: 1.7, marginBottom: 6 }}>
@@ -39,7 +39,7 @@ function CallCenterContent() {
           </p>
           <p style={{ fontSize: 13, color: "#6888a8", lineHeight: 1.7, marginBottom: 0 }}>
             Until then, email{" "}
-            <a href="mailto:hello@nexus-diagnostics.com" style={{ color: "#22d3ee", textDecoration: "none" }}>hello@nexus-diagnostics.com</a>
+            <a href="mailto:hello@usenexus.io" style={{ color: "#22d3ee", textDecoration: "none" }}>hello@usenexus.io</a>
             {" "}to book a call.
           </p>
         </motion.div>
@@ -77,6 +77,7 @@ function CallCenterContent() {
           <a href="/funnel" style={{ fontSize: 10, color: "#6888a8", textDecoration: "none" }}>← Run your free site audit</a>
         </div>
       </div>
+      <style>{`@keyframes dotPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.7)} }`}</style>
     </main>
   );
 }
