@@ -461,7 +461,7 @@ function buildPitch(result: AuditResult, fd: FunnelData): PitchData {
     icon: "📡", title: "Nexus Pulse — 5-Pillar Monitoring", tag: "MOST POPULAR", price: "$49/mo",
     bullets: [
       "Weekly automated scans across all 5 pillars",
-      "SMS + Slack alert the moment any score drops",
+      "Email + Slack alert the moment any score drops",
       bt === "ecom" ? "Track 3 competitor stores side-by-side" : "3 competitor URLs tracked continuously",
       "AI visibility monitoring — know when ChatGPT stops citing you",
       "ADA compliance monitoring — catch regressions before lawsuits",

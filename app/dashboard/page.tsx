@@ -10,7 +10,7 @@ import { supabase } from "../lib/supabase";
 interface Task { id: string; title: string; desc: string; impact: "High"|"Medium"|"Low"; effort: "High"|"Medium"|"Low"; val: number; status: "pending"|"verifying"|"recovered"; pillar: "performance"|"seo"|"accessibility"|"security"|"geo"; }
 interface HistoryPoint { ts: number; perf: number; seo: number; a11y: number; sec: number; geo: number; leak: number; }
 interface TrackedSite { id: string; url: string; label: string; isOwn: boolean; result: AuditResult|null; history: HistoryPoint[]; tasks: Task[]; loading: boolean; error: string; }
-interface UserSettings { smsPhone: string; smsAlerts: boolean; webhookUrl: string; weeklyDigest: boolean; criticalAlerts: boolean; emailTo: string; }
+interface UserSettings { webhookUrl: string; weeklyDigest: boolean; criticalAlerts: boolean; emailTo: string; }
 type Tab = "overview"|"vitals"|"blueprint"|"matrix"|"siteview"|"settings";
 type BlueprintFilter = Task["pillar"]|"all"|"verifying";
 // maxCompetitors is set per-plan in the component (see PLAN_CONFIG in supabase.ts)
@@ -580,7 +580,7 @@ export default function Dashboard() {
   const maxCompetitors = plan === "scale" ? 10 : 3;
   const [tab, setTab] = useState<Tab>("overview");
   const [sites, setSites] = useState<TrackedSite[]>([]);
-  const [settings, setSettings] = useState<UserSettings>({ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
+  const [settings, setSettings] = useState<UserSettings>({ webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
   const [pdfLoading, setPdfLoading] = useState(false);
   const [simpleMode, setSimpleMode] = useState(false);
   const [pulse, setPulse] = useState<{ time:string; text:string; type:"good"|"bad"|"neutral" }[]>([{ time:"Just now", text:"Secure connection established. Cloud synced.", type:"neutral" }]);
@@ -621,7 +621,7 @@ export default function Dashboard() {
           }
           return { ...s, tasks };
         }));
-        setSettings(data.app_data.settings||{ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
+        setSettings(data.app_data.settings||{ webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
       } else setSites([]);
       setLoaded(true);
     })();
@@ -671,7 +671,13 @@ export default function Dashboard() {
           ].filter(d=>d.prev-d.now>=10);
           if (drops.length>0) {
             const alertText = `🚨 NEXUS CRITICAL DROP — ${url}\n\n${drops.map(d=>`${d.label}: ${d.prev} → ${d.now} (−${d.prev-d.now} pts)`).join("\n")}\n\nRevenue leak: $${r.totalMonthlyCost.toLocaleString()}/mo`;
-            fetch(settings.webhookUrl,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ text:alertText }) }).catch(()=>{});
+            if (settings.webhookUrl) {
+              fetch(settings.webhookUrl,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ text:alertText }) }).catch(()=>{});
+            }
+            const alertEmail = settings.emailTo || userEmail;
+            if (alertEmail) {
+              fetch("/api/send-email",{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ to:alertEmail, toName:"", subject:`🚨 Critical drop detected — ${url.replace(/https?:\/\//,"")}`, body:alertText }) }).catch(()=>{});
+            }
             log(`⚠ Critical drop detected on ${drops.map(d=>d.label).join(", ")} — alert fired.`, "bad");
           }
         }
@@ -1102,7 +1108,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", marginBottom:13 }}>
-                  <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:13 }}>ACCESSIBILITY / ADA RISK</p>
+                  <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:13 }}>ACCESSIBILITY / ADA RISK</p>
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))", gap:7, marginBottom:11 }}>
                     {[
                       { label:"Image Alt Text", pass:!own.result.accessibility.missingAltText, detail:"Screen readers & Google Images" },
@@ -1131,7 +1137,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)" }}>
-                  <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:13 }}>SECURITY & BEST PRACTICES</p>
+                  <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em", marginBottom:13 }}>SECURITY & BEST PRACTICES</p>
                   <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))", gap:7, marginBottom:11 }}>
                     {[
                       { label:"HTTPS Enabled", pass:own.result.security.usesHTTPS, detail:"SSL certificate is active" },
@@ -1717,7 +1723,7 @@ export default function Dashboard() {
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:10 }}>
 
                   {/* Weekly digest */}
-                  <div style={{ padding:"16px 18px", borderRadius:12, background:"var(--surface)", border:"1px solid var(--border)", opacity:0.75 }}>
+                  <div style={{ padding:"16px 18px", borderRadius:12, background:"var(--surface)", border:"1px solid var(--border)" }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
                       <div>
                         <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
@@ -1742,28 +1748,20 @@ export default function Dashboard() {
                       <div>
                         <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
                           <span style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500 }}>Critical Drop Alerts</span>
-                          {settings.criticalAlerts && settings.webhookUrl && <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.25)", padding:"1px 6px", borderRadius:3 }}>● LIVE</span>}
-                          {settings.criticalAlerts && !settings.webhookUrl && <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"1px 6px", borderRadius:3 }}>SET WEBHOOK BELOW</span>}
+                          {settings.criticalAlerts && <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.25)", padding:"1px 6px", borderRadius:3 }}>● LIVE</span>}
                         </div>
-                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Auto-fires when any pillar drops {">"}10 pts on rescan</p>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Email + webhook alert when any pillar drops {">"}10 pts on rescan</p>
                       </div>
                       <ToggleSwitch value={settings.criticalAlerts} onChange={v=>setSettings(s=>({...s,criticalAlerts:v}))} color="#e8341a"/>
                     </div>
+                    {settings.criticalAlerts && (
+                      <div style={{ marginTop:10 }}>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", letterSpacing:"0.08em", marginBottom:5 }}>ALERT EMAIL (uses account email if blank)</p>
+                        <input type="email" value={settings.emailTo||""} onChange={e=>setSettings(s=>({...s,emailTo:e.target.value}))} placeholder={userEmail||"you@company.com"} style={{ width:"100%", background:"var(--bg)", border:"1px solid var(--border2)", borderRadius:7, padding:"8px 11px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:11, boxSizing:"border-box" as const }}/>
+                      </div>
+                    )}
                   </div>
 
-                  {/* SMS alerts — coming soon */}
-                  <div style={{ padding:"16px 18px", borderRadius:12, background:"var(--surface)", border:"1px solid var(--border)", opacity:0.7 }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
-                      <div>
-                        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
-                          <span style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500 }}>SMS Alerts</span>
-                          <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"1px 6px", borderRadius:3, marginLeft:6, letterSpacing:"0.08em" }}>COMING SOON</span>
-                        </div>
-                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Instant SMS when a critical drop is detected</p>
-                      </div>
-                      <ToggleSwitch value={settings.smsAlerts} onChange={v=>setSettings(s=>({...s,smsAlerts:v}))} color="#f59e0b"/>
-                    </div>
-                  </div>
                 </div>
               </div>
 

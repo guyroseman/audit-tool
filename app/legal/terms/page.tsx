@@ -49,7 +49,7 @@ export default function TermsOfService() {
           <ul style={{ paddingLeft: 20, display: "flex", flexDirection: "column", gap: 6 }}>
             <li>4-pillar analysis of Performance, SEO, Accessibility, and Security via Google PageSpeed Insights API</li>
             <li>Competitor URL tracking and automated re-scanning (paid tiers)</li>
-            <li>Email and webhook alerts for score changes (paid tiers); SMS alerts are in development</li>
+            <li>Email and webhook alerts for score changes (paid tiers)</li>
             <li>AI-generated developer action plans and recovery blueprints</li>
             <li>White-label PDF reports (Scale plan — currently in development)</li>
           </ul>

@@ -8,7 +8,7 @@ import { useAuth } from "../lib/auth-context";
 
 const FAQ = [
   { q: "What's in the free audit?", a: "Every free scan runs the full 4-pillar engine — Performance, SEO, Accessibility, and Security — powered by the Google PageSpeed Insights API. You get the complete report with findings, dollar impact, and exact fixes. No credit card required." },
-  { q: "What does Pulse add on top of free?", a: "Pulse automates everything. Weekly re-scans of your site plus up to 3 competitors, with SMS or Slack alerts the moment a score drops. You also get the AI Developer Blueprint — a prioritised 4-pillar task list your dev can execute immediately." },
+  { q: "What does Pulse add on top of free?", a: "Pulse automates everything. Weekly re-scans of your site plus up to 3 competitors, with email or Slack alerts the moment a score drops. You also get the AI Developer Blueprint — a prioritised 4-pillar task list your dev can execute immediately." },
   { q: "How is Pulse different from GTmetrix or Pingdom?", a: "GTmetrix and Pingdom are built for engineers. They output dry charts. Nexus translates the exact same Google data into dollar figures and plain-English business impact. You see 'LCP 4.2s = you're paying 34% more per Google Ad click' — not a raw millisecond number." },
   { q: "How does ADA compliance monitoring work?", a: "Every weekly scan re-checks your accessibility score against WCAG 2.1 AA. If it drops — say a new image is missing alt text — you get an alert before it becomes a legal issue. ADA website lawsuits increased 300% between 2017 and 2023." },
   { q: "Are the scores from real Google data?", a: "Yes. We call the official Google PageSpeed Insights API — the same data source Chrome DevTools and Google Search Console use. Scores are real, not simulated." },
@@ -25,7 +25,7 @@ function UpgradeBanner() {
       <div>
         <div style={{ fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 14, color: "var(--text)", marginBottom: 2 }}>Dashboard access requires a paid plan</div>
         <div style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)" }}>
-          Upgrade to <strong style={{ color: "#a78bfa" }}>Nexus Pulse</strong> to unlock automated monitoring, competitor tracking, SMS alerts and your full dashboard.
+          Upgrade to <strong style={{ color: "#a78bfa" }}>Nexus Pulse</strong> to unlock automated monitoring, competitor tracking, email alerts and your full dashboard.
         </div>
       </div>
     </motion.div>
@@ -137,7 +137,7 @@ function SubscribeInner() {
               badge: "★ MOST POPULAR", badgeColor: "#a78bfa", accentColor: "rgba(167,139,250,",
               popular: true, ctaBg: "#a78bfa", ctaColor: "#fff", cta: "START 7-DAY FREE TRIAL",
               href: process.env.NEXT_PUBLIC_LS_PULSE_URL ?? "/login", guarantee: "7-day money-back. Cancel anytime.",
-              features: ["Everything in Scout", "Weekly automated 4-pillar scans", "Track 3 competitor URLs", "Slack + SMS score alerts", "ADA compliance monitoring", "AI Developer Blueprint by ROI", "Webhooks for Make.com / Zapier"],
+              features: ["Everything in Scout", "Weekly automated 4-pillar scans", "Track 3 competitor URLs", "Slack + email score alerts", "ADA compliance monitoring", "AI Developer Blueprint by ROI", "Webhooks for Make.com / Zapier"],
               locked: [],
             },
             {
