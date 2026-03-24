@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { getArticle, articleList } from "../../lib/articles";
 import { NavBar } from "../../components/nav";
 
-interface Props { params: { slug: string } }
+interface Props { params: Promise<{ slug: string }> }
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexusdiag.com";
 
@@ -12,7 +12,8 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const article = getArticle(params.slug);
+  const { slug } = await params;
+  const article = getArticle(slug);
   if (!article) return {};
   return {
     title: article.title,
@@ -36,8 +37,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function ArticlePage({ params }: Props) {
-  const article = getArticle(params.slug);
+export default async function ArticlePage({ params }: Props) {
+  const { slug } = await params;
+  const article = getArticle(slug);
   if (!article) notFound();
 
   const jsonLd = {
