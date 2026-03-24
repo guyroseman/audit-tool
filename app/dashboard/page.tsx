@@ -7,8 +7,8 @@ import type { AuditResult } from "../lib/audit";
 import { supabase } from "../lib/supabase";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
-interface Task { id: string; title: string; desc: string; impact: "High"|"Medium"|"Low"; effort: "High"|"Medium"|"Low"; val: number; status: "pending"|"verifying"|"recovered"; pillar: "performance"|"seo"|"accessibility"|"security"; }
-interface HistoryPoint { ts: number; perf: number; seo: number; a11y: number; sec: number; leak: number; }
+interface Task { id: string; title: string; desc: string; impact: "High"|"Medium"|"Low"; effort: "High"|"Medium"|"Low"; val: number; status: "pending"|"verifying"|"recovered"; pillar: "performance"|"seo"|"accessibility"|"security"|"geo"; }
+interface HistoryPoint { ts: number; perf: number; seo: number; a11y: number; sec: number; geo: number; leak: number; }
 interface TrackedSite { id: string; url: string; label: string; isOwn: boolean; result: AuditResult|null; history: HistoryPoint[]; tasks: Task[]; loading: boolean; error: string; }
 interface UserSettings { smsPhone: string; smsAlerts: boolean; webhookUrl: string; weeklyDigest: boolean; criticalAlerts: boolean; emailTo: string; }
 type Tab = "overview"|"vitals"|"blueprint"|"matrix"|"siteview"|"settings";
@@ -86,7 +86,8 @@ function CompositeScore({ result, simpleMode }: { result: AuditResult; simpleMod
   const seo = result.seo?.estimatedSeoScore ?? 0;
   const a11y = result.accessibility?.estimatedA11yScore ?? 0;
   const sec = result.security?.estimatedBestPracticesScore ?? 0;
-  const composite = Math.round(perf * 0.35 + seo * 0.30 + a11y * 0.20 + sec * 0.15);
+  const geo = result.geo?.geoScore ?? 0;
+  const composite = Math.round(perf * 0.30 + seo * 0.25 + a11y * 0.20 + sec * 0.15 + geo * 0.10);
   const color = scoreColor(composite);
   const grade = composite >= 90
     ? { label: "EXCELLENT", desc: "Your website is in great shape — keep it maintained", emoji: "🏆" }
@@ -96,10 +97,11 @@ function CompositeScore({ result, simpleMode }: { result: AuditResult; simpleMod
     ? { label: "NEEDS WORK", desc: "Several issues are quietly draining customers and ad spend", emoji: "⚠️" }
     : { label: "CRITICAL", desc: "Serious problems are costing you customers every single day", emoji: "🚨" };
   const pillars = [
-    { label: simpleMode ? "Speed" : "PERFORMANCE", score: perf, color: "#e8341a", weight: "35%", simple: "How fast your pages load" },
-    { label: simpleMode ? "Google Rank" : "SEO", score: seo, color: "#f59e0b", weight: "30%", simple: "How visible you are on Google" },
+    { label: simpleMode ? "Speed" : "PERFORMANCE", score: perf, color: "#e8341a", weight: "30%", simple: "How fast your pages load" },
+    { label: simpleMode ? "Google Rank" : "SEO", score: seo, color: "#f59e0b", weight: "25%", simple: "How visible you are on Google" },
     { label: simpleMode ? "Everyone Can Use It" : "ACCESSIBILITY", score: a11y, color: "#a78bfa", weight: "20%", simple: "Can all users access your site?" },
     { label: simpleMode ? "Safety" : "SECURITY", score: sec, color: "#3b82f6", weight: "15%", simple: "Protection from threats" },
+    { label: simpleMode ? "AI Visibility" : "AI VISIBILITY", score: geo, color: "#10b981", weight: "10%", simple: "Cited by ChatGPT & Perplexity?" },
   ];
   return (
     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 16, borderRadius: 16, overflow: "hidden", border: `1.5px solid ${color}30`, background: `linear-gradient(135deg, ${color}08 0%, var(--surface) 50%)`, boxShadow: `0 0 80px ${color}08` }}>
@@ -109,7 +111,7 @@ function CompositeScore({ result, simpleMode }: { result: AuditResult; simpleMod
           <svg width={14} height={14} viewBox="0 0 28 28" fill="none"><path d="M14 2L25.26 8.5V21.5L14 28L2.74 21.5V8.5L14 2Z" stroke="#e8341a" strokeWidth="1.5" fill="rgba(232,52,26,0.1)"/><path d="M14 7L20.93 11V19L14 23L7.07 19V11L14 7Z" fill="#e8341a" opacity="0.7"/></svg>
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.18em" }}>NEXUS HEALTH SCORE</span>
         </div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>COMPOSITE · 4-PILLAR WEIGHTED</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>COMPOSITE · 5-PILLAR WEIGHTED</span>
       </div>
       {/* Body */}
       <div style={{ padding: "22px", display: "flex", gap: 24, alignItems: "center", flexWrap: "wrap" }}>
@@ -130,7 +132,7 @@ function CompositeScore({ result, simpleMode }: { result: AuditResult; simpleMod
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)" }}>Revenue leaking: <strong>${result.totalMonthlyCost.toLocaleString()}/mo</strong></span>
           </div>
         </div>
-        {/* 4 sub-pillars */}
+        {/* 5 sub-pillars */}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           {pillars.map(({ label, score, color: c, weight, simple }) => (
             <div key={label} style={{ textAlign: "center", minWidth: 64 }}>
@@ -228,6 +230,7 @@ function HistoryChart({ history }: { history: HistoryPoint[] }) {
     { key:"seo" as const, label:"SEO", color:"#f59e0b" },
     { key:"a11y" as const, label:"A11Y", color:"#a78bfa" },
     { key:"sec" as const, label:"SEC", color:"#3b82f6" },
+    { key:"geo" as const, label:"AI VIS", color:"#10b981" },
   ];
   if (history.length < 2) return (
     <div style={{ padding:"28px", textAlign:"center", border:"1px dashed var(--border)", borderRadius:10 }}>
@@ -457,6 +460,7 @@ function ScanDigest({ history }: { history: HistoryPoint[] }) {
     { label:"SEO", now:now.seo, d:now.seo-prev.seo, icon:"🔍" },
     { label:"Accessibility", now:now.a11y, d:now.a11y-prev.a11y, icon:"♿" },
     { label:"Security", now:now.sec, d:now.sec-prev.sec, icon:"🔒" },
+    { label:"AI Vis", now:now.geo??0, d:(now.geo??0)-(prev.geo??0), icon:"🤖" },
   ];
   const leakDelta = now.leak-prev.leak;
   return (
@@ -501,7 +505,12 @@ function generateTasks(result: AuditResult): Task[] {
     tasks.push({ id:"ada", pillar:"accessibility", title:high?"Remediate Critical ADA Violations":"Fix WCAG Issues", desc:high?`HIGH ADA risk. Lawsuits avg $25k–$90k. Locking out ~${result.accessibility.estimatedMarketLockout}% of potential customers.`:`~${result.accessibility.estimatedMarketLockout}% of users can't fully access your site.`, impact:high?"High":"Medium", effort:"Medium", val:Math.round((L*(high?0.08:0.04))/1000), status:"pending" });
   }
   if (result.accessibility?.missingAltText) tasks.push({ id:"alt", pillar:"accessibility", title:"Add Alt Text to All Images", desc:"Missing alt attributes breaks screen readers and loses Google Images SEO signal entirely.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
-  if (tasks.length===0) tasks.push({ id:"cache", pillar:"performance", title:"Implement SWR Caching", desc:"All 4 pillars healthy. Next level: stale-while-revalidate caching improves returning visitor speed.", impact:"Low", effort:"Medium", val:0, status:"pending" });
+  // GEO / AI Visibility tasks
+  if (result.geo && !result.geo.hasSchemaMarkup) tasks.push({ id:"schema", pillar:"geo", title:"Add JSON-LD Schema Markup", desc:"No structured data found. Schema markup is the #1 signal AI engines use to understand and cite your business. Add Organization, LocalBusiness, or FAQ schema immediately.", impact:"High", effort:"Low", val:Math.round((L*0.08)/1000), status:"pending" });
+  if (result.geo && !result.geo.hasStatisticalData) tasks.push({ id:"geo_stats", pillar:"geo", title:"Add Statistics & Data Points", desc:"No quantified claims detected. ChatGPT and Perplexity prefer pages with specific numbers, percentages, and financial figures as citation sources.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
+  if (result.geo && !result.geo.hasQuestionHeadings) tasks.push({ id:"geo_questions", pillar:"geo", title:"Rewrite Headings as Questions", desc:"No question-based H2/H3 headings found. AI systems extract content for answer-style queries — rewriting headings as questions dramatically increases citation probability.", impact:"Medium", effort:"Low", val:Math.round((L*0.03)/1000), status:"pending" });
+  if (result.geo && !result.geo.hasContentStructure) tasks.push({ id:"geo_structure", pillar:"geo", title:"Improve Content Structure", desc:"Insufficient lists and heading hierarchy detected. AI engines prefer well-structured content with clear sections, bullet lists, and multiple H2s for knowledge extraction.", impact:"Low", effort:"Low", val:Math.round((L*0.02)/1000), status:"pending" });
+  if (tasks.length===0) tasks.push({ id:"cache", pillar:"performance", title:"Implement SWR Caching", desc:"All 5 pillars healthy. Next level: stale-while-revalidate caching improves returning visitor speed.", impact:"Low", effort:"Medium", val:0, status:"pending" });
   return tasks;
 }
 
@@ -510,6 +519,7 @@ const PM: Record<Task["pillar"], { icon: string; color: string; label: string }>
   seo:         { icon:"🔍", color:"#f59e0b", label:"SEO" },
   security:    { icon:"🔒", color:"#3b82f6", label:"Security" },
   accessibility:{ icon:"♿", color:"#a78bfa", label:"Accessibility" },
+  geo:         { icon:"🤖", color:"#10b981", label:"AI Visibility" },
 };
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
@@ -542,7 +552,7 @@ export default function Dashboard() {
       const { data } = await supabase.from("profiles").select("app_data,tier").eq("id",session.user.id).single();
       if (data?.tier) setPlan(data.tier as "pulse"|"scale");
       if (data?.app_data && Object.keys(data.app_data).length>0) {
-        const validP = new Set(["performance","seo","security","accessibility"]);
+        const validP = new Set(["performance","seo","security","accessibility","geo"]);
         const raw: TrackedSite[] = data.app_data.sites||[];
         setSites(raw.map(s => ({ ...s, tasks:(s.tasks||[]).filter((t:Task)=>validP.has(t.pillar)) })));
         setSettings(data.app_data.settings||{ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
@@ -583,7 +593,7 @@ export default function Dashboard() {
     setTimeout(async () => {
       try {
         const r = await fetchAudit(url);
-        const pt: HistoryPoint = { ts:r.timestamp, perf:r.metrics.performanceScore, seo:r.seo?.estimatedSeoScore??0, a11y:r.accessibility?.estimatedA11yScore??0, sec:r.security?.estimatedBestPracticesScore??0, leak:r.totalMonthlyCost };
+        const pt: HistoryPoint = { ts:r.timestamp, perf:r.metrics.performanceScore, seo:r.seo?.estimatedSeoScore??0, a11y:r.accessibility?.estimatedA11yScore??0, sec:r.security?.estimatedBestPracticesScore??0, geo:r.geo?.geoScore??0, leak:r.totalMonthlyCost };
         // ── Critical drop alert ──────────────────────────────────────────────
         if (site?.isOwn && site.result && settings.criticalAlerts && settings.webhookUrl) {
           const drops = [
@@ -591,6 +601,7 @@ export default function Dashboard() {
             { label:"SEO",         prev:site.result.seo?.estimatedSeoScore??0,           now:r.seo?.estimatedSeoScore??0 },
             { label:"Accessibility",prev:site.result.accessibility?.estimatedA11yScore??0, now:r.accessibility?.estimatedA11yScore??0 },
             { label:"Security",    prev:site.result.security?.estimatedBestPracticesScore??0, now:r.security?.estimatedBestPracticesScore??0 },
+            { label:"AI Visibility",prev:site.result.geo?.geoScore??0,                   now:r.geo?.geoScore??0 },
           ].filter(d=>d.prev-d.now>=10);
           if (drops.length>0) {
             const alertText = `🚨 NEXUS CRITICAL DROP — ${url}\n\n${drops.map(d=>`${d.label}: ${d.prev} → ${d.now} (−${d.prev-d.now} pts)`).join("\n")}\n\nRevenue leak: $${r.totalMonthlyCost.toLocaleString()}/mo`;
@@ -600,8 +611,8 @@ export default function Dashboard() {
         }
         // ────────────────────────────────────────────────────────────────────
         const prevOwn = sites.find(s=>s.id===id&&s.isOwn);
-        const prevComposite = prevOwn?.result ? Math.round(prevOwn.result.metrics.performanceScore*0.35+(prevOwn.result.seo?.estimatedSeoScore??0)*0.30+(prevOwn.result.accessibility?.estimatedA11yScore??0)*0.20+(prevOwn.result.security?.estimatedBestPracticesScore??0)*0.15) : null;
-        const newComposite = Math.round(r.metrics.performanceScore*0.35+(r.seo?.estimatedSeoScore??0)*0.30+(r.accessibility?.estimatedA11yScore??0)*0.20+(r.security?.estimatedBestPracticesScore??0)*0.15);
+        const prevComposite = prevOwn?.result ? Math.round(prevOwn.result.metrics.performanceScore*0.30+(prevOwn.result.seo?.estimatedSeoScore??0)*0.25+(prevOwn.result.accessibility?.estimatedA11yScore??0)*0.20+(prevOwn.result.security?.estimatedBestPracticesScore??0)*0.15+(prevOwn.result.geo?.geoScore??0)*0.10) : null;
+        const newComposite = Math.round(r.metrics.performanceScore*0.30+(r.seo?.estimatedSeoScore??0)*0.25+(r.accessibility?.estimatedA11yScore??0)*0.20+(r.security?.estimatedBestPracticesScore??0)*0.15+(r.geo?.geoScore??0)*0.10);
         if (prevComposite!==null && newComposite>prevComposite) {
           setTimeout(()=>{ setScoreToast(`🎉 Score improved +${newComposite-prevComposite} pts! Now ${newComposite}/100`); setTimeout(()=>setScoreToast(null),5000); },800);
         }
@@ -624,7 +635,7 @@ export default function Dashboard() {
           resolved.forEach(t=>log(`✓ ${t.title} — verified & recovered!`, "good"));
           return { ...s, loading:false, result:r, url, tasks:s.isOwn?mergedTasks:[], history:[...(s.history||[]).slice(-11), pt] };
         }));
-        log("Scan complete. 4 pillars updated.", "good");
+        log("Scan complete. 5 pillars updated.", "good");
       } catch(e) {
         setSites(p=>p.map(s=>s.id===id?{ ...s, loading:false, error:e instanceof Error?e.message:"Scan failed" }:s));
         log("Scan failed.", "bad");
@@ -653,6 +664,10 @@ export default function Dashboard() {
       case "headers": return !!r.security?.hasSecurityHeaders;
       case "ada": return r.accessibility?.adaRiskLevel === "low";
       case "alt": return !r.accessibility?.missingAltText;
+      case "schema": return !!(r.geo?.hasSchemaMarkup);
+      case "geo_stats": return !!(r.geo?.hasStatisticalData);
+      case "geo_questions": return !!(r.geo?.hasQuestionHeadings);
+      case "geo_structure": return !!(r.geo?.hasContentStructure);
       default: return false;
     }
   }
@@ -692,7 +707,7 @@ export default function Dashboard() {
     if (!settings.webhookUrl) { alert("Set a Webhook URL in Settings first."); return; }
     const body = allTasks.filter(t=>t.status==="pending").map(t=>`[${t.impact} | ${PM[t.pillar].label}] ${t.title}:\n${t.desc}`).join("\n\n");
     try {
-      await fetch(settings.webhookUrl,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ text:`🚨 NEXUS 4-PILLAR ACTION PLAN\n\n${body}` }) });
+      await fetch(settings.webhookUrl,{ method:"POST", headers:{ "Content-Type":"application/json" }, body:JSON.stringify({ text:`🚨 NEXUS 5-PILLAR ACTION PLAN\n\n${body}` }) });
       alert("Dispatched!"); log("Payload sent to webhook.", "good");
     } catch { alert("Failed. Check your Webhook URL."); }
   }
@@ -823,7 +838,7 @@ export default function Dashboard() {
                 <motion.div initial={{ opacity:0, y:10 }} animate={{ opacity:1, y:0 }} style={{ padding:"72px 20px", textAlign:"center", border:"1px dashed rgba(167,139,250,0.4)", borderRadius:16, background:"linear-gradient(180deg,rgba(167,139,250,0.05) 0%,transparent 100%)" }}>
                   <div style={{ fontSize:38, marginBottom:14 }}>🎯</div>
                   <h3 style={{ fontFamily:"var(--font-display)", fontSize:26, marginBottom:10, color:"var(--text)", letterSpacing:"0.05em" }}>Engine Calibrated & Ready</h3>
-                  <p style={{ fontFamily:"var(--font-body)", color:"var(--text2)", maxWidth:400, margin:"0 auto 28px", lineHeight:1.6 }}>Enter your domain to run your first 4-pillar diagnostic.</p>
+                  <p style={{ fontFamily:"var(--font-body)", color:"var(--text2)", maxWidth:400, margin:"0 auto 28px", lineHeight:1.6 }}>Enter your domain to run your first 5-pillar diagnostic.</p>
                   <div style={{ display:"flex", gap:10, justifyContent:"center", maxWidth:460, margin:"0 auto" }}>
                     <input type="text" value={newUrl} onChange={e=>setNewUrl(e.target.value)} onKeyDown={e=>{ if(e.key==="Enter"&&newUrl){ const id=`own-${Date.now()}`; setSites([{ id, url:newUrl.trim(), label:"Your Domain", isOwn:true, result:null, history:[], tasks:[], loading:false, error:"" }]); setTimeout(()=>scan(id,newUrl.trim()),100); setNewUrl(""); }}} placeholder="https://yourwebsite.com" style={{ flex:1, padding:"13px 17px", borderRadius:9, border:"1px solid var(--border)", background:"var(--bg)", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:12 }}/>
                     <button onClick={()=>{ if(!newUrl) return; const id=`own-${Date.now()}`; setSites([{ id, url:newUrl.trim(), label:"Your Domain", isOwn:true, result:null, history:[], tasks:[], loading:false, error:"" }]); setTimeout(()=>scan(id,newUrl.trim()),100); setNewUrl(""); }} style={{ padding:"0 26px", background:"var(--accent)", color:"#fff", border:"none", borderRadius:9, fontFamily:"var(--font-mono)", fontSize:11, cursor:"pointer", letterSpacing:"0.1em" }}>INITIALIZE →</button>
@@ -888,24 +903,26 @@ export default function Dashboard() {
                   <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.1 }}
                     style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", marginBottom:14 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:15 }}>
-                      <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em" }}>4-PILLAR DIGITAL HEALTH</p>
+                      <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em" }}>5-PILLAR DIGITAL HEALTH</p>
                       <div style={{ display:"flex", gap:7 }}>
                         <button onClick={downloadPDF} disabled={pdfLoading} style={{ fontFamily:"var(--font-mono)", fontSize:7, color:pdfLoading?"var(--muted)":"#10b981", background:pdfLoading?"var(--bg)":"rgba(16,185,129,0.08)", border:`1px solid ${pdfLoading?"var(--border)":"rgba(16,185,129,0.3)"}`, padding:"2px 10px", borderRadius:4, cursor:pdfLoading?"not-allowed":"pointer" }}>{pdfLoading?"GENERATING...":"⬇ PDF REPORT"}</button>
                         <button onClick={()=>setTab("vitals")} style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--accent)", background:"none", border:"1px solid rgba(232,52,26,0.25)", padding:"2px 9px", borderRadius:4, cursor:"pointer" }}>DEEP DIVE →</button>
                       </div>
                     </div>
-                    <div className="pillar-rings" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:16 }}>
+                    <div className="pillar-rings" style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12, marginBottom:16 }}>
                       <ScoreRing score={own.result.metrics.performanceScore} size={66} label="PERFORMANCE"/>
                       <ScoreRing score={own.result.seo?.estimatedSeoScore??0} size={66} label="SEO"/>
                       <ScoreRing score={own.result.accessibility?.estimatedA11yScore??0} size={66} label="ACCESSIBILITY"/>
                       <ScoreRing score={own.result.security?.estimatedBestPracticesScore??0} size={66} label="SECURITY"/>
+                      <ScoreRing score={own.result.geo?.geoScore??0} size={66} label="AI VISIBILITY"/>
                     </div>
-                    <div className="dash-4pillar-stats" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, paddingTop:12, borderTop:"1px solid var(--border)" }}>
+                    <div className="dash-4pillar-stats" style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:8, paddingTop:12, borderTop:"1px solid var(--border)" }}>
                       {[
                         { label:"Ad Tax", value:`${own.result.adLossPercent}%`, bad:own.result.adLossPercent>20 },
                         { label:"SEO Reach Lost", value:`${own.result.seo?.seoReachLossPercent??0}%`, bad:(own.result.seo?.seoReachLossPercent??0)>20 },
                         { label:"Market Lockout", value:`${own.result.accessibility?.estimatedMarketLockout??0}%`, bad:(own.result.accessibility?.estimatedMarketLockout??0)>10 },
                         { label:"Vuln. Libraries", value:(own.result.security?.vulnerableLibraryCount??0)>0?`${own.result.security.vulnerableLibraryCount} found`:"Clean", bad:(own.result.security?.vulnerableLibraryCount??0)>0 },
+                        { label:"AI Pipeline Leak", value:`$${(own.result.geo?.estimatedAiPipelineLeak??0).toLocaleString()}/mo`, bad:(own.result.geo?.geoScore??0)<75 },
                       ].map(({ label, value, bad })=>(
                         <div key={label} style={{ textAlign:"center" }}>
                           <div style={{ fontFamily:"var(--font-display)", fontSize:16, color:bad?"#e8341a":"#10b981", marginBottom:2 }}>{value}</div>
@@ -922,7 +939,7 @@ export default function Dashboard() {
                   <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.12 }}
                     style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid var(--border)", marginBottom:14 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-                      <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em" }}>SCORE HISTORY — ALL 4 PILLARS</p>
+                      <p style={{ fontFamily:"var(--font-mono)", fontSize:10, color:"var(--muted)", letterSpacing:"0.14em" }}>SCORE HISTORY — ALL 5 PILLARS</p>
                       <span style={{ fontFamily:"var(--font-mono)", fontSize:9, color:"var(--muted2)" }}>{own.history?.length??0} SCANS RECORDED</span>
                     </div>
                     <HistoryChart history={own.history||[]}/>
@@ -1042,6 +1059,38 @@ export default function Dashboard() {
                     <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)", marginBottom:1 }}>BEST PRACTICES</div><div style={{ fontFamily:"var(--font-display)", fontSize:17, color:scoreColor(own.result.security.estimatedBestPracticesScore) }}>{own.result.security.estimatedBestPracticesScore}/100</div></div>
                   </div>
                 </div>
+                {/* ── AI VISIBILITY / GEO ── */}
+                {own.result.geo && (
+                  <div style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid rgba(16,185,129,0.2)", marginTop:0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:13 }}>
+                      <span style={{ fontSize:14 }}>🤖</span>
+                      <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#10b981", letterSpacing:"0.14em" }}>AI VISIBILITY — GENERATIVE ENGINE OPTIMISATION (GEO)</p>
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))", gap:7, marginBottom:11 }}>
+                      {[
+                        { label:"Schema / Structured Data", pass:own.result.geo.hasSchemaMarkup, detail: own.result.geo.schemaTypes.length>0?`Types: ${own.result.geo.schemaTypes.slice(0,3).join(", ")}`:"No JSON-LD found — AI engines can't identify your entity", impact:"AI engines use schema as the primary entity signal" },
+                        { label:"Statistical Data Density", pass:own.result.geo.hasStatisticalData, detail:"Figures, percentages & monetary values detected", impact:"Cited sources need ≥5 quantified claims to be authoritative" },
+                        { label:"Question-Based Headings", pass:own.result.geo.hasQuestionHeadings, detail:"H2/H3 headings phrased as questions", impact:"AI answer engines match queries to question-format headings" },
+                        { label:"Content Structure", pass:own.result.geo.hasContentStructure, detail:"≥2 lists + ≥1 H2 = structured for extraction", impact:"Well-structured content is 3× more likely to be quoted verbatim" },
+                      ].map(({ label, pass, detail, impact })=>(
+                        <div key={label} style={{ padding:"9px 11px", borderRadius:8, background:pass?"rgba(16,185,129,0.04)":"rgba(232,52,26,0.05)", border:`1px solid ${pass?"rgba(16,185,129,0.2)":"rgba(232,52,26,0.18)"}` }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:3 }}>
+                            <span style={{ fontSize:10 }}>{pass?"✅":"❌"}</span>
+                            <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:pass?"#10b981":"var(--text)" }}>{label}</span>
+                          </div>
+                          <p style={{ fontFamily:"var(--font-body)", fontSize:9, color:"var(--muted)", marginLeft:18, marginBottom:2 }}>{detail}</p>
+                          {!pass && <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#f59e0b", marginLeft:18 }}>→ {impact}</p>}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display:"flex", gap:16, padding:"8px 11px", borderRadius:9, background:"var(--bg)", border:"1px solid rgba(16,185,129,0.15)", flexWrap:"wrap", alignItems:"center" }}>
+                      <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)", marginBottom:1 }}>AI VISIBILITY SCORE</div><div style={{ fontFamily:"var(--font-display)", fontSize:17, color:scoreColor(own.result.geo.geoScore) }}>{own.result.geo.geoScore}/100</div></div>
+                      <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)", marginBottom:1 }}>AI PIPELINE LEAK</div><div style={{ fontFamily:"var(--font-display)", fontSize:17, color:"var(--accent)" }}>${own.result.geo.estimatedAiPipelineLeak.toLocaleString()}/mo</div></div>
+                      {own.result.geo.schemaTypes.length>0 && <div><div style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"var(--muted)", marginBottom:1 }}>SCHEMA TYPES</div><div style={{ fontFamily:"var(--font-body)", fontSize:11, color:"#10b981" }}>{own.result.geo.schemaTypes.join(", ")}</div></div>}
+                      {own.result.geo.geoScore<50 && <p style={{ fontFamily:"var(--font-body)", fontSize:11, color:"var(--text2)", flex:1, minWidth:180, lineHeight:1.5 }}>ChatGPT and Perplexity are likely not citing your site. Every AI citation you miss is a competitor gaining that customer.</p>}
+                    </div>
+                  </div>
+                )}
               </>)}
             </motion.div>
           )}
@@ -1058,7 +1107,7 @@ export default function Dashboard() {
                   <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>Issues from your scan, ordered by revenue impact. ⚡ Quick Wins recover money with the least effort.</p>
                 </div>
                 <div style={{ display:"flex", gap:8 }}>
-                  <button onClick={()=>{ const text=allTasks.map(t=>`[${t.impact}|${PM[t.pillar].label}] ${t.title}\n${t.desc}`).join("\n\n"); navigator.clipboard.writeText(`NEXUS 4-PILLAR DEV PLAN:\n\n${text}`); alert("Copied!"); }} style={{ fontFamily:"var(--font-mono)", fontSize:9, background:"var(--surface)", color:"var(--text)", border:"1px solid var(--border2)", padding:"7px 12px", borderRadius:7, cursor:"pointer" }}>📋 COPY</button>
+                  <button onClick={()=>{ const text=allTasks.map(t=>`[${t.impact}|${PM[t.pillar].label}] ${t.title}\n${t.desc}`).join("\n\n"); navigator.clipboard.writeText(`NEXUS 5-PILLAR DEV PLAN:\n\n${text}`); alert("Copied!"); }} style={{ fontFamily:"var(--font-mono)", fontSize:9, background:"var(--surface)", color:"var(--text)", border:"1px solid var(--border2)", padding:"7px 12px", borderRadius:7, cursor:"pointer" }}>📋 COPY</button>
                   <button onClick={sendWebhook} style={{ fontFamily:"var(--font-mono)", fontSize:9, background:"#f59e0b", color:"#000", border:"none", padding:"7px 12px", borderRadius:7, cursor:"pointer", fontWeight:"bold" }}>🚀 WEBHOOK</button>
                   <button onClick={downloadPDF} disabled={pdfLoading} style={{ fontFamily:"var(--font-mono)", fontSize:9, background:pdfLoading?"var(--surface)":"#10b981", color:pdfLoading?"var(--muted)":"#000", border:"none", padding:"7px 12px", borderRadius:7, cursor:pdfLoading?"not-allowed":"pointer", fontWeight:"bold" }}>{pdfLoading?"GENERATING...":"⬇ PDF"}</button>
                 </div>
@@ -1096,10 +1145,12 @@ export default function Dashboard() {
                       ada: `<!-- Fix common ADA issues -->\n<img src="..." alt="Descriptive text here">\n<label for="email">Email address</label>\n<input id="email" type="email">\n<!-- Check contrast: target 4.5:1 for body text -->`,
                       alt: `<!-- Every img needs alt text -->\n<img src="product.jpg" alt="Blue wireless headphones, overhead view">\n<!-- For decorative images -->\n<img src="divider.svg" alt="" role="presentation">`,
                       cache: `# nginx — cache static assets 1 year\nlocation ~* \\.(js|css|png|jpg|webp|woff2)$ {\n  add_header Cache-Control "public, max-age=31536000, immutable";\n}`,
+                      schema: `<!-- Add to every page <head> -->\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Organization",\n  "name": "Your Company",\n  "url": "https://yourdomain.com",\n  "description": "What you do in 1–2 sentences",\n  "sameAs": ["https://linkedin.com/company/you"]\n}\n</script>`,
                     };
                     const timeEst: Record<string,string> = {
                       lcp:"30–90 min", tbt:"1–3 hrs", cls:"30–60 min", meta:"2–4 hrs", viewport:"5 min",
                       vuln:"30–60 min", headers:"15–30 min", ada:"2–8 hrs", alt:"1–2 hrs", cache:"15–30 min",
+                      schema:"15–30 min", geo_stats:"2–4 hrs", geo_questions:"1–2 hrs", geo_structure:"1–3 hrs",
                     };
                     const simpleTerms: Record<string,string> = {
                       lcp:"Your page takes too long to show anything. Visitors see a blank screen and leave before they even read your headline. This directly costs you ad money.",
@@ -1112,6 +1163,10 @@ export default function Dashboard() {
                       ada:"Some people using your site with a screen reader or keyboard can't use it properly. This is both a legal risk and lost revenue.",
                       alt:"Your images have no descriptions. Google can't understand them for search, and screen readers can't describe them to visually impaired users.",
                       cache:"Every time someone visits, they download everything fresh. Returning visitors should see your site instantly — this wastes their time and your server costs.",
+                      schema:"ChatGPT and Perplexity don't know who you are. Without schema markup, AI engines can't identify your business as a reliable source — so they cite competitors instead.",
+                      geo_stats:"AI answer engines prefer sources with real numbers. Without statistics on your page, you're invisible to Perplexity, ChatGPT, and Google's AI Overviews.",
+                      geo_questions:"When someone asks ChatGPT a question, it finds pages that answer that exact question. Your headings don't match how people ask AI assistants.",
+                      geo_structure:"Your content isn't formatted for AI extraction. Well-structured pages with clear sections and bullet points are 3× more likely to be quoted directly.",
                     };
                     const whyItMatters: Record<string,string> = {
                       lcp:"Google's Core Web Vital threshold is 2.5s. Every 100ms delay reduces conversions by ~1%. LCP is the single biggest ranking factor in Performance.",
@@ -1124,6 +1179,10 @@ export default function Dashboard() {
                       ada:"ADA lawsuits increased 300% since 2020 and average $25k–$90k in settlement costs. Beyond legal risk, ~26% of adults have a disability — you're locking out revenue.",
                       alt:"Alt text is how Google Images indexes your content AND how screen readers describe your site. Both impact SEO reach and accessibility compliance.",
                       cache:"First-time visitors are slow — return visitors should be instant. Cache-Control headers reduce server load and improve repeat-visit LCP by 60–80%.",
+                      schema:"Schema markup is the #1 GEO signal. AI systems use JSON-LD to understand what your business does, who it serves, and when to cite it. Missing schema = invisible to AI.",
+                      geo_stats:"Studies show AI systems cite pages with ≥5 statistical claims 4× more often. Numbers, percentages, and dollar figures signal authoritative, research-grade content.",
+                      geo_questions:"74% of AI queries are question-format. Pages with question-based H2/H3 headings match these queries directly — dramatically increasing the chance of an AI citation.",
+                      geo_structure:"LLMs extract information from structured content. Multiple H2s, bullet lists, and clear sections make your content easy to parse, quote, and attribute.",
                     };
                     const isQuickWin = t.impact==="High" && t.effort==="Low";
                     return (
@@ -1218,7 +1277,7 @@ export default function Dashboard() {
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:20, flexWrap:"wrap", gap:10 }}>
                 <div>
                   <h2 style={{ fontFamily:"var(--font-display)", fontSize:"clamp(22px,4vw,30px)", color:"var(--text)", letterSpacing:"0.05em", marginBottom:4 }}>MARKET MATRIX</h2>
-                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>4-pillar competitor intelligence. Know where rivals beat you — and where they're exposed.</p>
+                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text2)" }}>5-pillar competitor intelligence. Know where rivals beat you — and where they're exposed.</p>
                 </div>
                 <div className="matrix-input-row" style={{ display:"flex", gap:7, flexWrap:"wrap" }}>
                   <input type="text" value={newUrl} onChange={e=>setNewUrl(e.target.value)} placeholder="https://competitor.com" onKeyDown={e=>{ if(e.key==="Enter"){ addComp(newUrl); setNewUrl(""); }}} disabled={competitors.length>=maxCompetitors} style={{ background:"var(--surface)", border:"1px solid var(--border2)", borderRadius:7, padding:"8px 12px", color:"var(--text)", fontFamily:"var(--font-mono)", fontSize:10, width:180, opacity:competitors.length>=maxCompetitors?0.5:1 }}/>
@@ -1229,7 +1288,7 @@ export default function Dashboard() {
               {competitors.length===0 ? (
                 <div style={{ padding:"44px", textAlign:"center", border:"1px dashed var(--border)", borderRadius:13 }}>
                   <p style={{ fontFamily:"var(--font-mono)", fontSize:12, color:"var(--muted)", marginBottom:5 }}>No competitors tracked.</p>
-                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--muted2)" }}>Add a URL above to compare 4-pillar scores side by side.</p>
+                  <p style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--muted2)" }}>Add a URL above to compare 5-pillar scores side by side.</p>
                 </div>
               ) : (
                 <div style={{ display:"flex", flexDirection:"column", gap:13 }}>
@@ -1275,6 +1334,7 @@ export default function Dashboard() {
                                 { icon:"🔍", label:"SEO", yours:own.result.seo?.estimatedSeoScore??0, theirs:c.result.seo?.estimatedSeoScore??0, higherWins:true, unit:"/100" },
                                 { icon:"♿", label:"Accessibility", yours:own.result.accessibility?.estimatedA11yScore??0, theirs:c.result.accessibility?.estimatedA11yScore??0, higherWins:true, unit:"/100" },
                                 { icon:"🔒", label:"Security", yours:own.result.security?.estimatedBestPracticesScore??0, theirs:c.result.security?.estimatedBestPracticesScore??0, higherWins:true, unit:"/100" },
+                                { icon:"🤖", label:"AI Visibility", yours:own.result.geo?.geoScore??0, theirs:c.result.geo?.geoScore??0, higherWins:true, unit:"/100" },
                                 { icon:"💰", label:"Ad Tax", yours:own.result.adLossPercent, theirs:c.result.adLossPercent, higherWins:false, unit:"%" },
                                 { icon:"⚖️", label:"ADA Risk", yours:own.result.accessibility?.adaRiskLevel==="high"?0:own.result.accessibility?.adaRiskLevel==="medium"?1:2, theirs:c.result.accessibility?.adaRiskLevel==="high"?0:c.result.accessibility?.adaRiskLevel==="medium"?1:2, higherWins:true, unit:"", displayYours:(own.result.accessibility?.adaRiskLevel??"low").toUpperCase(), displayTheirs:(c.result.accessibility?.adaRiskLevel??"low").toUpperCase() },
                                 { icon:"🐛", label:"Vuln. Libs", yours:-(own.result.security?.vulnerableLibraryCount??0), theirs:-(c.result.security?.vulnerableLibraryCount??0), higherWins:true, unit:"", displayYours:String(own.result.security?.vulnerableLibraryCount??0), displayTheirs:String(c.result.security?.vulnerableLibraryCount??0) },
@@ -1535,7 +1595,7 @@ export default function Dashboard() {
                           <span style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500 }}>Weekly Score Digest</span>
                           <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"1px 6px", borderRadius:3 }}>COMING SOON</span>
                         </div>
-                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Monday summary email — all 4 pillar scores</p>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Monday summary email — all 5 pillar scores</p>
                       </div>
                       <ToggleSwitch value={settings.weeklyDigest} onChange={v=>setSettings(s=>({...s,weeklyDigest:v}))} color="#10b981"/>
                     </div>
