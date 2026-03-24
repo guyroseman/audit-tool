@@ -105,7 +105,7 @@ function buildEmailContent(row: BatchRow): { subject: string; body: string } {
   const r = row.result;
   const d = domain(row.url);
   const link = funnelLink(row.url, row.result);
-  const firstName = row.firstName || null;
+  const name = row.firstName;
 
   const perf = r.metrics.performanceScore;
   const seoScore = r.seo?.estimatedSeoScore ?? 0;
@@ -113,100 +113,71 @@ function buildEmailContent(row: BatchRow): { subject: string; body: string } {
   const seoLoss = r.seo?.seoReachLossPercent ?? 0;
   const adaRisk = r.accessibility?.adaRiskLevel ?? "low";
   const vulnLibs = r.security?.vulnerableLibraryCount ?? 0;
-  const missingAlt = r.accessibility?.missingAltText;
-  const noStructured = !r.seo?.hasStructuredData;
+  const geoScore = r.geo?.geoScore ?? 0;
 
-  // ── Pick the single most impactful finding ──────────────────────────────────
-  type Finding = { subject: string; opening: string; body: string };
-  const candidates: Finding[] = [];
+  const hi = name ? `Hi ${name},` : "Hi,";
+  const entropy = d.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const cta = ["Full breakdown here (free, 30 sec):", "Pulled the full report here:", "Details here — no sign-up needed:"][entropy % 3];
+  const footer = `Alex\nNexus — usenexus.io`;
 
+  type Draft = { subject: string; body: string };
+  const drafts: Draft[] = [];
+
+  // 1. Ad spend penalty (highest $$ signal)
   if (perf < 55 && adLoss > 20) {
-    candidates.push({
-      subject: `${d} — ad spend issue`,
-      opening: firstName
-        ? `${firstName}, I ran a quick diagnostic on ${d} and noticed something worth flagging.`
-        : `I ran a quick diagnostic on ${d} and noticed something worth flagging.`,
-      body: `Google applies a direct speed penalty to paid campaigns — at a ${perf}/100 performance score, you're paying roughly ${adLoss}% more per click than a faster competitor in the same auction. That's not an estimate, it's how Google's quality scoring works. Based on the numbers, it's around $${r.monthlyAdOverspend.toLocaleString()}/month in inflated ad spend.`,
+    drafts.push({
+      subject: `${d} — ad spend finding`,
+      body: `${hi}\n\nRan a quick scan on ${d} — performance score came back at ${perf}/100.\n\nGoogle charges slower sites more per click. At that score you're paying ~${adLoss}% more per ad than faster competitors — roughly $${r.monthlyAdOverspend.toLocaleString()}/mo in extra spend.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
+  // 2. ADA risk
   if (adaRisk === "high") {
-    candidates.push({
-      subject: `accessibility flag on ${d}`,
-      opening: firstName
-        ? `${firstName} — flagged something on ${d} that's worth a look.`
-        : `Flagged something on ${d} that's worth a look.`,
-      body: `The site has a high ADA accessibility risk.${missingAlt ? " Images are missing alt text, which is the most cited issue in web accessibility demand letters." : ""} Most businesses don't hear about this until a letter arrives. It's fixable, usually without a full rebuild.`,
+    drafts.push({
+      subject: `accessibility flag — ${d}`,
+      body: `${hi}\n\nQuick flag on ${d} — it has a high ADA compliance risk.\n\nMost businesses only find out when a demand letter arrives. The issues are fixable.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
-  if (seoLoss > 35 && seoScore < 65) {
-    candidates.push({
-      subject: `found a visibility gap on ${d}`,
-      opening: firstName
-        ? `${firstName}, ran ${d} through our diagnostic — a few things came up on the SEO side.`
-        : `Ran ${d} through our diagnostic — a few things came up on the SEO side.`,
-      body: `Looks like around ${seoLoss}% of potential organic reach is being lost to technical issues Google is sensitive to.${noStructured ? " Structured data is missing, so rich results aren't showing in search." : ""} Traffic that should be coming in organically ends up going to paid instead.`,
+  // 3. SEO reach loss
+  if (seoLoss > 30 && seoScore < 65) {
+    drafts.push({
+      subject: `${d} — organic traffic gap`,
+      body: `${hi}\n\nScanned ${d} — around ${seoLoss}% of potential organic reach is being blocked by technical issues Google penalises.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
+  // 4. Security
   if (vulnLibs > 0) {
-    candidates.push({
-      subject: `security flag on ${d}`,
-      opening: firstName
-        ? `${firstName} — noticed something on ${d} worth passing along.`
-        : `Noticed something on ${d} worth passing along.`,
-      body: `Found ${vulnLibs} outdated JavaScript ${vulnLibs === 1 ? "library" : "libraries"} with known vulnerabilities. Outdated libraries are a common entry point for compromises. Whoever manages your hosting would know how to patch it.`,
+    drafts.push({
+      subject: `${d} — ${vulnLibs} security flag${vulnLibs > 1 ? "s" : ""}`,
+      body: `${hi}\n\nFound ${vulnLibs} JavaScript ${vulnLibs === 1 ? "library" : "libraries"} with known vulnerabilities on ${d}. Worth patching before they become a problem.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
-  if (perf < 70) {
-    candidates.push({
-      subject: `${d} performance — ${perf}/100`,
-      opening: firstName
-        ? `${firstName}, I looked at ${d} and the performance score came back lower than I'd expect.`
-        : `I looked at ${d} and the performance score came back lower than I'd expect.`,
-      body: `At ${perf}/100, the site is loading slower than Google's recommended threshold — which affects both rankings and how paid campaigns are scored. ${adLoss > 10 ? `Ad costs are likely inflated by around ${adLoss}% as a result.` : "It's usually a few targeted fixes rather than anything major."}`,
+  // 5. AI search visibility
+  if (geoScore < 50) {
+    drafts.push({
+      subject: `${d} — AI search visibility`,
+      body: `${hi}\n\n${d} scored ${geoScore}/100 for AI citation readiness. ChatGPT, Perplexity, and Gemini skip sites that lack the right signals — a few structural fixes can change this.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
-  // Fallback
-  const top: Finding = candidates[0] ?? {
-    subject: `ran a diagnostic on ${d}`,
-    opening: firstName
-      ? `${firstName}, pulled a quick report on ${d}.`
-      : `Pulled a quick report on ${d}.`,
-    body: `Performance came in at ${perf}/100 — a few small things in there that are worth knowing about, mostly quick wins.`,
+  // 6. General performance fallback
+  if (perf < 75) {
+    drafts.push({
+      subject: `quick look at ${d}`,
+      body: `${hi}\n\nRan ${d} through our diagnostic — performance came back at ${perf}/100 with ${adLoss > 10 ? `~${adLoss}% ad cost inflation as a side effect` : "a few things worth knowing about"}.\n\n${cta}\n${link}\n\n${footer}`,
+    });
+  }
+
+  // Absolute fallback
+  const top = drafts[0] ?? {
+    subject: `quick look at ${d}`,
+    body: `${hi}\n\nRan ${d} through our diagnostic — worth a look at the findings.\n\n${cta}\n${link}\n\n${footer}`,
   };
 
-  // ── Vary the CTA line based on domain character entropy ────────────────────
-  const entropy = d.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const ctaLines = [
-    `Full report here — no sign-up needed:`,
-    `I put the full breakdown here if you want to dig in:`,
-    `More detail in the report (no account required):`,
-  ];
-  const cta = ctaLines[entropy % ctaLines.length];
-
-  // ── Sign-off (rotate between 3 natural closings) ───────────────────────────
-  const signoffs = [`Let me know if any of it is useful.`, `Happy to answer questions if anything's unclear.`, `Worth a look at least.`];
-  const signoff = signoffs[entropy % signoffs.length];
-
-  const body = `${top.opening}
-
-${top.body}
-
-${cta}
-${link}
-
-${signoff}
-
-Alex Rivera
-Nexus | usenexus.io
-
-P.S. If you'd rather not hear from me again, just reply "no thanks" and I won't follow up.`;
-
-  return { subject: top.subject, body };
+  return top;
 }
 
 // ─── Gmail deep link ──────────────────────────────────────────────────────────
