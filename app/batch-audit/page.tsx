@@ -117,17 +117,21 @@ function buildEmailContent(row: BatchRow): { subject: string; body: string } {
 
   const hi = name ? `Hi ${name},` : "Hi,";
   const entropy = d.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
-  const cta = ["Full breakdown here (free, 30 sec):", "Pulled the full report here:", "Details here — no sign-up needed:"][entropy % 3];
+  // Rotate CTA phrasing — avoid spam-flagged phrases like "free" or "no sign-up"
+  const cta = ["Here's the full breakdown:", "I put the report here:", "Details are here:"][entropy % 3];
+  const intro = `I run Nexus — we build website auditing tools that show businesses exactly where they're losing revenue online.`;
   const footer = `Alex\nNexus — usenexus.io`;
 
   type Draft = { subject: string; body: string };
   const drafts: Draft[] = [];
 
   // 1. Ad spend penalty (highest $$ signal)
+  // Avoided: "click", "score", "$X", "%", "extra"
   if (perf < 55 && adLoss > 20) {
+    const overspend = r.monthlyAdOverspend.toLocaleString();
     drafts.push({
       subject: `${d} — ad spend finding`,
-      body: `${hi}\n\nRan a quick scan on ${d} — performance score came back at ${perf}/100.\n\nGoogle charges slower sites more per click. At that score you're paying ~${adLoss}% more per ad than faster competitors — roughly $${r.monthlyAdOverspend.toLocaleString()}/mo in extra spend.\n\n${cta}\n${link}\n\n${footer}`,
+      body: `${hi}\n\n${intro}\n\nI ran ${d} through our tool and wanted to flag something. The site rated ${perf} out of 100 — Google's ad auction penalises slower sites, meaning your campaigns are likely paying more per placement than faster competitors in the same auction. The gap works out to roughly ${overspend} a month in avoidable ad spend.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
@@ -135,15 +139,16 @@ function buildEmailContent(row: BatchRow): { subject: string; body: string } {
   if (adaRisk === "high") {
     drafts.push({
       subject: `accessibility flag — ${d}`,
-      body: `${hi}\n\nQuick flag on ${d} — it has a high ADA compliance risk.\n\nMost businesses only find out when a demand letter arrives. The issues are fixable.\n\n${cta}\n${link}\n\n${footer}`,
+      body: `${hi}\n\n${intro}\n\nI ran ${d} through our tool and flagged a high ADA compliance risk. Most businesses find out about this when a demand letter arrives — the issues are usually fixable without a full rebuild.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
   // 3. SEO reach loss
+  // Avoided: "%"
   if (seoLoss > 30 && seoScore < 65) {
     drafts.push({
-      subject: `${d} — organic traffic gap`,
-      body: `${hi}\n\nScanned ${d} — around ${seoLoss}% of potential organic reach is being blocked by technical issues Google penalises.\n\n${cta}\n${link}\n\n${footer}`,
+      subject: `${d} — organic visibility gap`,
+      body: `${hi}\n\n${intro}\n\nI ran ${d} through our tool — a significant portion of potential organic reach is being blocked by technical issues Google is sensitive to. The report has the specifics.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
@@ -151,30 +156,32 @@ function buildEmailContent(row: BatchRow): { subject: string; body: string } {
   if (vulnLibs > 0) {
     drafts.push({
       subject: `${d} — ${vulnLibs} security flag${vulnLibs > 1 ? "s" : ""}`,
-      body: `${hi}\n\nFound ${vulnLibs} JavaScript ${vulnLibs === 1 ? "library" : "libraries"} with known vulnerabilities on ${d}. Worth patching before they become a problem.\n\n${cta}\n${link}\n\n${footer}`,
+      body: `${hi}\n\n${intro}\n\nI ran ${d} through our tool and found ${vulnLibs} JavaScript ${vulnLibs === 1 ? "library" : "libraries"} with known vulnerabilities. Worth patching before they cause a problem — whoever manages the site would know how to handle it.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
   // 5. AI search visibility
+  // Avoided: "score"
   if (geoScore < 50) {
     drafts.push({
       subject: `${d} — AI search visibility`,
-      body: `${hi}\n\n${d} scored ${geoScore}/100 for AI citation readiness. ChatGPT, Perplexity, and Gemini skip sites that lack the right signals — a few structural fixes can change this.\n\n${cta}\n${link}\n\n${footer}`,
+      body: `${hi}\n\n${intro}\n\nI ran ${d} through our AI visibility audit — it rated ${geoScore} out of 100 for citation readiness. ChatGPT, Perplexity, and Gemini rely on specific structural signals to surface and reference sites. A few targeted changes can move this significantly.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
   // 6. General performance fallback
+  // Avoided: "score", "click", "%"
   if (perf < 75) {
     drafts.push({
       subject: `quick look at ${d}`,
-      body: `${hi}\n\nRan ${d} through our diagnostic — performance came back at ${perf}/100 with ${adLoss > 10 ? `~${adLoss}% ad cost inflation as a side effect` : "a few things worth knowing about"}.\n\n${cta}\n${link}\n\n${footer}`,
+      body: `${hi}\n\n${intro}\n\nI ran ${d} through our tool — the site came back at ${perf} out of 100, ${adLoss > 10 ? `with some knock-on impact on ad campaigns` : `with a few things worth knowing about`}. The report has the detail.\n\n${cta}\n${link}\n\n${footer}`,
     });
   }
 
   // Absolute fallback
   const top = drafts[0] ?? {
     subject: `quick look at ${d}`,
-    body: `${hi}\n\nRan ${d} through our diagnostic — worth a look at the findings.\n\n${cta}\n${link}\n\n${footer}`,
+    body: `${hi}\n\n${intro}\n\nI ran ${d} through our tool — worth a look at what came up.\n\n${cta}\n${link}\n\n${footer}`,
   };
 
   return top;
