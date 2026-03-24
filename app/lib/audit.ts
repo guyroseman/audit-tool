@@ -65,12 +65,13 @@ export interface LeadSignals {
 // ─── PILLAR 5: AI Visibility (GEO) ───────────────────────────────────────────
 export interface GEOSignals {
   geoScore: number;                  // 0–100 (4 checks × 25 pts each)
-  hasStatisticalData: boolean;       // $, £, % density ≥ 5 on page
-  hasQuestionHeadings: boolean;      // H2/H3 contains question words
-  hasSchemaMarkup: boolean;          // application/ld+json present
+  hasStatisticalData: boolean;       // quantified claims ≥ 3 on page
+  hasQuestionHeadings: boolean;      // H1-H6 or FAQ section contains question words
+  hasSchemaMarkup: boolean;          // JSON-LD / microdata / RDFa present
   schemaTypes: string[];             // detected @type values
-  hasContentStructure: boolean;      // ≥2 lists + ≥1 H2
+  hasContentStructure: boolean;      // ≥1 list or table + ≥1 H2-H4
   estimatedAiPipelineLeak: number;   // $/mo estimated AI search revenue at risk
+  fetchFailed?: boolean;             // true when the target URL couldn't be fetched
 }
 
 // ─── Plain-English Finding ────────────────────────────────────────────────────

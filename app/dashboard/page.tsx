@@ -538,13 +538,25 @@ function generateTasks(result: AuditResult): Task[] {
   }
 
   // ── GEO / AI Visibility ───────────────────────────────────────────────────────
-  if (result.geo && !result.geo.hasSchemaMarkup) tasks.push({ id:"schema", pillar:"geo", title:"Add JSON-LD Schema Markup", desc:"No structured data found. Schema markup is the single most impactful GEO signal — it tells AI engines who you are and what you do. Add Organization, LocalBusiness, or FAQ schema to every page.", impact:"High", effort:"Low", val:Math.round((L*0.08)/1000), status:"pending" });
-  if (result.geo && !result.geo.hasStatisticalData) tasks.push({ id:"geo_stats", pillar:"geo", title:"Add Statistics & Quantified Claims", desc:"No numerical data detected on your page. ChatGPT, Perplexity, and AI Overviews cite authoritative sources — pages with ≥5 specific stats (numbers, %, $) are cited 4× more often.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
-  if (result.geo && !result.geo.hasQuestionHeadings) tasks.push({ id:"geo_questions", pillar:"geo", title:"Rewrite H2/H3 Headings as Questions", desc:"No question-format headings found. 74% of AI queries are phrased as questions — pages with matching H2/H3 questions (What is...? How does...? Why should...?) are dramatically more likely to be cited.", impact:"Medium", effort:"Low", val:Math.round((L*0.03)/1000), status:"pending" });
-  if (result.geo && !result.geo.hasContentStructure) tasks.push({ id:"geo_structure", pillar:"geo", title:"Restructure Content for AI Extraction", desc:"Insufficient heading hierarchy and list structure. LLMs parse well-structured content — multiple H2s, bullet lists, and numbered steps signal extractable, quote-worthy information.", impact:"Low", effort:"Low", val:Math.round((L*0.02)/1000), status:"pending" });
-  // Catch-all if geo exists but score < 50 and no geo tasks were added
-  if (result.geo && (result.geo.geoScore ?? 0) < 50 && !tasks.some(t=>t.pillar==="geo")) {
-    tasks.push({ id:"geo_audit", pillar:"geo", title:`AI Visibility Is Critical (Score: ${result.geo.geoScore}/100)`, desc:"Your site is effectively invisible to AI engines. ChatGPT, Perplexity, and Google's AI Overviews are not citing your business — every AI query in your niche is sending potential customers to competitors.", impact:"High", effort:"Medium", val:Math.round((L*0.10)/1000), status:"pending" });
+  if (!result.geo) {
+    // Old saved result predates GEO pillar — prompt rescan
+    tasks.push({ id:"geo_rescan", pillar:"geo", title:"Scan AI Visibility (Not Yet Checked)", desc:"Your saved audit doesn't include AI Visibility data — this pillar was added after your last scan. Click RESCAN to get your full GEO score and specific recommendations for ChatGPT/Perplexity visibility.", impact:"High", effort:"Low", val:0, status:"pending" });
+  } else if (result.geo.fetchFailed) {
+    // Site blocked the scraper — give the 4 standard GEO tasks as manual checklist
+    tasks.push({ id:"schema", pillar:"geo", title:"Add JSON-LD Schema Markup", desc:"We couldn't auto-scan your page (it may have bot protection), but schema markup is the #1 GEO signal. Manually verify you have JSON-LD with Organization, LocalBusiness, or Article schema on every page.", impact:"High", effort:"Low", val:Math.round((L*0.08)/1000), status:"pending" });
+    tasks.push({ id:"geo_stats", pillar:"geo", title:"Add Statistics & Quantified Claims", desc:"AI engines cite data-rich sources. Ensure your pages contain at least 3–5 specific statistics: percentages, dollar figures, user counts, or growth metrics.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
+    tasks.push({ id:"geo_questions", pillar:"geo", title:"Rewrite Headings as Questions", desc:"74% of AI queries are question-format. Check that your H2/H3 headings ask and answer questions (What is X? How does Y work? Why should Z?)", impact:"Medium", effort:"Low", val:Math.round((L*0.03)/1000), status:"pending" });
+    tasks.push({ id:"geo_structure", pillar:"geo", title:"Add Content Lists and Heading Hierarchy", desc:"Ensure your key pages have at least one bulleted/numbered list and multiple H2 subheadings. Structured content is extracted and cited by AI engines far more often than dense prose.", impact:"Low", effort:"Low", val:Math.round((L*0.02)/1000), status:"pending" });
+  } else {
+    // We have real GEO data — generate specific tasks for each failing check
+    if (!result.geo.hasSchemaMarkup) tasks.push({ id:"schema", pillar:"geo", title:"Add JSON-LD Schema Markup", desc:"No structured data found. Schema markup is the single most impactful GEO signal — it tells AI engines who you are and what you do. Add Organization, LocalBusiness, or FAQ schema to every page.", impact:"High", effort:"Low", val:Math.round((L*0.08)/1000), status:"pending" });
+    if (!result.geo.hasStatisticalData) tasks.push({ id:"geo_stats", pillar:"geo", title:"Add Statistics & Quantified Claims", desc:"Fewer than 3 data points detected on your page. ChatGPT, Perplexity, and AI Overviews prefer authoritative sources with specific numbers, percentages, and dollar figures — aim for 5+ data points per key page.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
+    if (!result.geo.hasQuestionHeadings) tasks.push({ id:"geo_questions", pillar:"geo", title:"Rewrite Headings as Questions", desc:"No question-format headings found. 74% of AI queries are phrased as questions — pages with matching H1-H6 question headings (What is X? How does Y? Why should Z?) are dramatically more likely to be cited by ChatGPT and Perplexity.", impact:"Medium", effort:"Low", val:Math.round((L*0.03)/1000), status:"pending" });
+    if (!result.geo.hasContentStructure) tasks.push({ id:"geo_structure", pillar:"geo", title:"Add Structured Lists and Subheadings", desc:"No bullet lists or structured hierarchy detected. LLMs extract and quote content that is logically organized — add at least one bulleted/numbered list and clear H2/H3 subheadings to every key page.", impact:"Medium", effort:"Low", val:Math.round((L*0.02)/1000), status:"pending" });
+    // Catch-all: score isn't perfect but no specific tasks generated (all checks somehow passed with low score edge case)
+    if ((result.geo.geoScore ?? 0) < 75 && !tasks.some(t=>t.pillar==="geo")) {
+      tasks.push({ id:"geo_audit", pillar:"geo", title:`Improve AI Visibility Score (${result.geo.geoScore}/100)`, desc:"Your site passes the basic GEO checks but AI citation rate could be much higher. Focus on deeper schema markup (FAQ, Article, HowTo), more statistical content, and content specifically written to answer common queries in your niche.", impact:"High", effort:"Medium", val:Math.round((L*0.10)/1000), status:"pending" });
+    }
   }
 
   if (tasks.length===0) tasks.push({ id:"cache", pillar:"performance", title:"Implement Return-Visit Caching", desc:"All 5 pillars are healthy. Next level optimisation: stale-while-revalidate Cache-Control headers make returning visitors see your site instantly.", impact:"Low", effort:"Low", val:0, status:"pending" });
@@ -594,8 +606,19 @@ export default function Dashboard() {
         const raw: TrackedSite[] = data.app_data.sites||[];
         setSites(raw.map(s => {
           const savedTasks = (s.tasks||[]).filter((t:Task)=>validP.has(t.pillar));
-          // Auto-regenerate tasks from saved result if tasks are missing — handles old saved data
-          const tasks = savedTasks.length > 0 ? savedTasks : (s.isOwn && s.result ? generateTasks(s.result) : []);
+          let tasks = savedTasks;
+          if (s.isOwn && s.result) {
+            // Always regenerate from the latest result so new checks (GEO etc.) appear
+            // immediately — but preserve any verifying/recovered status the user already set
+            const freshTasks = generateTasks(s.result);
+            tasks = freshTasks.map(ft => {
+              const prev = savedTasks.find(pt => pt.id === ft.id);
+              if (prev?.status === "verifying" || prev?.status === "recovered") {
+                return { ...ft, status: prev.status };
+              }
+              return ft;
+            });
+          }
           return { ...s, tasks };
         }));
         setSettings(data.app_data.settings||{ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
@@ -736,7 +759,8 @@ export default function Dashboard() {
       case "geo_stats": return !!(r.geo?.hasStatisticalData);
       case "geo_questions": return !!(r.geo?.hasQuestionHeadings);
       case "geo_structure": return !!(r.geo?.hasContentStructure);
-      case "geo_audit": return (r.geo?.geoScore ?? 0) >= 50;
+      case "geo_audit": return (r.geo?.geoScore ?? 0) >= 75;
+      case "geo_rescan": return !!(r.geo && !r.geo.fetchFailed);
       default: return false;
     }
   }
@@ -1131,16 +1155,21 @@ export default function Dashboard() {
                 {/* ── AI VISIBILITY / GEO ── */}
                 {own.result.geo && (
                   <div style={{ padding:"17px 21px", borderRadius:13, background:"var(--surface)", border:"1px solid rgba(16,185,129,0.2)", marginTop:0 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:13 }}>
-                      <span style={{ fontSize:14 }}>🤖</span>
-                      <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#10b981", letterSpacing:"0.14em" }}>AI VISIBILITY — GENERATIVE ENGINE OPTIMISATION (GEO)</p>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:13, flexWrap:"wrap", gap:8 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <span style={{ fontSize:14 }}>🤖</span>
+                        <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#10b981", letterSpacing:"0.14em" }}>AI VISIBILITY — GENERATIVE ENGINE OPTIMISATION (GEO)</p>
+                      </div>
+                      {own.result.geo.fetchFailed && (
+                        <span style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.3)", padding:"2px 9px", borderRadius:4 }}>⚠ Site blocked auto-scan — manual review recommended</span>
+                      )}
                     </div>
                     <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(175px,1fr))", gap:7, marginBottom:11 }}>
                       {[
                         { label:"Schema / Structured Data", pass:own.result.geo.hasSchemaMarkup, detail: own.result.geo.schemaTypes.length>0?`Types: ${own.result.geo.schemaTypes.slice(0,3).join(", ")}`:"No JSON-LD found — AI engines can't identify your entity", impact:"AI engines use schema as the primary entity signal" },
-                        { label:"Statistical Data Density", pass:own.result.geo.hasStatisticalData, detail:"Figures, percentages & monetary values detected", impact:"Cited sources need ≥5 quantified claims to be authoritative" },
-                        { label:"Question-Based Headings", pass:own.result.geo.hasQuestionHeadings, detail:"H2/H3 headings phrased as questions", impact:"AI answer engines match queries to question-format headings" },
-                        { label:"Content Structure", pass:own.result.geo.hasContentStructure, detail:"≥2 lists + ≥1 H2 = structured for extraction", impact:"Well-structured content is 3× more likely to be quoted verbatim" },
+                        { label:"Statistical Data Density", pass:own.result.geo.hasStatisticalData, detail:"≥3 quantified claims (%, $, millions, ratios) detected", impact:"AI engines cite data-rich sources 4× more often — aim for 5+ stats per page" },
+                        { label:"Question-Based Headings", pass:own.result.geo.hasQuestionHeadings, detail:"H1-H6 headings or FAQ section with question words", impact:"74% of AI queries are question-format — matching headings = more citations" },
+                        { label:"Content Structure", pass:own.result.geo.hasContentStructure, detail:"≥1 list or table + ≥1 H2/H3 subheading", impact:"Structured content is extracted and quoted by LLMs far more often than prose" },
                       ].map(({ label, pass, detail, impact })=>(
                         <div key={label} style={{ padding:"9px 11px", borderRadius:8, background:pass?"rgba(16,185,129,0.04)":"rgba(232,52,26,0.05)", border:`1px solid ${pass?"rgba(16,185,129,0.2)":"rgba(232,52,26,0.18)"}` }}>
                           <div style={{ display:"flex", alignItems:"center", gap:5, marginBottom:3 }}>
