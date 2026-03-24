@@ -10,6 +10,7 @@ interface CapturePayload {
   adLossPercent?: number;
   bounceRateIncrease?: number;
   annualRevenueLoss?: number;
+  totalMonthlyCost?: number;
   severity?: string;
   timestamp?: number;
   // Funnel context
@@ -19,9 +20,9 @@ interface CapturePayload {
   source?: string;
   // Extended funnel answers
   phone?: string;
-  q1?: string; // business type / goal question 1
-  q2?: string; // pain point question 2
-  q3?: string; // revenue question 3
+  q1?: string;
+  q2?: string;
+  q3?: string;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
 
   const {
     email, url, score,
-    adLossPercent, bounceRateIncrease, annualRevenueLoss,
+    adLossPercent, bounceRateIncrease, annualRevenueLoss, totalMonthlyCost,
     severity, timestamp,
     painPoint, revenuePotential, lastAudit, source,
     phone, q1, q2, q3,
@@ -125,6 +126,7 @@ export async function POST(req: NextRequest) {
         ad_loss_percent: adLossPercent ?? null,
         bounce_rate_increase: bounceRateIncrease ?? null,
         annual_revenue_loss: annualRevenueLoss ?? null,
+        total_monthly_cost: totalMonthlyCost ?? null,
         pain_point: painPoint ?? null,
         revenue_potential: revenuePotential ?? null,
         last_audit: lastAudit ?? null,

@@ -15,39 +15,33 @@ type Tab = "overview"|"vitals"|"blueprint"|"matrix"|"siteview"|"settings";
 type BlueprintFilter = Task["pillar"]|"all"|"verifying";
 // maxCompetitors is set per-plan in the component (see PLAN_CONFIG in supabase.ts)
 
-// ─── Enhanced Toggle Switch ───────────────────────────────────────────────────
+// ─── Pill Toggle ──────────────────────────────────────────────────────────────
 function ToggleSwitch({ value, onChange, color = "#10b981" }: { value: boolean; onChange: (v: boolean) => void; color?: string }) {
   return (
-    <button
-      onClick={() => onChange(!value)}
-      aria-checked={value}
-      role="switch"
-      style={{
-        width: 52, height: 28, borderRadius: 14,
-        background: value ? color : "var(--bg)",
-        border: `1.5px solid ${value ? color : "var(--border2)"}`,
-        cursor: "pointer", position: "relative",
-        transition: "all 0.25s cubic-bezier(0.4,0,0.2,1)",
-        flexShrink: 0, padding: 0, outline: "none",
-        boxShadow: value ? `0 0 16px ${color}55, inset 0 1px 0 rgba(255,255,255,0.1)` : "none",
-      }}
-    >
-      <motion.div
-        animate={{ x: value ? 26 : 2 }}
-        transition={{ type: "spring", stiffness: 400, damping: 28 }}
+    <div role="group" style={{ display:"inline-flex", background:"var(--bg)", borderRadius:100, border:"1px solid var(--border2)", padding:3, gap:2, flexShrink:0 }}>
+      <button
+        onClick={() => onChange(true)}
         style={{
-          position: "absolute", top: 3, width: 20, height: 20, borderRadius: "50%",
-          background: value ? "#fff" : "var(--muted)",
-          boxShadow: value ? "0 2px 6px rgba(0,0,0,0.35)" : "0 1px 3px rgba(0,0,0,0.2)",
+          padding:"5px 14px", borderRadius:100, border:"none", cursor:"pointer",
+          background: value ? color : "transparent",
+          color: value ? "#fff" : "var(--muted)",
+          fontFamily:"var(--font-mono)", fontSize:9, letterSpacing:"0.1em", fontWeight: value ? 700 : 400,
+          transition:"all 0.18s", boxShadow: value ? `0 0 12px ${color}50` : "none",
+          outline:"none",
         }}
-      />
-      {value && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          style={{ position: "absolute", left: 8, top: "50%", transform: "translateY(-50%)", fontFamily: "var(--font-mono)", fontSize: 7, color: "#fff", letterSpacing: "0.05em", fontWeight: 700 }}>
-          ON
-        </motion.div>
-      )}
-    </button>
+      >ON</button>
+      <button
+        onClick={() => onChange(false)}
+        style={{
+          padding:"5px 14px", borderRadius:100, border:"none", cursor:"pointer",
+          background: !value ? "rgba(255,255,255,0.07)" : "transparent",
+          color: !value ? "var(--text2)" : "var(--muted)",
+          fontFamily:"var(--font-mono)", fontSize:9, letterSpacing:"0.1em", fontWeight: !value ? 600 : 400,
+          transition:"all 0.18s",
+          outline:"none",
+        }}
+      >OFF</button>
+    </div>
   );
 }
 
@@ -1728,7 +1722,7 @@ export default function Dashboard() {
                       <div>
                         <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
                           <span style={{ fontFamily:"var(--font-body)", fontSize:13, color:"var(--text)", fontWeight:500 }}>Weekly Score Digest</span>
-                          <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#f59e0b", background:"rgba(245,158,11,0.1)", border:"1px solid rgba(245,158,11,0.25)", padding:"1px 6px", borderRadius:3 }}>COMING SOON</span>
+                          <span style={{ fontFamily:"var(--font-mono)", fontSize:7, color:"#10b981", background:"rgba(16,185,129,0.1)", border:"1px solid rgba(16,185,129,0.25)", padding:"1px 6px", borderRadius:3 }}>● LIVE</span>
                         </div>
                         <p style={{ fontFamily:"var(--font-mono)", fontSize:8, color:"var(--muted)", margin:0 }}>Monday summary email — all 5 pillar scores</p>
                       </div>

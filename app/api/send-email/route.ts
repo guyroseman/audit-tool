@@ -6,18 +6,22 @@ export async function POST(req: NextRequest) {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "Missing API key" }, { status: 500 });
 
-  const { to, toName, subject, body } = await req.json();
-  if (!to || !subject || !body) return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+  const { to, toName, subject, body, htmlContent } = await req.json();
+  if (!to || !subject || (!body && !htmlContent))
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
+
+  const payload: Record<string, unknown> = {
+    sender: { name: "Alex at Nexus", email: "alex@nexusdiag.com" },
+    to: [{ email: to, name: toName || to }],
+    subject,
+  };
+  if (htmlContent) payload.htmlContent = htmlContent;
+  else payload.textContent = body;
 
   const res = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: { "api-key": apiKey, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      sender: { name: "Alex", email: "alex@nexusdiag.com" },
-      to: [{ email: to, name: toName || to }],
-      subject,
-      textContent: body,
-    }),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
