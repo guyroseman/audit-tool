@@ -492,25 +492,62 @@ function ScanDigest({ history }: { history: HistoryPoint[] }) {
 // ─── Task Generator ───────────────────────────────────────────────────────────
 function generateTasks(result: AuditResult): Task[] {
   const tasks: Task[] = [];
-  const L = result.annualRevenueLoss;
-  if (result.metrics.lcp>2500) tasks.push({ id:"lcp", pillar:"performance", title:"Resolve LCP Bottleneck", desc:`LCP is ${fmtMs(result.metrics.lcp)} — ${fmtMs(result.metrics.lcp-2500)} over Google's threshold. Preload hero asset, use WebP/AVIF, enable server caching.`, impact:"High", effort:"Low", val:Math.round((L*0.4)/1000), status:"pending" });
-  if (result.metrics.tbt>200) tasks.push({ id:"tbt", pillar:"performance", title:"Clear Main Thread Blocking", desc:`TBT is ${fmtMs(result.metrics.tbt)}. Third-party scripts are freezing the browser. Defer execution until after first paint.`, impact:"High", effort:"Medium", val:Math.round((L*0.3)/1000), status:"pending" });
-  if (result.metrics.cls>0.1) tasks.push({ id:"cls", pillar:"performance", title:"Fix Layout Shift (CLS)", desc:`CLS: ${result.metrics.cls.toFixed(2)}. Elements are jumping mid-load — users click the wrong buttons. Set explicit dimensions on all images and embeds.`, impact:"Medium", effort:"Low", val:Math.round((L*0.15)/1000), status:"pending" });
-  if (result.seo && !result.seo.hasMeta) tasks.push({ id:"meta", pillar:"seo", title:"Write Meta Descriptions", desc:"No meta description detected. Google auto-generates one users ignore — reducing CTR by ~35%. Write 155-char descriptions for every page.", impact:"Medium", effort:"Low", val:Math.round((L*0.10)/1000), status:"pending" });
-  if (result.seo && !result.seo.mobileViewport) tasks.push({ id:"viewport", pillar:"seo", title:"Add Mobile Viewport Tag", desc:"Missing viewport tag. Google demotes non-mobile-optimised sites in all rankings — 68% of your traffic is mobile.", impact:"High", effort:"Low", val:Math.round((L*0.20)/1000), status:"pending" });
-  if (result.security?.vulnerableLibraryCount>0) tasks.push({ id:"vuln", pillar:"security", title:`Update ${result.security.vulnerableLibraryCount} Vulnerable Libraries`, desc:`${result.security.vulnerableLibraryCount} JS libraries with known CVEs. Browsers warn users at checkout. Update dependencies immediately.`, impact:"High", effort:"Medium", val:Math.round((L*0.12)/1000), status:"pending" });
-  if (result.security && !result.security.hasSecurityHeaders) tasks.push({ id:"headers", pillar:"security", title:"Add Security Response Headers", desc:"CSP, X-Frame-Options, and HSTS missing. Free to implement — directly signals trustworthiness to B2B buyers.", impact:"Medium", effort:"Low", val:Math.round((L*0.06)/1000), status:"pending" });
-  if (result.accessibility?.adaRiskLevel!=="low") {
-    const high = result.accessibility.adaRiskLevel==="high";
-    tasks.push({ id:"ada", pillar:"accessibility", title:high?"Remediate Critical ADA Violations":"Fix WCAG Issues", desc:high?`HIGH ADA risk. Lawsuits avg $25k–$90k. Locking out ~${result.accessibility.estimatedMarketLockout}% of potential customers.`:`~${result.accessibility.estimatedMarketLockout}% of users can't fully access your site.`, impact:high?"High":"Medium", effort:"Medium", val:Math.round((L*(high?0.08:0.04))/1000), status:"pending" });
+  const L = result.annualRevenueLoss ?? 10000;
+
+  // ── Performance ──────────────────────────────────────────────────────────────
+  if (result.metrics.lcp > 2500) tasks.push({ id:"lcp", pillar:"performance", title:"Resolve LCP Bottleneck", desc:`LCP is ${fmtMs(result.metrics.lcp)} — ${fmtMs(result.metrics.lcp-2500)} over Google's 2.5s threshold. Preload hero asset, convert to WebP/AVIF, enable CDN + server caching.`, impact:"High", effort:"Low", val:Math.round((L*0.40)/1000), status:"pending" });
+  if (result.metrics.tbt > 200) tasks.push({ id:"tbt", pillar:"performance", title:"Clear Main Thread Blocking", desc:`TBT is ${fmtMs(result.metrics.tbt)} (target <200ms). Third-party scripts are freezing the browser after load. Defer or remove scripts not needed on initial render.`, impact:"High", effort:"Medium", val:Math.round((L*0.30)/1000), status:"pending" });
+  if (result.metrics.cls > 0.1) tasks.push({ id:"cls", pillar:"performance", title:"Fix Layout Shift (CLS)", desc:`CLS: ${result.metrics.cls.toFixed(2)} (target <0.1). Elements are jumping mid-load — users accidentally click wrong buttons. Set explicit width/height on all images and embeds.`, impact:"Medium", effort:"Low", val:Math.round((L*0.15)/1000), status:"pending" });
+  // Catch-all: low performance score without a specific metric breach
+  if (!tasks.some(t=>t.pillar==="performance") && result.metrics.performanceScore < 60) {
+    tasks.push({ id:"perf_score", pillar:"performance", title:`Overhaul Page Speed (Score: ${result.metrics.performanceScore}/100)`, desc:`Performance is ${result.metrics.performanceScore}/100 — significantly below Google's "Good" threshold of 90. Slow sites lose 7% of conversions per second of delay. Audit images, scripts, and server response time.`, impact:"High", effort:"Medium", val:Math.round((L*0.30)/1000), status:"pending" });
   }
-  if (result.accessibility?.missingAltText) tasks.push({ id:"alt", pillar:"accessibility", title:"Add Alt Text to All Images", desc:"Missing alt attributes breaks screen readers and loses Google Images SEO signal entirely.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
-  // GEO / AI Visibility tasks
-  if (result.geo && !result.geo.hasSchemaMarkup) tasks.push({ id:"schema", pillar:"geo", title:"Add JSON-LD Schema Markup", desc:"No structured data found. Schema markup is the #1 signal AI engines use to understand and cite your business. Add Organization, LocalBusiness, or FAQ schema immediately.", impact:"High", effort:"Low", val:Math.round((L*0.08)/1000), status:"pending" });
-  if (result.geo && !result.geo.hasStatisticalData) tasks.push({ id:"geo_stats", pillar:"geo", title:"Add Statistics & Data Points", desc:"No quantified claims detected. ChatGPT and Perplexity prefer pages with specific numbers, percentages, and financial figures as citation sources.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
-  if (result.geo && !result.geo.hasQuestionHeadings) tasks.push({ id:"geo_questions", pillar:"geo", title:"Rewrite Headings as Questions", desc:"No question-based H2/H3 headings found. AI systems extract content for answer-style queries — rewriting headings as questions dramatically increases citation probability.", impact:"Medium", effort:"Low", val:Math.round((L*0.03)/1000), status:"pending" });
-  if (result.geo && !result.geo.hasContentStructure) tasks.push({ id:"geo_structure", pillar:"geo", title:"Improve Content Structure", desc:"Insufficient lists and heading hierarchy detected. AI engines prefer well-structured content with clear sections, bullet lists, and multiple H2s for knowledge extraction.", impact:"Low", effort:"Low", val:Math.round((L*0.02)/1000), status:"pending" });
-  if (tasks.length===0) tasks.push({ id:"cache", pillar:"performance", title:"Implement SWR Caching", desc:"All 5 pillars healthy. Next level: stale-while-revalidate caching improves returning visitor speed.", impact:"Low", effort:"Medium", val:0, status:"pending" });
+
+  // ── SEO ───────────────────────────────────────────────────────────────────────
+  if (result.seo && !result.seo.hasMeta) tasks.push({ id:"meta", pillar:"seo", title:"Write Meta Descriptions", desc:"No meta description detected. Google auto-generates one from random page text — reducing CTR by ~35%. Write 155-char compelling descriptions for every page.", impact:"High", effort:"Low", val:Math.round((L*0.15)/1000), status:"pending" });
+  if (result.seo && !result.seo.mobileViewport) tasks.push({ id:"viewport", pillar:"seo", title:"Add Mobile Viewport Tag", desc:"Missing <meta name='viewport'> tag. Google treats your site as desktop-only — demoting it for 68% of all searches. 5-minute fix with massive ranking impact.", impact:"High", effort:"Low", val:Math.round((L*0.20)/1000), status:"pending" });
+  if (result.seo && !result.seo.hasOGTags) tasks.push({ id:"og_tags", pillar:"seo", title:"Add Open Graph / Social Tags", desc:"No OG tags found. Every link shared on LinkedIn, Twitter, or Slack shows a broken blank preview — killing click-through on social traffic.", impact:"Medium", effort:"Low", val:Math.round((L*0.06)/1000), status:"pending" });
+  if (result.seo && !result.seo.hasStructuredData) tasks.push({ id:"structured_data", pillar:"seo", title:"Implement Structured Data", desc:"No structured data found. Structured data enables Google Rich Results (stars, FAQs, prices in SERP) — increasing CTR by 20–30%.", impact:"Medium", effort:"Low", val:Math.round((L*0.08)/1000), status:"pending" });
+  if (result.seo && !result.seo.isCrawlable) tasks.push({ id:"crawlable", pillar:"seo", title:"Fix Site Crawlability", desc:"Google cannot crawl this site. A robots.txt or meta noindex directive is blocking indexing — your pages may not appear in search at all.", impact:"High", effort:"Low", val:Math.round((L*0.25)/1000), status:"pending" });
+  if (result.seo && !result.seo.httpsEnabled) tasks.push({ id:"https", pillar:"seo", title:"Enable HTTPS / SSL Certificate", desc:"Site is serving over HTTP. Google flags non-HTTPS sites in Chrome and ranks them lower. Free SSL via Let's Encrypt — implement today.", impact:"High", effort:"Medium", val:Math.round((L*0.15)/1000), status:"pending" });
+  // Catch-all: low SEO score without specific checks firing
+  if (!tasks.some(t=>t.pillar==="seo") && (result.seo?.estimatedSeoScore??100) < 60) {
+    tasks.push({ id:"seo_audit", pillar:"seo", title:`SEO Foundation Needs Work (Score: ${result.seo?.estimatedSeoScore??0}/100)`, desc:`SEO score is ${result.seo?.estimatedSeoScore??0}/100. Multiple signals are suppressing your rankings. Audit meta tags, structured data, mobile-friendliness, and crawlability.`, impact:"High", effort:"Medium", val:Math.round((L*0.18)/1000), status:"pending" });
+  }
+
+  // ── Security ──────────────────────────────────────────────────────────────────
+  if (result.security?.vulnerableLibraryCount > 0) tasks.push({ id:"vuln", pillar:"security", title:`Update ${result.security.vulnerableLibraryCount} Vulnerable JS Libraries`, desc:`${result.security.vulnerableLibraryCount} JavaScript ${result.security.vulnerableLibraryCount===1?"library":"libraries"} with known CVEs detected. Browsers display security warnings at checkout. Run: npm audit fix`, impact:"High", effort:"Medium", val:Math.round((L*0.12)/1000), status:"pending" });
+  if (result.security && !result.security.hasSecurityHeaders) tasks.push({ id:"headers", pillar:"security", title:"Add Security Response Headers", desc:"Missing CSP, X-Frame-Options, HSTS, and X-Content-Type-Options. These 4 headers are free to add and are the first thing enterprise buyers check before purchasing.", impact:"High", effort:"Low", val:Math.round((L*0.08)/1000), status:"pending" });
+  if (result.security && !result.security.usesHTTPS) tasks.push({ id:"ssl", pillar:"security", title:"Install SSL Certificate", desc:"Traffic is unencrypted. Payment processors, enterprise firewalls, and modern browsers all block or warn on HTTP-only sites.", impact:"High", effort:"Medium", val:Math.round((L*0.15)/1000), status:"pending" });
+  // Catch-all
+  if (!tasks.some(t=>t.pillar==="security") && (result.security?.estimatedBestPracticesScore??100) < 60) {
+    tasks.push({ id:"sec_audit", pillar:"security", title:`Security Posture Is Weak (Score: ${result.security?.estimatedBestPracticesScore??0}/100)`, desc:`Security score is ${result.security?.estimatedBestPracticesScore??0}/100. Enterprise buyers run security checks before purchasing — a weak score is an invisible sales barrier.`, impact:"Medium", effort:"Medium", val:Math.round((L*0.08)/1000), status:"pending" });
+  }
+
+  // ── Accessibility ────────────────────────────────────────────────────────────
+  if (result.accessibility?.adaRiskLevel !== "low") {
+    const high = result.accessibility.adaRiskLevel==="high";
+    tasks.push({ id:"ada", pillar:"accessibility", title:high?"Remediate Critical ADA Violations":"Resolve WCAG Accessibility Issues", desc:high?`HIGH ADA risk — lawsuits average $25k–$90k and increased 300% since 2020. Currently locking out ~${result.accessibility.estimatedMarketLockout}% of potential customers.`:`~${result.accessibility.estimatedMarketLockout}% of users can't fully access your site. WCAG 2.1 AA compliance protects against legal risk.`, impact:high?"High":"Medium", effort:"Medium", val:Math.round((L*(high?0.08:0.04))/1000), status:"pending" });
+  }
+  if (result.accessibility?.missingAltText) tasks.push({ id:"alt", pillar:"accessibility", title:"Add Alt Text to All Images", desc:"Images without alt attributes fail screen readers and lose Google Images SEO signal. Every img tag needs descriptive alt text — this is also an ADA compliance requirement.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
+  if (result.accessibility?.missingFormLabels) tasks.push({ id:"form_labels", pillar:"accessibility", title:"Add Labels to All Form Fields", desc:"Form inputs without <label> elements are inaccessible to screen readers and fail WCAG 2.1. Users can't tell what to type — this directly kills form conversion rates.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
+  if (result.accessibility?.lowContrastRatio) tasks.push({ id:"contrast", pillar:"accessibility", title:"Fix Colour Contrast Ratio", desc:"Text contrast is below 4.5:1 (WCAG AA minimum). Low contrast fails legal accessibility requirements and makes text unreadable on mobile in sunlight.", impact:"Medium", effort:"Low", val:Math.round((L*0.03)/1000), status:"pending" });
+  // Catch-all
+  if (!tasks.some(t=>t.pillar==="accessibility") && (result.accessibility?.estimatedA11yScore??100) < 60) {
+    tasks.push({ id:"a11y_audit", pillar:"accessibility", title:`Accessibility Overhaul Needed (Score: ${result.accessibility?.estimatedA11yScore??0}/100)`, desc:`A11Y score is ${result.accessibility?.estimatedA11yScore??0}/100. ~${result.accessibility?.estimatedMarketLockout??15}% of users are being locked out. Beyond legal risk, accessibility improvements lift all users' experience.`, impact:"Medium", effort:"Medium", val:Math.round((L*0.06)/1000), status:"pending" });
+  }
+
+  // ── GEO / AI Visibility ───────────────────────────────────────────────────────
+  if (result.geo && !result.geo.hasSchemaMarkup) tasks.push({ id:"schema", pillar:"geo", title:"Add JSON-LD Schema Markup", desc:"No structured data found. Schema markup is the single most impactful GEO signal — it tells AI engines who you are and what you do. Add Organization, LocalBusiness, or FAQ schema to every page.", impact:"High", effort:"Low", val:Math.round((L*0.08)/1000), status:"pending" });
+  if (result.geo && !result.geo.hasStatisticalData) tasks.push({ id:"geo_stats", pillar:"geo", title:"Add Statistics & Quantified Claims", desc:"No numerical data detected on your page. ChatGPT, Perplexity, and AI Overviews cite authoritative sources — pages with ≥5 specific stats (numbers, %, $) are cited 4× more often.", impact:"Medium", effort:"Low", val:Math.round((L*0.04)/1000), status:"pending" });
+  if (result.geo && !result.geo.hasQuestionHeadings) tasks.push({ id:"geo_questions", pillar:"geo", title:"Rewrite H2/H3 Headings as Questions", desc:"No question-format headings found. 74% of AI queries are phrased as questions — pages with matching H2/H3 questions (What is...? How does...? Why should...?) are dramatically more likely to be cited.", impact:"Medium", effort:"Low", val:Math.round((L*0.03)/1000), status:"pending" });
+  if (result.geo && !result.geo.hasContentStructure) tasks.push({ id:"geo_structure", pillar:"geo", title:"Restructure Content for AI Extraction", desc:"Insufficient heading hierarchy and list structure. LLMs parse well-structured content — multiple H2s, bullet lists, and numbered steps signal extractable, quote-worthy information.", impact:"Low", effort:"Low", val:Math.round((L*0.02)/1000), status:"pending" });
+  // Catch-all if geo exists but score < 50 and no geo tasks were added
+  if (result.geo && (result.geo.geoScore ?? 0) < 50 && !tasks.some(t=>t.pillar==="geo")) {
+    tasks.push({ id:"geo_audit", pillar:"geo", title:`AI Visibility Is Critical (Score: ${result.geo.geoScore}/100)`, desc:"Your site is effectively invisible to AI engines. ChatGPT, Perplexity, and Google's AI Overviews are not citing your business — every AI query in your niche is sending potential customers to competitors.", impact:"High", effort:"Medium", val:Math.round((L*0.10)/1000), status:"pending" });
+  }
+
+  if (tasks.length===0) tasks.push({ id:"cache", pillar:"performance", title:"Implement Return-Visit Caching", desc:"All 5 pillars are healthy. Next level optimisation: stale-while-revalidate Cache-Control headers make returning visitors see your site instantly.", impact:"Low", effort:"Low", val:0, status:"pending" });
   return tasks;
 }
 
@@ -542,6 +579,7 @@ export default function Dashboard() {
   const [scanStartedAt, setScanStartedAt] = useState<number|null>(null);
   const [activePin, setActivePin] = useState<number|null>(null);
   const [elapsed, setElapsed] = useState(0);
+  const hasAutoScanned = useRef(false);
 
   useEffect(() => {
     (async () => {
@@ -554,7 +592,12 @@ export default function Dashboard() {
       if (data?.app_data && Object.keys(data.app_data).length>0) {
         const validP = new Set(["performance","seo","security","accessibility","geo"]);
         const raw: TrackedSite[] = data.app_data.sites||[];
-        setSites(raw.map(s => ({ ...s, tasks:(s.tasks||[]).filter((t:Task)=>validP.has(t.pillar)) })));
+        setSites(raw.map(s => {
+          const savedTasks = (s.tasks||[]).filter((t:Task)=>validP.has(t.pillar));
+          // Auto-regenerate tasks from saved result if tasks are missing — handles old saved data
+          const tasks = savedTasks.length > 0 ? savedTasks : (s.isOwn && s.result ? generateTasks(s.result) : []);
+          return { ...s, tasks };
+        }));
         setSettings(data.app_data.settings||{ smsPhone:"", smsAlerts:false, webhookUrl:"", weeklyDigest:true, criticalAlerts:true, emailTo:"" });
       } else setSites([]);
       setLoaded(true);
@@ -567,6 +610,19 @@ export default function Dashboard() {
         .then(({ error }) => { if (error) console.error("Sync failed:", error); });
     }
   }, [sites, settings, loaded, userId]);
+
+  // Auto-scan: fire once after load if result is missing or stale (>6 hours)
+  useEffect(() => {
+    if (!loaded || hasAutoScanned.current) return;
+    const own = sites.find(s=>s.isOwn);
+    if (!own || own.loading || !own.url) return;
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+    const isStale = !own.result || (Date.now() - (own.result.timestamp ?? 0)) > SIX_HOURS;
+    if (isStale) {
+      hasAutoScanned.current = true;
+      setTimeout(() => scan(own.id), 800); // small delay so UI renders first
+    }
+  }, [loaded, sites, scan]);
 
   const isScanning = sites.some(s=>s.isOwn && s.loading);
   useEffect(() => {
@@ -664,10 +720,22 @@ export default function Dashboard() {
       case "headers": return !!r.security?.hasSecurityHeaders;
       case "ada": return r.accessibility?.adaRiskLevel === "low";
       case "alt": return !r.accessibility?.missingAltText;
+      case "og_tags": return !!(r.seo?.hasOGTags);
+      case "structured_data": return !!(r.seo?.hasStructuredData);
+      case "crawlable": return !!(r.seo?.isCrawlable);
+      case "https": return !!(r.seo?.httpsEnabled);
+      case "ssl": return !!(r.security?.usesHTTPS);
+      case "form_labels": return !r.accessibility?.missingFormLabels;
+      case "contrast": return !r.accessibility?.lowContrastRatio;
+      case "perf_score": return r.metrics.performanceScore >= 60;
+      case "seo_audit": return (r.seo?.estimatedSeoScore ?? 0) >= 60;
+      case "sec_audit": return (r.security?.estimatedBestPracticesScore ?? 0) >= 60;
+      case "a11y_audit": return (r.accessibility?.estimatedA11yScore ?? 0) >= 60;
       case "schema": return !!(r.geo?.hasSchemaMarkup);
       case "geo_stats": return !!(r.geo?.hasStatisticalData);
       case "geo_questions": return !!(r.geo?.hasQuestionHeadings);
       case "geo_structure": return !!(r.geo?.hasContentStructure);
+      case "geo_audit": return (r.geo?.geoScore ?? 0) >= 50;
       default: return false;
     }
   }
@@ -1146,11 +1214,18 @@ export default function Dashboard() {
                       alt: `<!-- Every img needs alt text -->\n<img src="product.jpg" alt="Blue wireless headphones, overhead view">\n<!-- For decorative images -->\n<img src="divider.svg" alt="" role="presentation">`,
                       cache: `# nginx — cache static assets 1 year\nlocation ~* \\.(js|css|png|jpg|webp|woff2)$ {\n  add_header Cache-Control "public, max-age=31536000, immutable";\n}`,
                       schema: `<!-- Add to every page <head> -->\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "Organization",\n  "name": "Your Company",\n  "url": "https://yourdomain.com",\n  "description": "What you do in 1–2 sentences",\n  "sameAs": ["https://linkedin.com/company/you"]\n}\n</script>`,
+                      og_tags: `<!-- Add to every page <head> -->\n<meta property="og:title" content="Page Title | Brand Name">\n<meta property="og:description" content="155 chars — your value prop + keyword">\n<meta property="og:image" content="https://yourdomain.com/og-image.jpg">\n<meta property="og:url" content="https://yourdomain.com/page">\n<meta name="twitter:card" content="summary_large_image">`,
+                      structured_data: `<!-- FAQ schema — add inside <head> -->\n<script type="application/ld+json">\n{\n  "@context": "https://schema.org",\n  "@type": "FAQPage",\n  "mainEntity": [{\n    "@type": "Question",\n    "name": "What does [your company] do?",\n    "acceptedAnswer": { "@type": "Answer", "text": "We..." }\n  }]\n}\n</script>`,
+                      headers: `# nginx.conf — add these headers\nadd_header X-Frame-Options "SAMEORIGIN" always;\nadd_header X-Content-Type-Options "nosniff" always;\nadd_header X-XSS-Protection "1; mode=block" always;\nadd_header Referrer-Policy "strict-origin-when-cross-origin" always;\nadd_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;\nadd_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'" always;`,
                     };
                     const timeEst: Record<string,string> = {
-                      lcp:"30–90 min", tbt:"1–3 hrs", cls:"30–60 min", meta:"2–4 hrs", viewport:"5 min",
+                      lcp:"30–90 min", tbt:"1–3 hrs", cls:"30–60 min", meta:"15–30 min", viewport:"5 min",
                       vuln:"30–60 min", headers:"15–30 min", ada:"2–8 hrs", alt:"1–2 hrs", cache:"15–30 min",
                       schema:"15–30 min", geo_stats:"2–4 hrs", geo_questions:"1–2 hrs", geo_structure:"1–3 hrs",
+                      perf_score:"2–8 hrs", seo_audit:"1–2 hrs audit + fixes", sec_audit:"1–3 hrs",
+                      a11y_audit:"2–6 hrs", og_tags:"15–30 min", structured_data:"30–60 min",
+                      crawlable:"15–30 min", https:"30–60 min", ssl:"30–60 min",
+                      form_labels:"30–60 min", contrast:"1–3 hrs", geo_audit:"4–8 hrs", ssl:"30–60 min",
                     };
                     const simpleTerms: Record<string,string> = {
                       lcp:"Your page takes too long to show anything. Visitors see a blank screen and leave before they even read your headline. This directly costs you ad money.",
@@ -1167,6 +1242,18 @@ export default function Dashboard() {
                       geo_stats:"AI answer engines prefer sources with real numbers. Without statistics on your page, you're invisible to Perplexity, ChatGPT, and Google's AI Overviews.",
                       geo_questions:"When someone asks ChatGPT a question, it finds pages that answer that exact question. Your headings don't match how people ask AI assistants.",
                       geo_structure:"Your content isn't formatted for AI extraction. Well-structured pages with clear sections and bullet points are 3× more likely to be quoted directly.",
+                      perf_score:"Your website is slow. Visitors see a blank or half-loaded screen and leave before seeing your offer. For every second of delay, 7% of potential customers abandon.",
+                      seo_audit:"Your website is hard to find on Google. Multiple technical signals are suppressing your rankings — fewer people ever discover your business through search.",
+                      sec_audit:"Your website has security gaps. Enterprise buyers and IT teams check these signals before approving purchases — a weak security posture silently kills B2B sales.",
+                      a11y_audit:"A significant portion of your visitors can't fully use your website. This affects people with disabilities, mobile users in difficult conditions, and exposes you to legal risk.",
+                      og_tags:"When people share your site on LinkedIn or Slack, it shows a blank or broken preview. Every social share with no preview loses clicks — it looks like a broken link.",
+                      structured_data:"Google can't show your business in rich results. Other sites appear with stars, prices, and FAQs below their listing in search — yours shows plain text and gets fewer clicks.",
+                      crawlable:"Google literally cannot find your pages. A misconfigured robots.txt or noindex tag may be preventing your entire site from appearing in search results.",
+                      https:"Your site is unencrypted. Every modern browser marks it 'Not Secure'. Visitors see a warning before they even read your headline.",
+                      ssl:"No SSL certificate. Payment systems won't work, browsers display security warnings, and customers won't trust you with their data.",
+                      form_labels:"Your forms are broken for keyboard and screen reader users. People trying to fill in contact forms or sign up can't tell what goes in each field.",
+                      contrast:"Text on your site is hard to read for many users. Low contrast fails accessibility laws and makes mobile users squint — reducing the time they spend reading your content.",
+                      geo_audit:"AI engines like ChatGPT and Perplexity are completely ignoring your website. Every time someone asks an AI about your industry, a competitor gets cited instead of you.",
                     };
                     const whyItMatters: Record<string,string> = {
                       lcp:"Google's Core Web Vital threshold is 2.5s. Every 100ms delay reduces conversions by ~1%. LCP is the single biggest ranking factor in Performance.",
@@ -1183,6 +1270,18 @@ export default function Dashboard() {
                       geo_stats:"Studies show AI systems cite pages with ≥5 statistical claims 4× more often. Numbers, percentages, and dollar figures signal authoritative, research-grade content.",
                       geo_questions:"74% of AI queries are question-format. Pages with question-based H2/H3 headings match these queries directly — dramatically increasing the chance of an AI citation.",
                       geo_structure:"LLMs extract information from structured content. Multiple H2s, bullet lists, and clear sections make your content easy to parse, quote, and attribute.",
+                      perf_score:"Google's Core Web Vitals directly impact Ad Quality Score and organic rankings. Below 60/100 — you're paying more per click AND ranking lower than competitors.",
+                      seo_audit:"Every 1% of organic traffic lost = $X/month in revenue that goes to competitors who rank above you. SEO issues compound — each missed signal reduces visibility across all keywords.",
+                      sec_audit:"Enterprise buyers run security checks before signing contracts. A low security score is an invisible filter that removes you from B2B purchase consideration.",
+                      a11y_audit:"26% of adults have a disability. ADA lawsuits average $25–90k in settlement costs plus legal fees. Accessibility improvements also lift SEO, speed, and conversion for all users.",
+                      og_tags:"Social sharing is one of the highest-quality traffic sources. Without OG tags, every shared link shows a blank or broken card — destroying click-through from social channels.",
+                      structured_data:"Rich Results get 20–30% more clicks than plain listings. FAQ schema, review stars, and product prices in SERP are only available when structured data is properly implemented.",
+                      crawlable:"If Google can't crawl your site, you're invisible to 92% of all searches. This is the most fundamental SEO issue possible — it outranks every other fix in priority.",
+                      https:"HTTPS is a direct Google ranking signal (since 2014) and a Chrome security requirement. Unencrypted sites are flagged 'Not Secure' — losing visitor trust immediately on arrival.",
+                      ssl:"Without SSL, Chrome, Firefox, and Safari all display security warnings. Enterprise IT policies block HTTP sites entirely. This is a prerequisite for all other improvements.",
+                      form_labels:"Unlabelled form fields fail WCAG 2.1 AA — a legal standard in the US, UK, and EU. Screen reader users cannot use your contact forms or lead capture.",
+                      contrast:"WCAG 2.1 AA requires 4.5:1 contrast ratio for body text. Failing contrast means failing compliance in 47 US states with accessibility laws. It also reduces reading speed for all users.",
+                      geo_audit:"AI search is the fastest-growing traffic channel. Businesses that appear in AI citations get high-intent, qualified visitors — those who don't are losing ground every week.",
                     };
                     const isQuickWin = t.impact==="High" && t.effort==="Low";
                     return (
