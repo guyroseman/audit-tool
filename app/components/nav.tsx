@@ -15,7 +15,7 @@ const NexusLogo = ({ size = 22 }: { size?: number }) => (
 
 interface NavBarProps {
   maxWidth?: number;
-  page?: "home" | "funnel" | "subscribe" | "dashboard" | "login" | "account" | "about";
+  page?: "home" | "funnel" | "subscribe" | "dashboard" | "login" | "account" | "about" | "blog";
 }
 
 const NAV_LINK: React.CSSProperties = {
@@ -51,6 +51,9 @@ export function NavBar({ maxWidth = 1280, page }: NavBarProps) {
 
         {/* Centre links */}
         <div className="nav-centre-links" style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <a href="/blog" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: page === "blog" ? "var(--text)" : "var(--muted)", letterSpacing: "0.1em", textDecoration: "none", padding: "6px 12px", borderRadius: 5, transition: "color 0.15s" }}>
+            BLOG
+          </a>
           <a href="/subscribe" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: page === "subscribe" ? "#a78bfa" : "var(--muted)", letterSpacing: "0.1em", textDecoration: "none", padding: "6px 12px", borderRadius: 5, transition: "color 0.15s" }}>
             PRICING
           </a>

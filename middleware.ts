@@ -8,7 +8,7 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 // AUTH    — must be logged in (any plan, including free)
 // PAID    — must be logged in AND have pulse or scale plan
 
-const PUBLIC_PREFIXES = ["/", "/funnel", "/subscribe", "/legal", "/api"];
+const PUBLIC_PREFIXES = ["/", "/funnel", "/subscribe", "/legal", "/api", "/blog", "/about"];
 const LOGIN_PATH      = "/login";
 const AUTH_PATHS      = ["/dashboard"];
 const ADMIN_PATHS     = ["/batch-audit"];
