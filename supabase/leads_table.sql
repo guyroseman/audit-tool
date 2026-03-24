@@ -1,59 +1,53 @@
 -- ─── Leads table ──────────────────────────────────────────────────────────────
 -- Run this in the Supabase SQL editor (Dashboard → SQL Editor → New query).
--- This creates the leads table and grants the right permissions.
--- Safe to run multiple times (uses IF NOT EXISTS).
+-- Safe to run multiple times — uses IF NOT EXISTS everywhere.
 
+-- 1. Create table (only runs if it doesn't exist yet)
 create table if not exists public.leads (
-  id                   uuid primary key default gen_random_uuid(),
-  email                text not null,
-  url                  text not null,
-  score                integer,
-  severity             text,
-  ad_loss_percent      numeric,
-  bounce_rate_increase numeric,
-  annual_revenue_loss  numeric,
-  total_monthly_cost   numeric,
-  pain_point           text,
-  revenue_potential    text,
-  last_audit           text,
-  source               text,
-  phone                text,
-  q1                   text,
-  q2                   text,
-  q3                   text,
-  tier                 text default 'free',
-  status               text default 'new' check (status in ('new','contacted','converted','spam')),
-  created_at           timestamptz default now(),
-  updated_at           timestamptz default now()
+  id uuid primary key default gen_random_uuid(),
+  email text not null,
+  url text not null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
--- Add total_monthly_cost if upgrading from previous schema
-alter table public.leads add column if not exists total_monthly_cost numeric;
+-- 2. Add every column individually — safe if already present
+alter table public.leads add column if not exists score               integer;
+alter table public.leads add column if not exists severity            text;
+alter table public.leads add column if not exists ad_loss_percent     numeric;
+alter table public.leads add column if not exists bounce_rate_increase numeric;
+alter table public.leads add column if not exists annual_revenue_loss numeric;
+alter table public.leads add column if not exists total_monthly_cost  numeric;
+alter table public.leads add column if not exists pain_point          text;
+alter table public.leads add column if not exists revenue_potential   text;
+alter table public.leads add column if not exists last_audit          text;
+alter table public.leads add column if not exists source              text;
+alter table public.leads add column if not exists phone               text;
+alter table public.leads add column if not exists q1                  text;
+alter table public.leads add column if not exists q2                  text;
+alter table public.leads add column if not exists q3                  text;
+alter table public.leads add column if not exists tier                text default 'free';
+alter table public.leads add column if not exists status              text default 'new';
 
--- Indexes for common queries
+-- 3. Indexes
 create index if not exists leads_created_at_idx on public.leads(created_at desc);
 create index if not exists leads_status_idx     on public.leads(status);
 create index if not exists leads_tier_idx       on public.leads(tier);
 create index if not exists leads_email_idx      on public.leads(email);
 
--- ── Row Level Security ────────────────────────────────────────────────────────
+-- 4. Row Level Security
 alter table public.leads enable row level security;
 
--- Allow anyone (anon) to INSERT — public-facing capture API
+-- Drop and recreate policies (idempotent)
+drop policy if exists "anon can insert leads" on public.leads;
+drop policy if exists "anon can read leads"   on public.leads;
+drop policy if exists "anon can update leads" on public.leads;
+
 create policy "anon can insert leads"
-  on public.leads for insert
-  to anon
-  with check (true);
+  on public.leads for insert to anon with check (true);
 
--- Allow anon to SELECT — needed for admin panel
 create policy "anon can read leads"
-  on public.leads for select
-  to anon
-  using (true);
+  on public.leads for select to anon using (true);
 
--- Allow anon to UPDATE status — admin panel status changes
 create policy "anon can update leads"
-  on public.leads for update
-  to anon
-  using (true)
-  with check (true);
+  on public.leads for update to anon using (true) with check (true);
