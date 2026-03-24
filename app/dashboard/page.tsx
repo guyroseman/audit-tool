@@ -611,19 +611,6 @@ export default function Dashboard() {
     }
   }, [sites, settings, loaded, userId]);
 
-  // Auto-scan: fire once after load if result is missing or stale (>6 hours)
-  useEffect(() => {
-    if (!loaded || hasAutoScanned.current) return;
-    const own = sites.find(s=>s.isOwn);
-    if (!own || own.loading || !own.url) return;
-    const SIX_HOURS = 6 * 60 * 60 * 1000;
-    const isStale = !own.result || (Date.now() - (own.result.timestamp ?? 0)) > SIX_HOURS;
-    if (isStale) {
-      hasAutoScanned.current = true;
-      setTimeout(() => scan(own.id), 800); // small delay so UI renders first
-    }
-  }, [loaded, sites, scan]);
-
   const isScanning = sites.some(s=>s.isOwn && s.loading);
   useEffect(() => {
     if (!isScanning) { setScanStartedAt(null); return; }
@@ -698,6 +685,20 @@ export default function Dashboard() {
       }
     }, 3500);
   }, [sites, settings]);
+
+  // Auto-scan: fire once after load if result is missing or stale (>6 hours)
+  // Placed AFTER scan useCallback to avoid temporal dead zone crash
+  useEffect(() => {
+    if (!loaded || hasAutoScanned.current) return;
+    const own = sites.find(s=>s.isOwn);
+    if (!own || own.loading || !own.url) return;
+    const SIX_HOURS = 6 * 60 * 60 * 1000;
+    const isStale = !own.result || (Date.now() - (own.result.timestamp ?? 0)) > SIX_HOURS;
+    if (isStale) {
+      hasAutoScanned.current = true;
+      setTimeout(() => scan(own.id), 800);
+    }
+  }, [loaded, sites, scan]);
 
   function addComp(url: string) {
     if (competitors.length>=maxCompetitors) { log("Competitor limit reached — upgrade to Scale for up to 10.", "bad"); return; }
