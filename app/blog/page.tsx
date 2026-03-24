@@ -18,10 +18,19 @@ export const metadata: Metadata = {
 };
 
 const CATS = ["All", "Performance", "SEO", "Accessibility", "Security", "AI Visibility"];
+const CAT_COLORS: Record<string, string> = {
+  Performance: "#e8341a", SEO: "#f59e0b", Accessibility: "#a78bfa",
+  Security: "#22d3ee", "AI Visibility": "#10b981",
+};
 
-export default function BlogIndex() {
-  const featured = articleList[0];
-  const rest = articleList.slice(1);
+interface Props { searchParams: Promise<{ cat?: string }> }
+
+export default async function BlogIndex({ searchParams }: Props) {
+  const { cat } = await searchParams;
+  const activeCat = cat && CATS.includes(cat) ? cat : "All";
+  const filtered = activeCat === "All" ? articleList : articleList.filter(a => a.category === activeCat);
+  const featured = filtered[0];
+  const rest = filtered.slice(1);
 
   return (
     <main style={{ minHeight: "100vh", background: "var(--bg)" }}>
@@ -37,97 +46,120 @@ export default function BlogIndex() {
           <p style={{ fontFamily: "var(--font-body)", fontSize: 17, color: "var(--text2)", maxWidth: 520, lineHeight: 1.7, marginBottom: 28 }}>
             Practical guides on performance, SEO, accessibility, security, and AI search — written for business owners, not developers.
           </p>
-          {/* Category pills */}
+
+          {/* Category filter pills */}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-            {CATS.map(cat => (
-              <span key={cat} style={{
-                fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em",
-                padding: "5px 12px", borderRadius: 20, cursor: "default",
-                color: cat === "All" ? "#fff" : "var(--muted)",
-                background: cat === "All" ? "var(--accent)" : "var(--surface)",
-                border: `1px solid ${cat === "All" ? "transparent" : "var(--border)"}`,
-              }}>{cat.toUpperCase()}</span>
-            ))}
+            {CATS.map(c => {
+              const isActive = c === activeCat;
+              const color = CAT_COLORS[c];
+              return (
+                <a key={c} href={c === "All" ? "/blog" : `/blog?cat=${encodeURIComponent(c)}`}
+                  style={{
+                    fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.1em",
+                    padding: "6px 14px", borderRadius: 20, textDecoration: "none", transition: "all 0.15s",
+                    color: isActive ? (c === "All" ? "#fff" : color) : "var(--muted)",
+                    background: isActive ? (c === "All" ? "var(--accent)" : color + "15") : "var(--surface)",
+                    border: `1px solid ${isActive ? (c === "All" ? "transparent" : color + "40") : "var(--border)"}`,
+                    fontWeight: isActive ? 700 : 400,
+                  }}
+                >
+                  {c.toUpperCase()}
+                  {c !== "All" && (
+                    <span style={{ marginLeft: 6, opacity: 0.6 }}>
+                      {articleList.filter(a => a.category === c).length}
+                    </span>
+                  )}
+                </a>
+              );
+            })}
           </div>
         </div>
       </div>
 
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "48px 24px 100px" }}>
 
+        {filtered.length === 0 && (
+          <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--muted)", textAlign: "center", padding: "60px 0" }}>
+            No articles in this category yet.
+          </p>
+        )}
+
         {/* Featured article */}
-        <a href={`/blog/${featured.slug}`} style={{ textDecoration: "none", display: "block", marginBottom: 32 }}>
-          <article className="blog-card" style={{
-            padding: "36px 40px", borderRadius: 14, border: "1px solid var(--border)",
-            background: "var(--surface)", cursor: "pointer",
-            display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center",
-          }}>
-            <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.14em", padding: "3px 9px", borderRadius: 4, color: "#e8341a", background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.2)" }}>FEATURED</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.12em", padding: "3px 9px", borderRadius: 4, color: featured.categoryColor, background: featured.categoryColor + "15", border: `1px solid ${featured.categoryColor}30` }}>{featured.category.toUpperCase()}</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>{featured.date} · {featured.readTime}</span>
+        {featured && (
+          <a href={`/blog/${featured.slug}`} style={{ textDecoration: "none", display: "block", marginBottom: 28 }}>
+            <article className="blog-card" style={{
+              padding: "36px 40px", borderRadius: 14, border: "1px solid var(--border)",
+              background: "var(--surface)", cursor: "pointer",
+              display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center",
+            }}>
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.14em", padding: "3px 9px", borderRadius: 4, color: "#e8341a", background: "rgba(232,52,26,0.1)", border: "1px solid rgba(232,52,26,0.2)" }}>FEATURED</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: "0.12em", padding: "3px 9px", borderRadius: 4, color: featured.categoryColor, background: featured.categoryColor + "15", border: `1px solid ${featured.categoryColor}30` }}>{featured.category.toUpperCase()}</span>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>{featured.date} · {featured.readTime}</span>
+                </div>
+                <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px,3vw,30px)", color: "var(--text)", letterSpacing: "0.03em", lineHeight: 1.25, marginBottom: 14 }}>
+                  {featured.title}
+                </h2>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", lineHeight: 1.75, margin: 0, maxWidth: 620 }}>
+                  {featured.description}
+                </p>
               </div>
-              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px,3vw,30px)", color: "var(--text)", letterSpacing: "0.03em", lineHeight: 1.25, marginBottom: 14 }}>
-                {featured.title}
-              </h2>
-              <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", lineHeight: 1.75, margin: 0, maxWidth: 620 }}>
-                {featured.description}
-              </p>
-            </div>
-            <div style={{ flexShrink: 0 }}>
-              <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: "var(--accent)" }}>→</span>
+              <div style={{ flexShrink: 0 }}>
+                <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: "var(--accent)" }}>→</span>
+                </div>
               </div>
-            </div>
-          </article>
-        </a>
+            </article>
+          </a>
+        )}
 
         {/* Article count */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.12em" }}>
-            {articleList.length} ARTICLES
+        {rest.length > 0 && (
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.12em", marginBottom: 20 }}>
+            {filtered.length} {activeCat === "All" ? "TOTAL" : activeCat.toUpperCase()} ARTICLE{filtered.length !== 1 ? "S" : ""}
           </p>
-        </div>
+        )}
 
         {/* 2-col grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(440px, 1fr))", gap: 12 }}>
-          {rest.map(article => (
-            <a key={article.slug} href={`/blog/${article.slug}`} style={{ textDecoration: "none", display: "block" }}>
-              <article className="blog-card" style={{
-                padding: "24px 28px", borderRadius: 12, border: "1px solid var(--border)",
-                background: "var(--surface)", cursor: "pointer", height: "100%",
-                display: "flex", flexDirection: "column", gap: 12,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.12em", padding: "3px 8px", borderRadius: 4, color: article.categoryColor, background: article.categoryColor + "15", border: `1px solid ${article.categoryColor}30` }}>
-                    {article.category.toUpperCase()}
-                  </span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>{article.readTime}</span>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(15px,2vw,18px)", color: "var(--text)", letterSpacing: "0.02em", lineHeight: 1.35, marginBottom: 10 }}>
-                    {article.title}
-                  </h2>
-                  <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.7, margin: 0 }}>
-                    {article.description}
-                  </p>
-                </div>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>{article.date}</span>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)" }}>READ →</span>
-                </div>
-              </article>
-            </a>
-          ))}
-        </div>
+        {rest.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(420px, 1fr))", gap: 12 }}>
+            {rest.map(article => (
+              <a key={article.slug} href={`/blog/${article.slug}`} style={{ textDecoration: "none", display: "block" }}>
+                <article className="blog-card" style={{
+                  padding: "24px 28px", borderRadius: 12, border: "1px solid var(--border)",
+                  background: "var(--surface)", cursor: "pointer", height: "100%",
+                  display: "flex", flexDirection: "column", gap: 12,
+                }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, letterSpacing: "0.12em", padding: "3px 8px", borderRadius: 4, color: article.categoryColor, background: article.categoryColor + "15", border: `1px solid ${article.categoryColor}30` }}>
+                      {article.category.toUpperCase()}
+                    </span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>{article.readTime}</span>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(15px,2vw,18px)", color: "var(--text)", letterSpacing: "0.02em", lineHeight: 1.35, marginBottom: 10 }}>
+                      {article.title}
+                    </h2>
+                    <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.7, margin: 0 }}>
+                      {article.description}
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)" }}>{article.date}</span>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)" }}>READ →</span>
+                  </div>
+                </article>
+              </a>
+            ))}
+          </div>
+        )}
 
         {/* CTA */}
         <div style={{ marginTop: 72, padding: "40px 44px", borderRadius: 16, background: "rgba(232,52,26,0.04)", border: "1px solid rgba(232,52,26,0.18)", display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center" }}>
           <div>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.16em", marginBottom: 10 }}>FREE 60-SECOND AUDIT</p>
-            <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px,3vw,28px)", color: "var(--text)", marginBottom: 10, letterSpacing: "0.04em" }}>
-              SEE HOW YOUR SITE SCORES
-            </h3>
+            <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px,3vw,28px)", color: "var(--text)", marginBottom: 10, letterSpacing: "0.04em" }}>SEE HOW YOUR SITE SCORES</h3>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 14, color: "var(--text2)", lineHeight: 1.65, margin: 0 }}>
               5-pillar audit: Performance · SEO · Accessibility · Security · AI Visibility — with a revenue impact estimate.
             </p>
