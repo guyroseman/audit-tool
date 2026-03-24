@@ -46,23 +46,7 @@ export default function BlogIndex() {
               href={`/blog/${article.slug}`}
               style={{ textDecoration: "none", display: "block" }}
             >
-              <article style={{
-                padding: "28px 32px",
-                borderRadius: 12,
-                border: "1px solid var(--border)",
-                background: "var(--surface)",
-                transition: "border-color 0.15s, background 0.15s",
-                cursor: "pointer",
-              }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = "rgba(232,52,26,0.3)";
-                  (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)";
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLElement).style.borderColor = "var(--border)";
-                  (e.currentTarget as HTMLElement).style.background = "var(--surface)";
-                }}
-              >
+              <article className="blog-card" style={{ padding: "28px 32px", borderRadius: 12, border: "1px solid var(--border)", background: "var(--surface)", transition: "border-color 0.15s, background 0.15s", cursor: "pointer" }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
