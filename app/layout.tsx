@@ -5,7 +5,7 @@ import { AuthProvider } from "./lib/auth-context";
 import { PageDecorations } from "./components/page-decorations";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://usenexus.io"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexusdiag.com"),
   title: { default: "Free Website Revenue Audit | Nexus Performance Agency", template: "%s | Nexus" },
   description: "Discover exactly how much revenue your slow website is costing you every month. Free 60-second diagnostic powered by Google PageSpeed.",
   robots: { index: true, follow: true },

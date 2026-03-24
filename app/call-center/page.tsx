@@ -39,7 +39,7 @@ function CallCenterContent() {
           </p>
           <p style={{ fontSize: 13, color: "#6888a8", lineHeight: 1.7, marginBottom: 0 }}>
             Until then, email{" "}
-            <a href="mailto:hello@usenexus.io" style={{ color: "#22d3ee", textDecoration: "none" }}>hello@usenexus.io</a>
+            <a href="mailto:alex@nexusdiag.com" style={{ color: "#22d3ee", textDecoration: "none" }}>alex@nexusdiag.com</a>
             {" "}to book a call.
           </p>
         </motion.div>

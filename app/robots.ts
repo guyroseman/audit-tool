@@ -11,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/_next/", "/dashboard", "/account", "/batch-audit"],
       },
     ],
-    sitemap: "https://nexus-diagnostics.vercel.app/sitemap.xml",
+    sitemap: "https://nexusdiag.com/sitemap.xml",
   };
 }
