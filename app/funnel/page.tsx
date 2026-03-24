@@ -36,13 +36,19 @@ const SCAN_LINES = [
   { label: "  ↳ Vulnerable JavaScript library detection", pillar: "sec" },
   { label: "  ↳ Security response headers audit", pillar: "sec" },
   { label: "  ↳ HTTPS config & checkout trust risk...", pillar: "sec" },
-  { label: "Running 4-pillar revenue leakage model...", pillar: null },
+  { label: "PILLAR 5 — AI Search Visibility (GEO) scan", pillar: "geo" },
+  { label: "  ↳ JSON-LD schema markup detection", pillar: "geo" },
+  { label: "  ↳ Statistical data density analysis", pillar: "geo" },
+  { label: "  ↳ Question-based heading structure check", pillar: "geo" },
+  { label: "  ↳ Scoring AI citation readiness...", pillar: "geo" },
+  { label: "Running 5-pillar revenue leakage model...", pillar: null },
   { label: "  ↳ Google Ads overspend from performance penalty", pillar: null },
   { label: "  ↳ SEO organic traffic dollar loss estimate", pillar: null },
+  { label: "  ↳ AI pipeline leak from GEO gaps...", pillar: null },
   { label: "  ↳ Compiling executive recovery blueprint...", pillar: null },
 ];
 
-const PILLAR_COLORS: Record<string, string> = { perf: "#e8341a", seo: "#f59e0b", a11y: "#a78bfa", sec: "#22d3ee" };
+const PILLAR_COLORS: Record<string, string> = { perf: "#e8341a", seo: "#f59e0b", a11y: "#a78bfa", sec: "#22d3ee", geo: "#10b981" };
 
 function ScanLoader({ url, apiReady = false }: { url: string; apiReady?: boolean }) {
   const [visibleLines, setVisibleLines] = useState(0);
@@ -134,19 +140,20 @@ function ScanLoader({ url, apiReady = false }: { url: string; apiReady?: boolean
               style={{ height: "100%", background: "linear-gradient(90deg, var(--accent), #f59e0b)", borderRadius: 2, boxShadow: "0 0 10px rgba(232,52,26,0.5)" }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.1em" }}>4-PILLAR ANALYSIS</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.1em" }}>5-PILLAR ANALYSIS</span>
             <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.1em" }}>{progress}%</span>
           </div>
         </div>
       </div>
 
       {/* Pillar status cards */}
-      <div className="funnel-pillar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginTop: 12 }}>
+      <div className="funnel-pillar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8, marginTop: 12 }}>
         {[
           { label: "PERFORMANCE", icon: "⚡", color: "#e8341a", done: 7, start: 3 },
           { label: "SEO", icon: "🔍", color: "#f59e0b", done: 12, start: 8 },
           { label: "ACCESSIBILITY", icon: "♿", color: "#a78bfa", done: 16, start: 13 },
           { label: "SECURITY", icon: "🔒", color: "#22d3ee", done: 20, start: 17 },
+          { label: "AI VISIBILITY", icon: "🤖", color: "#10b981", done: 25, start: 21 },
         ].map(({ label, icon, color, done, start }) => {
           const active = visibleLines >= start && visibleLines <= done;
           const completed = visibleLines > done;
@@ -201,6 +208,11 @@ function URLIntelligencePanel({ result }: { result: AuditResult }) {
     ...(result.accessibility?.adaRiskLevel === "high" ? [{ id: "ada-h", cat: "accessibility", severity: "critical" as Severity, title: "HIGH ADA Compliance Risk", impact: `~${result.accessibility.estimatedMarketLockout}% of users locked out. ADA lawsuits average $20k–$75k settlement. Demand letters require no prior warning.`, fix: "WCAG 2.1 AA audit urgently needed. Fix alt text, contrast ratios, form labels.", icon: "♿" }] : result.accessibility?.adaRiskLevel === "medium" ? [{ id: "ada-m", cat: "accessibility", severity: "warning" as Severity, title: "MEDIUM ADA Compliance Risk", impact: "Multiple WCAG failures. Rising number of demand letters and lawsuits even for medium-risk sites.", fix: "Fix missing alt text, improve colour contrast to 4.5:1 ratio minimum.", icon: "♿" }] : []),
     // Lead capture
     ...((result.leads?.estimatedLeadScore ?? 100) < 50 ? [{ id: "leads", cat: "leads", severity: "warning" as Severity, title: `Lead Capture Score: ${result.leads?.estimatedLeadScore ?? 0}/100`, impact: `${!result.leads?.hasCTA ? "No clear CTA detected. " : ""}${!result.leads?.hasContactForm ? "No contact form found. " : ""}${!result.leads?.hasPhoneNumber ? "No phone number visible. " : ""}Visitors arrive and bounce with no conversion path.`, fix: "Add visible CTAs, a live chat widget, and a phone number above the fold.", icon: "💼" }] : []),
+    // AI Visibility (GEO)
+    ...(!result.geo?.hasSchemaMarkup ? [{ id: "geo-schema", cat: "geo", severity: "critical" as Severity, title: "Missing JSON-LD Schema — AI engines can't categorise you", impact: `ChatGPT, Perplexity, and Gemini rely on structured data to understand what you sell. Without it, you are invisible to AI-powered search. Estimated AI pipeline at risk: $${result.geo?.estimatedAiPipelineLeak?.toLocaleString() ?? "N/A"}/mo.`, fix: "Add Organization or SoftwareApplication JSON-LD schema to your <head>. Takes 15 minutes.", icon: "🤖" }] : []),
+    ...((result.geo && !result.geo.hasStatisticalData) ? [{ id: "geo-stats", cat: "geo", severity: "warning" as Severity, title: "No Hard Data — AI engines skip vague pages", impact: "LLMs prioritise citing pages with concrete statistics, percentages, and dollar figures. Your page lacks measurable proof.", fix: "Replace vague adjectives with hard numbers (e.g. 'saves 4 hrs/week', 'starting at $49/mo').", icon: "🤖" }] : []),
+    ...((result.geo && !result.geo.hasQuestionHeadings) ? [{ id: "geo-qa", cat: "geo", severity: "warning" as Severity, title: "No Question Headings — misaligned with AI search queries", impact: "AI search scrapes pages for direct answers to user questions. Question-formatted H2s dramatically increase citation chances.", fix: "Rewrite at least 2 H2s as questions — 'How does X work?' or 'What makes Y different?'", icon: "🤖" }] : []),
+    ...((result.geo && !result.geo.hasContentStructure) ? [{ id: "geo-struct", cat: "geo", severity: "warning" as Severity, title: "Dense text blocks — hard for AI to parse and cite", impact: "LLMs extract information more easily from bullet lists and clear headings. Unbroken paragraphs are skimmed or ignored.", fix: "Break up long paragraphs into bullet lists. Add H2 section headings. Aim for <50 words per paragraph.", icon: "🤖" }] : []),
   ];
 
   const catMeta: Record<string, { label: string; color: string; desc: string }> = {
@@ -209,6 +221,7 @@ function URLIntelligencePanel({ result }: { result: AuditResult }) {
     security: { label: "SECURITY RISKS", color: "#22d3ee", desc: "Why checkout trust is broken" },
     accessibility: { label: "ADA / ACCESSIBILITY", color: "#a78bfa", desc: "Legal exposure + market lockout" },
     leads: { label: "LEAD CAPTURE", color: "#10b981", desc: "Why visitors don't become customers" },
+    geo: { label: "AI VISIBILITY (GEO)", color: "#10b981", desc: "Why ChatGPT & Perplexity skip your site" },
   };
 
   const grouped = Object.entries(catMeta)
@@ -295,6 +308,7 @@ function ScanTeaser({ result, onContinue }: { result: AuditResult; onContinue: (
     { label: "SEO", val: result.seo?.estimatedSeoScore ?? 0 },
     { label: "A11Y", val: result.accessibility?.estimatedA11yScore ?? 0 },
     { label: "SEC", val: result.security?.estimatedBestPracticesScore ?? 0 },
+    { label: "AI VIS", val: result.geo?.geoScore ?? 0 },
   ];
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
@@ -302,7 +316,7 @@ function ScanTeaser({ result, onContinue }: { result: AuditResult; onContinue: (
       <div style={{ textAlign: "center" }}>
         <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "5px 14px", borderRadius: 100, background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.25)", marginBottom: 14 }}>
           <span style={{ width: 5, height: 5, borderRadius: "50%", background: "var(--accent)" }} className="animate-pulse" />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.12em" }}>4-PILLAR SCAN COMPLETE</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.12em" }}>5-PILLAR SCAN COMPLETE</span>
         </div>
         <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px,6vw,46px)", color: "var(--text)", letterSpacing: "0.03em", lineHeight: 1, marginBottom: 8 }}>
           WE FOUND <span style={{ color: "var(--accent)" }}>{result.explanations.length} ISSUES</span>
@@ -312,7 +326,7 @@ function ScanTeaser({ result, onContinue }: { result: AuditResult; onContinue: (
           <strong style={{ color: "var(--accent)" }}>${result.totalMonthlyCost.toLocaleString()}/mo</strong> estimated leak
         </p>
       </div>
-      <div className="funnel-pillar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
+      <div className="funnel-pillar-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 6 }}>
         {scores.map(({ label, val }) => {
           const color = val < 50 ? "#e8341a" : val < 80 ? "#f59e0b" : "#10b981";
           return (
@@ -428,16 +442,31 @@ function buildPitch(result: AuditResult, fd: FunnelData): PitchData {
   const adaRisk = result.accessibility?.adaRiskLevel;
   const vulnCount = result.security?.vulnerableLibraryCount ?? 0;
   const cards: PitchCard[] = [];
+  const geoScore = result.geo?.geoScore ?? 0;
   cards.push({
-    icon: "📡", title: "Nexus Pulse — 4-Pillar Monitoring", tag: "MOST POPULAR", price: "$49/mo",
+    icon: "📡", title: "Nexus Pulse — 5-Pillar Monitoring", tag: "MOST POPULAR", price: "$49/mo",
     bullets: [
-      "Weekly automated scans across all 4 pillars",
+      "Weekly automated scans across all 5 pillars",
       "SMS + Slack alert the moment any score drops",
       bt === "ecom" ? "Track 3 competitor stores side-by-side" : "3 competitor URLs tracked continuously",
+      "AI visibility monitoring — know when ChatGPT stops citing you",
       "ADA compliance monitoring — catch regressions before lawsuits",
     ],
     cta: "ACTIVATE PULSE →", href: "/subscribe", highlight: true,
   });
+  if (geoScore < 50) {
+    cards.push({
+      icon: "🤖", title: "AI Visibility Fix — GEO Optimisation", tag: "AI SEARCH READY", price: "$600",
+      bullets: [
+        `AI Score ${geoScore}/100 → target 75+ for consistent citations`,
+        "JSON-LD schema markup for all key page types",
+        "Question-based content restructure for LLM readability",
+        "Statistical proof-points added to core pages",
+        "3-day turnaround — before your competitors catch on",
+      ],
+      cta: "BOOK A CALL →", href: `/call-center?score=${score}&leak=${leak}`,
+    });
+  }
   if (adaRisk && adaRisk !== "low") {
     cards.push({
       icon: "⚖️", title: adaRisk === "high" ? "ADA Compliance Fix — Urgent" : "Accessibility Remediation",
@@ -593,7 +622,7 @@ function FunnelInner() {
           {step === "q3" && (
             <motion.div key="q3" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} style={{ width: "100%" }}>
               <ProgressDots step="q3" />
-              <Q q="Has this site had a full 4-pillar audit?" sub="Performance · SEO · Accessibility · Security">
+              <Q q="Has this site had a full 5-pillar audit?" sub="Performance · SEO · Accessibility · Security · AI Visibility">
                 <Choice icon="🙈" label="Never — flying completely blind" onClick={() => go({ q3: "never" }, "url")} />
                 <Choice icon="⚡" label="Speed only — never checked SEO or compliance" sub="Most teams only check Lighthouse" onClick={() => go({ q3: "speed-only" }, "url")} />
                 <Choice icon="📅" label="Over a year ago — a lot has changed" onClick={() => go({ q3: "year+" }, "url")} />
@@ -605,7 +634,7 @@ function FunnelInner() {
           {step === "url" && (
             <motion.div key="url" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} style={{ width: "100%" }}>
               <ProgressDots step="url" />
-              <Q q="Run your free 4-pillar diagnostic." sub="Performance · SEO · Accessibility · Security — real Google data, zero cost.">
+              <Q q="Run your free 5-pillar diagnostic." sub="Performance · SEO · Accessibility · Security · AI Visibility — real data, zero cost.">
                 <input type="url" inputMode="url" autoComplete="url"
                   value={urlInput} onChange={e => { setUrlInput(e.target.value); setUrlError(""); }}
                   onKeyDown={e => e.key === "Enter" && urlInput.trim() && runAudit(urlInput)}

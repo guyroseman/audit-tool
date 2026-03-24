@@ -10,9 +10,10 @@ const TICKER = [
   { url: "shopify-store.com", finding: "LCP 4.2s → $1,840/mo leaking", color: "#e8341a" },
   { url: "dental-clinic.co.uk", finding: "ADA Risk HIGH → $50k lawsuit exposure", color: "#f59e0b" },
   { url: "ecom-brand.io", finding: "Google Ad Tax 34% → $920 wasted/mo", color: "#e8341a" },
+  { url: "b2b-software.com", finding: "AI Score 25/100 → $680/mo invisible pipeline", color: "#10b981" },
   { url: "local-law-firm.com", finding: "3 vulnerable JS libs → trust risk HIGH", color: "#f59e0b" },
   { url: "saas-startup.app", finding: "SEO Score 29 → 61% organic reach lost", color: "#e8341a" },
-  { url: "hotel-booking.co", finding: "Security headers missing → checkout FAIL", color: "#f59e0b" },
+  { url: "hotel-booking.co", finding: "No schema markup → AI search invisible", color: "#10b981" },
 ];
 
 function LiveTicker() {
@@ -240,7 +241,7 @@ export default function Home() {
           style={{ textAlign: "center", marginBottom: 44 }}>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--muted)", letterSpacing: "0.18em", marginBottom: 12 }}>WHAT WE SCAN</p>
           <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(32px,5.5vw,58px)", color: "var(--text)", letterSpacing: "0.03em", lineHeight: 1 }}>
-            4 PILLARS. ONE <span style={{ color: "var(--accent)" }}>LEAK NUMBER.</span>
+            5 PILLARS. ONE <span style={{ color: "var(--accent)" }}>LEAK NUMBER.</span>
           </h2>
           <p style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text2)", maxWidth: 500, margin: "16px auto 0", lineHeight: 1.75 }}>
             Every finding is explained in plain English with a dollar impact. No charts, no jargon. Just your monthly leak and a prioritised fix list.
@@ -251,6 +252,7 @@ export default function Home() {
           <PillarBlock i={1} icon="🔍" name="SEO" color="#f59e0b" metric="Invisible to Google" hook="Missing tags, blocked crawlers, no viewport. Google is actively hiding you from your own customers. This is fixable in hours, not months." />
           <PillarBlock i={2} icon="♿" name="ACCESSIBILITY" color="#a78bfa" metric="Legal exposure" hook="WCAG violations lock out 15% of users and expose you to ADA lawsuits. US demand letters arrive without warning. Average settlement: $50k." />
           <PillarBlock i={3} icon="🔒" name="SECURITY" color="#22d3ee" metric="Trust killers" hook="Outdated JavaScript libraries trigger browser security warnings at checkout. One red banner and the sale is gone. Permanently." />
+          <PillarBlock i={4} icon="🤖" name="AI VISIBILITY" color="#10b981" metric="Invisible to AI" hook="ChatGPT, Perplexity, and Gemini are replacing Google for millions of queries. If you have no schema markup or question-based content, you don't exist in AI search." />
         </div>
 
         <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
@@ -275,7 +277,7 @@ export default function Home() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 14 }}>
             {[
               { n: "01", icon: "🔗", title: "Paste your URL", body: "No account. No credit card. Just your domain. Nexus calls Google Lighthouse in real time.", color: "var(--accent)" },
-              { n: "02", icon: "⚡", title: "Watch the 4-pillar scan", body: "A terminal-style audit checks all 4 pillars live. You see what we&rsquo;re testing as we test it.", color: "#f59e0b" },
+              { n: "02", icon: "⚡", title: "Watch the 5-pillar scan", body: "A terminal-style audit checks all 5 pillars live — including AI search visibility. You see what we&rsquo;re testing as we test it.", color: "#f59e0b" },
               { n: "03", icon: "💸", title: "Get your leak number", body: "Every finding is translated into $ per month. One terrifying number. No guesswork.", color: "#a78bfa" },
               { n: "04", icon: "📋", title: "Get the fix blueprint", body: "A prioritised developer task list ordered by dollar ROI. Forward it to your dev today.", color: "#10b981" },
             ].map((s, i) => (
@@ -329,8 +331,8 @@ export default function Home() {
         </motion.div>
         <div className="vs-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, maxWidth: 760, margin: "0 auto" }}>
           {[
-            { label: "GTmetrix / Pingdom", type: "other" as const, points: ["Engineers read it", "No dollar translation", "Charts. Just dry charts.", "No SEO or accessibility pillar", "No fix blueprint"] },
-            { label: "NEXUS", type: "us" as const, points: ["Founders read it instantly", "$ per month, per finding", "Plain-English business impact", "Full 4-pillar engine", "Prioritised fix plan + webhooks"] },
+            { label: "GTmetrix / Pingdom", type: "other" as const, points: ["Engineers read it", "No dollar translation", "Charts. Just dry charts.", "No SEO, accessibility, or AI pillar", "No fix blueprint"] },
+            { label: "NEXUS", type: "us" as const, points: ["Founders read it instantly", "$ per month, per finding", "Plain-English business impact", "Full 5-pillar engine (+ AI visibility)", "Prioritised fix plan + webhooks"] },
           ].map(card => (
             <motion.div key={card.label} initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
               style={{ padding: "24px 20px", borderRadius: 14, background: card.type === "us" ? "linear-gradient(135deg,rgba(232,52,26,0.07),rgba(232,52,26,0.03))" : "var(--surface)", border: `1.5px solid ${card.type === "us" ? "rgba(232,52,26,0.35)" : "var(--border)"}` }}>
@@ -416,7 +418,7 @@ export default function Home() {
           </div>
           <div style={{ borderTop: "1px solid var(--border)", paddingTop: 20, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>© {new Date().getFullYear()} Nexus Diagnostics Ltd. All rights reserved.</p>
-            <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>4-Pillar Diagnostic Engine · Powered by Google Lighthouse</p>
+            <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted2)" }}>5-Pillar Diagnostic Engine · Powered by Google Lighthouse</p>
           </div>
         </div>
       </footer>

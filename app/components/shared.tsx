@@ -44,7 +44,7 @@ export function TerminalLoader({ url }: { url: string }) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ width: "100%", maxWidth: 560, margin: "0 auto" }}>
       <div style={{ textAlign: "center", marginBottom: 20 }}>
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 6 }}>NEXUS DIAGNOSTIC ENGINE v4.0 — 4-PILLAR SCAN</p>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 6 }}>NEXUS DIAGNOSTIC ENGINE v5.0 — 5-PILLAR SCAN</p>
         <h2 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(24px,5vw,42px)", color: "var(--text)", letterSpacing: "0.05em" }}>
           SCANNING <span style={{ color: "var(--accent)" }} className="flicker">{url.replace(/https?:\/\//, "").replace(/\/$/, "")}</span>
         </h2>
@@ -217,10 +217,10 @@ export function EmailGate({ onSubmit, loading }: { onSubmit: (email: string) => 
         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
           style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 56, height: 56, borderRadius: "50%", background: "rgba(232,52,26,0.12)", border: "1px solid rgba(232,52,26,0.3)", marginBottom: 16, fontSize: 26, position: "relative" }}
           className="pulse-ring">🔍</motion.div>
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.2em", marginBottom: 10 }}>4-PILLAR DIAGNOSTIC COMPLETE</p>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--accent)", letterSpacing: "0.2em", marginBottom: 10 }}>5-PILLAR DIAGNOSTIC COMPLETE</p>
         <h3 style={{ fontFamily: "var(--font-display)", fontSize: 30, color: "var(--text)", letterSpacing: "0.05em", marginBottom: 12 }}>YOUR REPORT IS READY</h3>
         <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.65, marginBottom: 24 }}>
-          Unlock your full 4-pillar breakdown — performance, SEO, accessibility, and security vulnerabilities.
+          Unlock your full 5-pillar breakdown — performance, SEO, accessibility, security, and AI visibility.
         </p>
         <input ref={ref} type="email" value={email} placeholder="you@company.com"
           onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && submit()}
@@ -267,7 +267,7 @@ export function NexusPulsePitch({ result }: { result: AuditResult }) {
               </p>
             </div>
             <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", lineHeight: 1.6, margin: 0 }}>
-              Pulse monitors your 4 pillars weekly, tracks competitors, and alerts you the moment anything changes — before the damage compounds to <strong style={{ color: "var(--text)" }}>${annual.toLocaleString()}/yr</strong>.
+              Pulse monitors your 5 pillars weekly, tracks competitors, and alerts you the moment anything changes — before the damage compounds to <strong style={{ color: "var(--text)" }}>${annual.toLocaleString()}/yr</strong>.
             </p>
           </div>
         </div>
@@ -277,7 +277,8 @@ export function NexusPulsePitch({ result }: { result: AuditResult }) {
       <div style={{ padding: "16px 22px", borderBottom: "1px solid rgba(167,139,250,0.12)" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 8 }}>
           {[
-            ["📡", "Weekly 4-pillar re-audit", "Never miss a regression"],
+            ["📡", "Weekly 5-pillar re-audit", "Never miss a regression"],
+            ["🤖", "AI visibility monitoring", "Know when ChatGPT stops citing you"],
             ["🔍", "Track 3 competitor URLs", "See exactly where they beat you"],
             ["⚖️", "ADA compliance monitoring", "Catch violations before demand letters"],
             ["🔔", "Slack alerts when scores drop", "Zero-delay notification"],
@@ -329,7 +330,7 @@ function FindingBanner({ finding, index }: { finding: AuditFinding; index: numbe
   const bgColor = isCritical ? "rgba(232,52,26,0.04)" : isOk ? "rgba(16,185,129,0.03)" : "rgba(245,158,11,0.03)";
   const labelColor = isCritical ? "#e8341a" : isOk ? "#10b981" : "#f59e0b";
   const label = isCritical ? "⚠ CRITICAL" : isOk ? "✓ PASSING" : "⚡ WARNING";
-  const catIcon: Record<string, string> = { performance: "⚡", seo: "🔍", tech: "⚙️", accessibility: "♿", security: "🔒" };
+  const catIcon: Record<string, string> = { performance: "⚡", seo: "🔍", tech: "⚙️", accessibility: "♿", security: "🔒", geo: "🤖" };
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 * index }}
@@ -513,7 +514,7 @@ export function ResultsPanel({ result, onDiscover }: {
         style={{ marginBottom: 14, padding: "22px 24px", borderRadius: 14, background: "linear-gradient(135deg,rgba(232,52,26,0.08),rgba(232,52,26,0.03))", border: "1px solid rgba(232,52,26,0.25)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block" }} className="animate-pulse" />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.2em" }}>EXECUTIVE SUMMARY — COMBINED REVENUE LEAKAGE ACROSS ALL 4 PILLARS</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.2em" }}>EXECUTIVE SUMMARY — COMBINED REVENUE LEAKAGE ACROSS ALL 5 PILLARS</span>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "center" }}>
           <div>
@@ -540,6 +541,7 @@ export function ResultsPanel({ result, onDiscover }: {
               { label: "SEO Reach Lost", value: `${seo?.seoReachLossPercent ?? 0}%`, alarm: (seo?.seoReachLossPercent ?? 0) > 20 },
               { label: "Vuln. Libraries", value: (security?.vulnerableLibraryCount ?? 0) > 0 ? `${security!.vulnerableLibraryCount} found` : "Clean", alarm: (security?.vulnerableLibraryCount ?? 0) > 0 },
               { label: "ADA Risk", value: (accessibility?.adaRiskLevel ?? "low").toUpperCase(), alarm: accessibility?.adaRiskLevel === "high" },
+              ...(result.geo ? [{ label: "AI Pipeline Leak", value: `$${result.geo.estimatedAiPipelineLeak.toLocaleString()}/mo`, alarm: result.geo.estimatedAiPipelineLeak > 300 }] : []),
             ].map(({ label, value, alarm }) => (
               <div key={label} style={{ display: "flex", justifyContent: "space-between", gap: 18, padding: "4px 0", borderBottom: "1px solid rgba(232,52,26,0.1)" }}>
                 <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.07em", whiteSpace: "nowrap" }}>{label}</span>
@@ -562,7 +564,7 @@ export function ResultsPanel({ result, onDiscover }: {
 
       {/* ── 4-Pillar Grid ── */}
       <div style={{ marginBottom: 14 }}>
-        <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 10 }}>4-PILLAR DIGITAL HEALTH OVERVIEW</p>
+        <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--muted)", letterSpacing: "0.15em", marginBottom: 10 }}>5-PILLAR DIGITAL HEALTH OVERVIEW</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(185px, 1fr))", gap: 10 }}>
           <PillarCard icon="⚡" title="PERFORMANCE" score={metrics.performanceScore} delay={0.15}
             stats={[
@@ -637,7 +639,7 @@ export function ResultsPanel({ result, onDiscover }: {
             {criticalFindings.length === 0 ? (
               <div style={{ padding: "28px", textAlign: "center", background: "var(--surface)", borderRadius: 12, border: "1px solid rgba(16,185,129,0.2)" }}>
                 <p style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#10b981" }}>✓ NO CRITICAL ISSUES</p>
-                <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", marginTop: 8 }}>Your site passes all major checks across all 4 pillars.</p>
+                <p style={{ fontFamily: "var(--font-body)", fontSize: 13, color: "var(--text2)", marginTop: 8 }}>Your site passes all major checks across all 5 pillars.</p>
               </div>
             ) : (
               <div style={{ position: "relative" }}>

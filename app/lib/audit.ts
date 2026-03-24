@@ -560,15 +560,17 @@ function buildExplanations(
   }
 
   // ── ALL GOOD ───────────────────────────────────────────────────────────────
+  const geoPassScore = geo ? geo.geoScore : 0;
   if (
     metrics.performanceScore >= 80 && seo.estimatedSeoScore >= 80 &&
-    accessibility.estimatedA11yScore >= 80 && security.estimatedBestPracticesScore >= 80
+    accessibility.estimatedA11yScore >= 80 && security.estimatedBestPracticesScore >= 80 &&
+    geoPassScore >= 75
   ) {
     findings.push({
       id: "all-good", severity: "ok", category: "performance",
-      headline: "Strong foundations across all 4 pillars",
-      businessImpact: "Your site is in the top tier for speed, SEO, accessibility, and security. Focus on conversion optimisation to maximise the traffic you are already earning.",
-      technicalDetail: `Performance: ${metrics.performanceScore}/100 · SEO: ${seo.estimatedSeoScore}/100 · Accessibility: ${accessibility.estimatedA11yScore}/100 · Security: ${security.estimatedBestPracticesScore}/100.`,
+      headline: "Strong foundations across all 5 pillars",
+      businessImpact: "Your site is in the top tier for speed, SEO, accessibility, security, and AI visibility. Focus on conversion optimisation to maximise the traffic you are already earning.",
+      technicalDetail: `Performance: ${metrics.performanceScore}/100 · SEO: ${seo.estimatedSeoScore}/100 · Accessibility: ${accessibility.estimatedA11yScore}/100 · Security: ${security.estimatedBestPracticesScore}/100 · AI Visibility: ${geoPassScore}/100.`,
       fix: "Continue monitoring — performance degrades as you add features. Set up automated weekly audits.",
     });
   }
