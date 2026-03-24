@@ -208,10 +208,28 @@ function CopyBtn({ text, label = "COPY" }: { text: string; label?: string }) {
 }
 
 // ─── Result row ───────────────────────────────────────────────────────────────
+type SendStatus = "idle" | "sending" | "sent" | "error";
+
 function ResultRow({ row, idx }: { row: BatchRow; idx: number }) {
   const [expanded, setExpanded] = useState(false);
+  const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
   const r = row.result;
   const { subject, body } = r ? buildEmailContent(row) : { subject: "", body: "" };
+
+  const sendViaBrevo = async () => {
+    if (!row.email || !r) return;
+    setSendStatus("sending");
+    try {
+      const res = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: row.email, toName: row.firstName || "", subject, body }),
+      });
+      setSendStatus(res.ok ? "sent" : "error");
+    } catch {
+      setSendStatus("error");
+    }
+  };
 
   return (
     <div style={{ borderBottom: "1px solid var(--border)", overflow: "hidden" }}>
@@ -263,14 +281,18 @@ function ResultRow({ row, idx }: { row: BatchRow; idx: number }) {
         {/* Actions */}
         <div style={{ display: "flex", gap: 4, justifyContent: "center", flexWrap: "wrap" }}>
           {r && row.email && (
-            <a
-              href={gmailLink(row)}
-              target="_blank"
-              rel="noopener"
-              style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#fff", background: "#e8341a", border: "none", padding: "4px 10px", borderRadius: 4, cursor: "pointer", letterSpacing: "0.06em", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, boxShadow: "0 0 10px rgba(232,52,26,0.3)" }}
+            <button
+              onClick={sendViaBrevo}
+              disabled={sendStatus === "sending" || sendStatus === "sent"}
+              style={{
+                fontFamily: "var(--font-mono)", fontSize: 9, border: "none", padding: "4px 10px", borderRadius: 4, cursor: sendStatus === "sent" ? "default" : "pointer", letterSpacing: "0.06em", display: "inline-flex", alignItems: "center", gap: 4,
+                color: "#fff",
+                background: sendStatus === "sent" ? "#10b981" : sendStatus === "error" ? "#ef4444" : sendStatus === "sending" ? "rgba(232,52,26,0.5)" : "#e8341a",
+                boxShadow: sendStatus === "sent" ? "0 0 10px rgba(16,185,129,0.3)" : "0 0 10px rgba(232,52,26,0.3)",
+              }}
             >
-              ✉ SEND
-            </a>
+              {sendStatus === "sending" ? "..." : sendStatus === "sent" ? "✓ SENT" : sendStatus === "error" ? "✗ ERR" : "✉ SEND"}
+            </button>
           )}
           {r && (
             <button
