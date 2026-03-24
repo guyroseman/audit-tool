@@ -120,7 +120,7 @@ function buildEmailContent(row: BatchRow): { subject: string; body: string } {
   // Rotate CTA phrasing — avoid spam-flagged phrases like "free" or "no sign-up"
   const cta = ["Here's the full breakdown:", "I put the report here:", "Details are here:"][entropy % 3];
   const intro = `I run Nexus — we build website auditing tools that show businesses exactly where they're losing revenue online.`;
-  const footer = `Alex\nNexus — usenexus.io`;
+  const footer = `Alex\nNexus — usenexus.io\nalex@nexusdiag.com`;
 
   type Draft = { subject: string; body: string };
   const drafts: Draft[] = [];
