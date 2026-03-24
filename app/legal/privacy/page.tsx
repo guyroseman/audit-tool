@@ -2,8 +2,8 @@ import React from "react";
 
 const LAST_UPDATED = "March 2026";
 const COMPANY = "Nexus Diagnostics";
-const EMAIL = "privacy@nexus-diagnostics.com";
-const SITE = "nexus-diagnostics.com";
+const EMAIL = "privacy@nexusdiag.com";
+const SITE = "nexusdiag.com";
 
 export const metadata = { title: "Privacy Policy — Nexus" };
 

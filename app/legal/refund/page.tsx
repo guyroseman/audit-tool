@@ -1,7 +1,7 @@
 import React from "react";
 
 const LAST_UPDATED = "March 2026";
-const EMAIL = "billing@nexus-diagnostics.com";
+const EMAIL = "billing@nexusdiag.com";
 
 export const metadata = { title: "Refund Policy — Nexus" };
 

@@ -22,7 +22,7 @@ function DeleteAccount() {
     } catch {
       setDeleting(false);
       setConfirming(false);
-      alert("Error deleting account. Please email billing@nexus-diagnostics.com to request deletion.");
+      alert("Error deleting account. Please email billing@nexusdiag.com to request deletion.");
     }
   };
 

@@ -2,7 +2,7 @@ import React from "react";
 
 const LAST_UPDATED = "March 2026";
 const COMPANY = "Nexus Diagnostics";
-const EMAIL = "legal@nexus-diagnostics.com";
+const EMAIL = "legal@nexusdiag.com";
 
 export const metadata = { title: "Terms of Service — Nexus" };
 
