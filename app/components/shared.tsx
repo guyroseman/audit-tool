@@ -452,9 +452,17 @@ export function ResultsPanel({ result, onDiscover }: {
   };
 
   const [stickyVisible, setStickyVisible] = useState(false);
+  const [cookieBannerUp, setCookieBannerUp] = useState(false);
   useEffect(() => {
     const t = setTimeout(() => setStickyVisible(true), 1800);
     return () => clearTimeout(t);
+  }, []);
+  useEffect(() => {
+    const consent = typeof window !== "undefined" ? localStorage.getItem("nexus_cookie_consent") : "accepted";
+    if (!consent) setCookieBannerUp(true);
+    const handler = () => setCookieBannerUp(false);
+    window.addEventListener("nexusCookieConsent", handler);
+    return () => window.removeEventListener("nexusCookieConsent", handler);
   }, []);
 
   return (
@@ -471,7 +479,7 @@ export function ResultsPanel({ result, onDiscover }: {
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 28 }}
               style={{
-                position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9000,
+                position: "fixed", bottom: cookieBannerUp ? 68 : 0, left: 0, right: 0, zIndex: 9000,
                 display: "flex", alignItems: "center", justifyContent: "center",
                 padding: "14px 20px",
                 background: "rgba(3,7,15,0.92)", backdropFilter: "blur(16px)",

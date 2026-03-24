@@ -183,7 +183,7 @@ function ScanLoader({ url, apiReady = false }: { url: string; apiReady?: boolean
 }
 
 // ─── URL Intelligence Panel ───────────────────────────────────────────────────
-function URLIntelligencePanel({ result }: { result: AuditResult }) {
+function URLIntelligencePanel({ result, onGeoFix }: { result: AuditResult; onGeoFix?: () => void }) {
   const [expanded, setExpanded] = useState<string | null>("seo");
 
   type Severity = "critical" | "warning";
@@ -280,10 +280,24 @@ function URLIntelligencePanel({ result }: { result: AuditResult }) {
                           </div>
                           <div style={{ fontFamily: "var(--font-body)", fontWeight: 600, fontSize: 13, color: "var(--text)", marginBottom: 5, lineHeight: 1.4 }}>{issue.title}</div>
                           <div style={{ fontFamily: "var(--font-body)", fontSize: 12, color: "var(--text2)", lineHeight: 1.6, marginBottom: 8 }}>{issue.impact}</div>
-                          <div style={{ padding: "7px 10px", borderRadius: 6, background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)" }}>
-                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#10b981", letterSpacing: "0.1em" }}>THE FIX: </span>
-                            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text2)" }}>{issue.fix}</span>
-                          </div>
+                          {issue.cat === "geo" ? (
+                            <div style={{ position: "relative", borderRadius: 6, overflow: "hidden" }}>
+                              <div style={{ padding: "7px 10px", background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)", filter: "blur(4px)", userSelect: "none", pointerEvents: "none" }}>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#10b981", letterSpacing: "0.1em" }}>THE FIX: </span>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text2)" }}>{issue.fix}</span>
+                              </div>
+                              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, background: "rgba(3,7,15,0.72)", backdropFilter: "blur(2px)", cursor: onGeoFix ? "pointer" : "default" }}
+                                onClick={(e) => { e.stopPropagation(); onGeoFix?.(); }}>
+                                <span style={{ fontSize: 11 }}>🔐</span>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text2)", letterSpacing: "0.09em" }}>GET THIS FIX — SEE YOUR PLAN →</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ padding: "7px 10px", borderRadius: 6, background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)" }}>
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "#10b981", letterSpacing: "0.1em" }}>THE FIX: </span>
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text2)" }}>{issue.fix}</span>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -738,7 +752,7 @@ function FunnelInner() {
                 <AnimatePresence>
                   {showIntelligence && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} style={{ overflow: "hidden", marginBottom: 16 }}>
-                      <URLIntelligencePanel result={result} />
+                      <URLIntelligencePanel result={result} onGeoFix={() => setStep("discover")} />
                     </motion.div>
                   )}
                 </AnimatePresence>

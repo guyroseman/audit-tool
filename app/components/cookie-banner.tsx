@@ -12,11 +12,13 @@ export function CookieBanner() {
   const accept = () => {
     localStorage.setItem("nexus_cookie_consent", "accepted");
     setVisible(false);
+    window.dispatchEvent(new CustomEvent("nexusCookieConsent"));
   };
 
   const decline = () => {
     localStorage.setItem("nexus_cookie_consent", "declined");
     setVisible(false);
+    window.dispatchEvent(new CustomEvent("nexusCookieConsent"));
   };
 
   if (!visible) return null;
