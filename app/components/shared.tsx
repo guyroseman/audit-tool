@@ -28,7 +28,8 @@ const SCAN_LINES = [
   "> Auditing meta-data & crawlability...",
   "> Scanning for ADA/WCAG compliance violations...",
   "> Detecting vulnerable JavaScript libraries...",
-  "> Running 4-pillar revenue impact model...",
+  "> Checking AI search visibility (ChatGPT / Perplexity)...",
+  "> Running 5-pillar revenue impact model...",
   "> Compiling executive recovery report...",
 ];
 export function TerminalLoader({ url }: { url: string }) {
@@ -583,6 +584,13 @@ export function ResultsPanel({ result, onDiscover }: {
               { label: "Vuln. Scripts", value: (security?.vulnerableLibraryCount ?? 0) > 0 ? `${security!.vulnerableLibraryCount} detected` : "Clean", alarm: (security?.vulnerableLibraryCount ?? 0) > 0, tooltip: "Outdated JavaScript libraries with known security holes. Attackers can exploit these to steal customer data, hijack sessions, or redirect users — harming both your visitors and your SEO trust score." },
               { label: "Trust Risk", value: (security?.trustRiskLevel ?? "low").toUpperCase(), alarm: security?.trustRiskLevel === "high", tooltip: "Overall visitor trust signal based on HTTPS validity, security headers, and vulnerability exposure. Browsers show warnings for untrusted sites, immediately killing conversions." },
             ]} />
+          {result.geo && (
+            <PillarCard icon="🤖" title="AI VISIBILITY" score={result.geo.geoScore} delay={0.35}
+              stats={[
+                { label: "AI Pipeline Leak", value: `$${result.geo.estimatedAiPipelineLeak.toLocaleString()}/mo`, alarm: result.geo.estimatedAiPipelineLeak > 300, tooltip: "Estimated monthly revenue at risk as AI-powered search (ChatGPT, Perplexity, Gemini) replaces traditional Google queries. Sites not optimised for AI citation lose referral traffic to competitors who are." },
+                { label: "Schema Markup", value: result.geo.hasSchemaMarkup ? (result.geo.schemaTypes.length > 0 ? result.geo.schemaTypes[0] : "Present") : "Missing", alarm: !result.geo.hasSchemaMarkup, tooltip: "JSON-LD structured data tells AI crawlers exactly what your business does. Without it, AI engines cannot confidently categorise or recommend you." },
+              ]} />
+          )}
         </div>
       </div>
 

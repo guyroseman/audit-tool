@@ -62,13 +62,24 @@ export interface LeadSignals {
   estimatedLeadScore: number;
 }
 
+// ─── PILLAR 5: AI Visibility (GEO) ───────────────────────────────────────────
+export interface GEOSignals {
+  geoScore: number;                  // 0–100 (4 checks × 25 pts each)
+  hasStatisticalData: boolean;       // $, £, % density ≥ 5 on page
+  hasQuestionHeadings: boolean;      // H2/H3 contains question words
+  hasSchemaMarkup: boolean;          // application/ld+json present
+  schemaTypes: string[];             // detected @type values
+  hasContentStructure: boolean;      // ≥2 lists + ≥1 H2
+  estimatedAiPipelineLeak: number;   // $/mo estimated AI search revenue at risk
+}
+
 // ─── Plain-English Finding ────────────────────────────────────────────────────
 export type FindingSeverity = "critical" | "warning" | "ok";
 
 export interface AuditFinding {
   id: string;
   severity: FindingSeverity;
-  category: "performance" | "seo" | "tech" | "accessibility" | "security";
+  category: "performance" | "seo" | "tech" | "accessibility" | "security" | "geo";
   headline: string;
   businessImpact: string;
   technicalDetail: string;
@@ -84,6 +95,7 @@ export interface AuditResult {
   accessibility: AccessibilitySignals;
   security: SecuritySignals;
   leads: LeadSignals;
+  geo: GEOSignals;
   // Legacy fields (kept for shared.tsx compatibility)
   adLossPercent: number;
   bounceRateIncrease: number;
@@ -286,13 +298,14 @@ function calcLeads(seo: SEOSignals): LeadSignals {
   };
 }
 
-// ─── Plain-English Explanations (All 4 Pillars) ───────────────────────────────
+// ─── Plain-English Explanations (All 5 Pillars) ───────────────────────────────
 function buildExplanations(
   metrics: AuditMetrics,
   seo: SEOSignals,
   tech: TechIssues,
   accessibility: AccessibilitySignals,
   security: SecuritySignals,
+  geo?: GEOSignals,
 ): AuditFinding[] {
   const findings: AuditFinding[] = [];
 
@@ -499,6 +512,53 @@ function buildExplanations(
     });
   }
 
+  // ── PILLAR 5: GEO / AI VISIBILITY ─────────────────────────────────────────
+  if (geo) {
+    if (!geo.hasSchemaMarkup) {
+      findings.push({
+        id: "geo-no-schema", severity: "critical", category: "geo",
+        headline: "AI crawlers cannot categorise your business — missing structured data",
+        businessImpact: `ChatGPT and Perplexity rely on JSON-LD schema to understand what you sell. Without it, you are invisible to AI-powered search. Estimated AI pipeline at risk: $${geo.estimatedAiPipelineLeak.toLocaleString()}/mo.`,
+        technicalDetail: "No application/ld+json schema found. AI bots cannot confidently categorise your site type, products, or services.",
+        fix: "Add Organization or SoftwareApplication JSON-LD schema to your <head>. FAQPage schema gives the highest GEO lift. Takes ~15 minutes.",
+        estimatedRecovery: "1–2 days after deploy",
+      });
+    }
+
+    if (!geo.hasStatisticalData) {
+      findings.push({
+        id: "geo-no-stats", severity: "warning", category: "geo",
+        headline: "No hard data on your page — AI engines skip vague claims",
+        businessImpact: "AI models prioritise citing pages with concrete statistics, percentages, and dollar figures. Pages without measurable proof are rarely recommended.",
+        technicalDetail: "Fewer than 5 instances of numerical data ($, £, %) detected in your page content.",
+        fix: "Replace vague adjectives ('fast', 'affordable', 'proven') with hard numbers ('loads in 1.2s', 'saves teams 4 hrs/week', 'starting at $49/mo').",
+        estimatedRecovery: "Same day",
+      });
+    }
+
+    if (!geo.hasQuestionHeadings) {
+      findings.push({
+        id: "geo-no-qa", severity: "warning", category: "geo",
+        headline: "Your headings do not match how people ask AI questions",
+        businessImpact: "AI search engines scrape pages looking for direct answers to user queries. Question-formatted H2s dramatically increase the chance of being cited.",
+        technicalDetail: "No H2 or H3 headings containing question words (What, How, Why, When, Who) were detected.",
+        fix: "Rewrite at least two H2s as questions, e.g. 'How does [Product] work?' or 'What makes [Brand] different?'. Follow with a clear 2–3 sentence answer.",
+        estimatedRecovery: "Same day",
+      });
+    }
+
+    if (!geo.hasContentStructure) {
+      findings.push({
+        id: "geo-no-structure", severity: "warning", category: "geo",
+        headline: "Dense text blocks make your content hard for AI to parse",
+        businessImpact: "LLMs extract information more easily from bullet lists and clear headings. Unbroken paragraphs get skimmed or ignored when building AI responses.",
+        technicalDetail: "Fewer than 2 list elements (<ul>/<ol>) and/or fewer than 1 H2 heading detected.",
+        fix: "Break up long paragraphs into bullet lists. Add clear H2 section headings. Aim for paragraphs under 50 words.",
+        estimatedRecovery: "Same day",
+      });
+    }
+  }
+
   // ── ALL GOOD ───────────────────────────────────────────────────────────────
   if (
     metrics.performanceScore >= 80 && seo.estimatedSeoScore >= 80 &&
@@ -538,8 +598,17 @@ const FAKE_SECURITY: SecuritySignals = {
   hasSecurityHeaders: false, vulnerableLibraryCount: 3, trustRiskLevel: "high",
 };
 const FAKE_LEADS: LeadSignals = { hasLiveChatWidget: false, hasContactForm: true, hasCTA: true, hasPhoneNumber: false, estimatedLeadScore: 45 };
+const FAKE_GEO: GEOSignals = {
+  geoScore: 25,
+  hasStatisticalData: false,
+  hasQuestionHeadings: false,
+  hasSchemaMarkup: true,
+  schemaTypes: ["Organization"],
+  hasContentStructure: false,
+  estimatedAiPipelineLeak: 420,
+};
 const FAKE_AD_LOSS = 61;
-const FAKE_EXPLANATIONS = buildExplanations(FAKE_METRICS, FAKE_SEO, FAKE_TECH, FAKE_A11Y, FAKE_SECURITY);
+const FAKE_EXPLANATIONS = buildExplanations(FAKE_METRICS, FAKE_SEO, FAKE_TECH, FAKE_A11Y, FAKE_SECURITY, FAKE_GEO);
 
 export const FAKE_AUDIT_RESULT: AuditResult = {
   url: "test.com",
@@ -549,6 +618,7 @@ export const FAKE_AUDIT_RESULT: AuditResult = {
   monthlyAdOverspend: calcMonthlyAdOverspend(FAKE_AD_LOSS),
   monthlyOrganicLoss: calcMonthlyOrganicLoss(FAKE_SEO),
   totalMonthlyCost: calcMonthlyAdOverspend(FAKE_AD_LOSS) + calcMonthlyOrganicLoss(FAKE_SEO),
+  geo: FAKE_GEO,
   explanations: FAKE_EXPLANATIONS,
   severity: "critical", timestamp: Date.now(),
 };
@@ -573,8 +643,20 @@ export async function fetchAudit(rawUrl: string): Promise<AuditResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 55000);
 
+  // GEO API base URL — works client-side (relative) and respects NEXT_PUBLIC_SITE_URL server-side
+  const geoBase =
+    typeof window !== "undefined"
+      ? ""
+      : (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000");
+  const geoFetch = fetch(`${geoBase}/api/geo?url=${encodeURIComponent(url)}`, { cache: "no-store" })
+    .then((r) => r.json() as Promise<GEOSignals>)
+    .catch(() => null);
+
   try {
-    const res = await fetch(apiUrl, { cache: "no-store", signal: controller.signal });
+    const [res, geoRaw] = await Promise.all([
+      fetch(apiUrl, { cache: "no-store", signal: controller.signal }),
+      geoFetch,
+    ]);
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`PageSpeed API returned ${res.status}: ${res.statusText}`);
 
@@ -601,15 +683,33 @@ export async function fetchAudit(rawUrl: string): Promise<AuditResult> {
     const monthlyAdOverspend = calcMonthlyAdOverspend(adLossPercent);
     const monthlyOrganicLoss = calcMonthlyOrganicLoss(seo);
 
+    // Compute AI pipeline leak: fraction of organic value at risk based on GEO readiness
+    const geoScore = geoRaw?.geoScore ?? 0;
+    const aiPipelineLeak = Math.max(
+      200,
+      Math.round((1 - geoScore / 100) * Math.max(1000, monthlyOrganicLoss) * 0.35)
+    );
+    const geo: GEOSignals = geoRaw
+      ? { ...geoRaw, estimatedAiPipelineLeak: aiPipelineLeak }
+      : {
+          geoScore: 0,
+          hasStatisticalData: false,
+          hasQuestionHeadings: false,
+          hasSchemaMarkup: false,
+          schemaTypes: [],
+          hasContentStructure: false,
+          estimatedAiPipelineLeak: aiPipelineLeak,
+        };
+
     const screenshot = audits["final-screenshot"]?.details?.data;
 
     return {
-      url: rawUrl.trim(), metrics, seo, tech, accessibility, security, leads,
+      url: rawUrl.trim(), metrics, seo, tech, accessibility, security, leads, geo,
       adLossPercent, bounceRateIncrease: calcBounceRateIncrease(metrics),
       annualRevenueLoss: Math.round((adLossPercent / 100) * 8000 * 12),
       monthlyAdOverspend, monthlyOrganicLoss,
       totalMonthlyCost: monthlyAdOverspend + monthlyOrganicLoss,
-      explanations: buildExplanations(metrics, seo, tech, accessibility, security),
+      explanations: buildExplanations(metrics, seo, tech, accessibility, security, geo),
       severity: calcSeverity(metrics.performanceScore),
       timestamp: Date.now(),
       ...(screenshot ? { screenshot } : {}),
