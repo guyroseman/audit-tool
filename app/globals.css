@@ -467,6 +467,46 @@ button {
   /* Very small phones: hide account link, keep only dashboard */
   .nav-account-link { display: none !important; }
 }
+
+/* ── Nav hamburger button — mobile only ──────────────────────────────────── */
+/* Hidden on desktop */
+@media (min-width: 601px) {
+  .nav-hamburger { display: none !important; }
+}
+/* Shown on mobile */
+@media (max-width: 600px) {
+  .nav-hamburger { display: flex !important; }
+  /* Hide the desktop-only action links (Sign In / Free Audit / Dashboard) to avoid duplication */
+  .nav-action-link { display: none !important; }
+}
+
+/* ── Nav mobile overlay — only rendered on mobile, hidden on desktop ─────── */
+@media (min-width: 601px) {
+  .nav-mobile-overlay { display: none !important; }
+}
+
+/* ── Blog page mobile fixes ──────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* Featured article: switch from 2-col to single column */
+  .blog-featured-grid { grid-template-columns: 1fr !important; padding: 24px 20px !important; }
+  /* Hide the arrow icon circle on mobile (saves space) */
+  .blog-featured-arrow { display: none !important; }
+  /* Article grid: always single column on small screens */
+  .blog-article-grid { grid-template-columns: 1fr !important; }
+  /* Bottom CTA: stack vertically and reduce padding */
+  .blog-cta-grid { grid-template-columns: 1fr !important; padding: 28px 24px !important; gap: 20px !important; }
+  .blog-cta-grid a { white-space: normal !important; text-align: center; display: block; }
+}
+
+/* ── Home page footer mobile ─────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .footer-links-row { gap: 28px !important; }
+}
+
+/* ── Results panel executive summary ────────────────────────────────────── */
+@media (max-width: 560px) {
+  .results-summary-grid { grid-template-columns: 1fr !important; }
+}
 /* ── About page ──────────────────────────────────────────────────────────── */
 .about-story-grid {
   display: grid;

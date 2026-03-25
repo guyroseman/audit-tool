@@ -524,7 +524,7 @@ export function ResultsPanel({ result, onDiscover }: {
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--accent)", display: "inline-block" }} className="animate-pulse" />
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.2em" }}>EXECUTIVE SUMMARY — COMBINED REVENUE LEAKAGE ACROSS ALL 5 PILLARS</span>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "center" }}>
+        <div className="results-summary-grid" style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 24, alignItems: "center" }}>
           <div>
             <div style={{ fontFamily: "var(--font-display)", fontSize: "clamp(44px,7vw,70px)", color: "var(--accent)", lineHeight: 1, letterSpacing: "0.01em", textShadow: "0 0 50px rgba(232,52,26,0.35)" }}>
               {animated ? <>$<AnimatedNumber value={totalMonthlyCost} />/mo</> : "$0/mo"}

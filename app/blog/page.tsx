@@ -87,7 +87,7 @@ export default async function BlogIndex({ searchParams }: Props) {
         {/* Featured article */}
         {featured && (
           <a href={`/blog/${featured.slug}`} style={{ textDecoration: "none", display: "block", marginBottom: 28 }}>
-            <article className="blog-card" style={{
+            <article className="blog-card blog-featured-grid" style={{
               padding: "36px 40px", borderRadius: 14, border: "1px solid var(--border)",
               background: "var(--surface)", cursor: "pointer",
               display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center",
@@ -105,7 +105,7 @@ export default async function BlogIndex({ searchParams }: Props) {
                   {featured.description}
                 </p>
               </div>
-              <div style={{ flexShrink: 0 }}>
+              <div className="blog-featured-arrow" style={{ flexShrink: 0 }}>
                 <div style={{ width: 52, height: 52, borderRadius: "50%", background: "rgba(232,52,26,0.08)", border: "1px solid rgba(232,52,26,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: "var(--accent)" }}>→</span>
                 </div>
@@ -123,7 +123,7 @@ export default async function BlogIndex({ searchParams }: Props) {
 
         {/* 2-col grid */}
         {rest.length > 0 && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(420px, 1fr))", gap: 12 }}>
+          <div className="blog-article-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 380px), 1fr))", gap: 12 }}>
             {rest.map(article => (
               <a key={article.slug} href={`/blog/${article.slug}`} style={{ textDecoration: "none", display: "block" }}>
                 <article className="blog-card" style={{
@@ -156,7 +156,7 @@ export default async function BlogIndex({ searchParams }: Props) {
         )}
 
         {/* CTA */}
-        <div style={{ marginTop: 72, padding: "40px 44px", borderRadius: 16, background: "rgba(232,52,26,0.04)", border: "1px solid rgba(232,52,26,0.18)", display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center" }}>
+        <div className="blog-cta-grid" style={{ marginTop: 72, padding: "40px 44px", borderRadius: 16, background: "rgba(232,52,26,0.04)", border: "1px solid rgba(232,52,26,0.18)", display: "grid", gridTemplateColumns: "1fr auto", gap: 32, alignItems: "center" }}>
           <div>
             <p style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--accent)", letterSpacing: "0.16em", marginBottom: 10 }}>FREE 60-SECOND AUDIT</p>
             <h3 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(20px,3vw,28px)", color: "var(--text)", marginBottom: 10, letterSpacing: "0.04em" }}>SEE HOW YOUR SITE SCORES</h3>

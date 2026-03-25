@@ -401,7 +401,7 @@ export default function Home() {
               </div>
             </div>
             {/* Links */}
-            <div style={{ display: "flex", gap: 48, flexWrap: "wrap" }}>
+            <div className="footer-links-row" style={{ display: "flex", gap: "clamp(24px,5vw,48px)", flexWrap: "wrap" }}>
               <div>
                 <p style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--muted2)", letterSpacing: "0.12em", marginBottom: 12 }}>PRODUCT</p>
                 {[["Free Audit", "/funnel"], ["Pricing", "/subscribe"], ["Dashboard", "/dashboard"], ["About", "/about"]].map(([l, h]) => (
