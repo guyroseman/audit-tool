@@ -7,8 +7,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/funnel", "/subscribe"],
-        disallow: ["/api/", "/_next/", "/dashboard", "/account", "/batch-audit"],
+        allow: ["/", "/blog", "/blog/", "/funnel", "/subscribe", "/about", "/legal"],
+        disallow: ["/api/", "/_next/", "/dashboard", "/account", "/batch-audit", "/admin", "/call-center"],
       },
     ],
     sitemap: "https://nexusdiag.com/sitemap.xml",
