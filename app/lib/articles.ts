@@ -10,8 +10,15 @@ export interface ArticleMeta {
   keywords: string[];
 }
 
+export interface ArticleFaq {
+  q: string;
+  a: string;
+}
+
 export interface Article extends ArticleMeta {
   html: string;
+  faqs?: ArticleFaq[];
+  related?: string[];
 }
 
 const ARTICLES: Article[] = [
@@ -53,6 +60,12 @@ const ARTICLES: Article[] = [
 <h2>How Much Is It Costing You Right Now?</h2>
 <p>The fastest way to find out is a free performance audit. You'll see your current score, which Core Web Vitals are failing, and a monthly estimate of the ad spend those failures are generating. Most fixes take a developer a day or two — and the return shows up in the first month's ad bill.</p>
     `,
+    related: ["fix-core-web-vitals", "reduce-google-ads-cost-per-click", "cost-of-slow-website"],
+    faqs: [
+      { q: "How does page speed affect Google Ads cost per click?", a: "Google includes landing page experience — which incorporates page speed — as a component of Quality Score. A lower Quality Score means you pay more per click for the same ad position. Sites scoring below 50/100 on performance typically pay 40–90% more per click than sites scoring above 80." },
+      { q: "What page speed score should I aim for?", a: "A Google PageSpeed Insights score of 80+ is the threshold where most ad Quality Score penalties start to disappear. Above 90 is considered 'good'. The most impactful single metric is LCP (Largest Contentful Paint) — keep it under 2.5 seconds." },
+      { q: "How quickly will fixing page speed affect my Google Ads costs?", a: "Quality Score updates within a few days of Google re-crawling your landing page. Most businesses see CPC changes within 1–2 weeks of deploying significant speed improvements." },
+    ],
   },
 
   {
@@ -96,6 +109,12 @@ const ARTICLES: Article[] = [
 <h2>How to Check Your Current Risk Level</h2>
 <p>An automated accessibility audit surfaces the most common WCAG failures in under a minute — alt text gaps, contrast failures, missing form labels, and absent ARIA roles. Running a free audit shows your current ADA risk level alongside the specific issues that need fixing — before someone else finds them for you.</p>
     `,
+    related: ["wcag-2-1-checklist", "website-audit-checklist-2026", "eeat-seo-guide-2026"],
+    faqs: [
+      { q: "Does the ADA apply to small business websites?", a: "Yes. Courts across the US have consistently ruled that websites are 'places of public accommodation' under Title III of the ADA, regardless of business size. Small businesses are targeted more frequently than large ones because they're less likely to have legal monitoring in place." },
+      { q: "What does WCAG 2.1 AA compliance require?", a: "WCAG 2.1 Level AA requires your site to be perceivable (alt text, sufficient contrast), operable (full keyboard navigation), understandable (labelled forms, predictable behaviour), and robust (compatible with screen readers). The most commonly cited failures are missing alt text, low contrast, and unlabelled form fields." },
+      { q: "How much do ADA website lawsuits typically cost?", a: "Settlement demands typically range from $5,000–$20,000 for small business cases. Legal defence costs can be significantly higher. Most businesses settle because the cost to fix the issues is far lower than the cost to litigate." },
+    ],
   },
 
   {
@@ -135,6 +154,12 @@ const ARTICLES: Article[] = [
 <h2>Measuring Where You Stand</h2>
 <p>Most website audit tools don't measure AI citation readiness yet. A 5-pillar audit that includes GEO signals will show your current readiness score, which structural signals are missing, and which fixes have the highest impact.</p>
     `,
+    related: ["what-is-structured-data-website", "get-business-in-google-ai-overviews", "eeat-seo-guide-2026"],
+    faqs: [
+      { q: "What is Generative Engine Optimisation (GEO)?", a: "GEO is the practice of optimising your website to be cited and referenced by AI systems like ChatGPT, Perplexity, and Google's AI Overviews. It involves adding structured data (JSON-LD), writing factual and structured content, and using question-format headings that match how people query AI systems." },
+      { q: "How do I get my website cited by ChatGPT or Perplexity?", a: "The most effective steps are: add complete Organisation schema markup, write content with specific facts and data points rather than vague marketing copy, use question-and-answer formatted headings, and add an FAQ section to key pages. AI systems favour pages they can clearly categorise and verify." },
+      { q: "Does optimising for AI search affect regular SEO?", a: "The same changes that improve AI citability — structured data, clear content hierarchy, factual writing — also improve traditional SEO. There is no conflict between the two; they reinforce each other." },
+    ],
   },
 
   {
@@ -169,6 +194,12 @@ const ARTICLES: Article[] = [
 <h2>How to Find Your Scores</h2>
 <p>Google's PageSpeed Insights will show your scores for any URL. A score of 90+ is good, 50–89 needs improvement, and below 50 is considered poor. A full 5-pillar audit combines your scores with a monthly ad spend overspend estimate — useful for prioritising the work with your developer or agency.</p>
     `,
+    related: ["fix-core-web-vitals", "cost-of-slow-website", "slow-website-google-ads-cost"],
+    faqs: [
+      { q: "What are Core Web Vitals?", a: "Core Web Vitals are three specific performance metrics Google uses to measure user experience: Largest Contentful Paint (LCP, measures loading speed), Total Blocking Time (TBT, measures interactivity), and Cumulative Layout Shift (CLS, measures visual stability). They have been Google ranking signals since 2021." },
+      { q: "What is a good Core Web Vitals score?", a: "Google rates each metric as Good, Needs Improvement, or Poor. For LCP: Good is under 2.5s, Poor is above 4s. For TBT: Good is under 200ms, Poor is above 600ms. For CLS: Good is under 0.1, Poor is above 0.25. A PageSpeed Insights score of 90+ indicates all three are in the Good range." },
+      { q: "Do Core Web Vitals affect Google Ads costs?", a: "Yes. Google uses Core Web Vitals as part of the landing page experience component of Quality Score in Google Ads. Poor scores reduce your Quality Score, which means you pay more per click. A site moving from a score of 45 to 85 can reduce Google Ads CPCs by 30–60%." },
+    ],
   },
 
   {
@@ -229,6 +260,12 @@ const ARTICLES: Article[] = [
 <h2>How to Run the Audit</h2>
 <p>You can check each pillar manually using free tools, or run an automated 5-pillar audit that checks all of them simultaneously and outputs a prioritised fix list with revenue impact estimates — significantly faster than the manual approach.</p>
     `,
+    related: ["fix-core-web-vitals", "wcag-2-1-checklist", "eeat-seo-guide-2026"],
+    faqs: [
+      { q: "How often should a website be audited?", a: "A full 5-pillar audit should be run at minimum annually. High-traffic or ad-supported sites benefit from quarterly audits, as Google algorithm updates, new CVEs, and a changing competitive landscape all affect scores over time." },
+      { q: "How much does a professional website audit cost?", a: "Agency-conducted audits typically range from £500 to £5,000 depending on depth and site size. Automated 5-pillar audits like Nexus are free and take 60 seconds — useful for a baseline read before deciding whether to commission deeper work." },
+      { q: "What is the most important area in a website audit?", a: "For most business websites, performance (Core Web Vitals) has the highest direct revenue impact — it affects both organic rankings and Google Ads costs simultaneously. Accessibility is the highest legal risk area. Which matters most depends on how you acquire customers." },
+    ],
   },
 
   {
@@ -267,6 +304,12 @@ const ARTICLES: Article[] = [
 <h2>How to Measure the Before and After</h2>
 <p>Run a free audit on your landing page URL before making any changes. Note your current performance score and estimated ad overspend. After implementing the fixes, run it again — the difference in the monthly estimate is your projected monthly saving from the work.</p>
     `,
+    related: ["slow-website-google-ads-cost", "improve-google-ads-quality-score", "fix-core-web-vitals"],
+    faqs: [
+      { q: "What is the fastest way to reduce Google Ads CPC?", a: "Improving your landing page speed is typically the fastest high-impact lever. Converting your hero image to WebP and deferring non-critical JavaScript can improve your PageSpeed score by 20–40 points within days, which flows directly into Quality Score and lowers your effective CPC." },
+      { q: "What Quality Score should I aim for in Google Ads?", a: "A Quality Score of 7 or above is generally considered good. At 8–10, you receive a significant CPC discount relative to lower-scoring competitors. Most accounts with untreated landing page speed issues sit at 4–6." },
+      { q: "Does bid strategy affect Quality Score?", a: "No. Quality Score is independent of your bid strategy. It is determined by your historical CTR, ad relevance, and landing page experience — none of which are affected by whether you use manual CPC, target CPA, or target ROAS." },
+    ],
   },
 
   {
@@ -309,6 +352,12 @@ const ARTICLES: Article[] = [
 <h2>How to Add Them</h2>
 <p>Security headers are added at the server or CDN layer — in your Nginx or Apache configuration, your Vercel/Netlify configuration file, or your CDN's header rules. A developer familiar with your hosting setup can add all six headers in under an hour. Once set, they apply to every page automatically.</p>
     `,
+    related: ["website-audit-checklist-2026", "eeat-seo-guide-2026", "website-speed-optimisation-guide"],
+    faqs: [
+      { q: "What are HTTP security headers?", a: "HTTP security headers are instructions your web server sends to browsers alongside page content. They tell browsers how to handle your site — preventing clickjacking, cross-site scripting, protocol downgrade attacks, and other common exploits. They are invisible to visitors but checked by attackers as standard reconnaissance." },
+      { q: "Are security headers legally required?", a: "In the UK and EU, GDPR and the Network and Information Systems Regulations require organisations to take appropriate technical measures to secure their systems. Missing security headers can be cited as evidence of inadequate security in regulatory investigations. HTTPS enforced by HSTS is also a hard requirement under most PCI standards." },
+      { q: "How do I check which security headers my site has?", a: "Visit securityheaders.com and enter your URL for a free instant scan. It grades your site A–F and shows exactly which headers are present and which are missing. A full website audit also surfaces missing security headers alongside performance, SEO, and accessibility issues." },
+    ],
   },
 
   {
@@ -354,6 +403,12 @@ const ARTICLES: Article[] = [
 <h2>How to Measure Your Starting Point</h2>
 <p>Run a free performance audit on your site to see your current Core Web Vitals scores (LCP, TBT, CLS) and a breakdown of what's causing each issue. The report will show which fixes are available and their estimated impact — useful for briefing a developer or prioritising your own time.</p>
     `,
+    related: ["fix-core-web-vitals", "cost-of-slow-website", "free-website-speed-test"],
+    faqs: [
+      { q: "How fast should my website load?", a: "Google's threshold for 'good' LCP (your main content loading) is under 2.5 seconds. For total page load, under 3 seconds is the target. The average small business website loads in 6–8 seconds on mobile — there is nearly always significant room for improvement." },
+      { q: "What is the single biggest cause of slow websites?", a: "Unoptimised images. Large JPEG files, especially hero images, account for 60–70% of total page weight on most small business sites. Converting to WebP and compressing appropriately is the highest single-impact optimisation available to most sites." },
+      { q: "Does website speed affect SEO rankings?", a: "Yes, directly. Core Web Vitals (which measure page speed and stability) have been Google ranking signals since 2021. A site that improves from poor to good Core Web Vitals can see measurable organic ranking improvements within 4–6 weeks of Google recrawling." },
+    ],
   },
 
   {
@@ -402,6 +457,12 @@ const ARTICLES: Article[] = [
 <h2>How to Audit Your Current AI Visibility</h2>
 <p>A 5-pillar website audit that includes AI visibility signals will show your current GEO score, which specific signals are missing (schema, content structure, question headings), and what changes are likely to have the most impact. Most businesses can meaningfully improve their AI citation readiness within a week of targeted fixes.</p>
     `,
+    related: ["what-is-structured-data-website", "website-visibility-ai-search-chatgpt", "eeat-seo-guide-2026"],
+    faqs: [
+      { q: "What are Google AI Overviews?", a: "Google AI Overviews are AI-generated summaries that appear above organic results for many queries. They cite 3–5 specific web pages as sources. Sites cited in AI Overviews receive prominent visibility above traditional organic results." },
+      { q: "How do I get featured in Google AI Overviews?", a: "The highest-impact changes are: add complete JSON-LD schema markup, write content that answers the query directly in the first paragraph, use question-format H2 headings, include specific facts and statistics, and add an FAQ section. Technical requirements include being indexed, HTTPS, and good Core Web Vitals." },
+      { q: "How is AI Overviews different from featured snippets?", a: "Featured snippets pull content from a single page. AI Overviews synthesise information from multiple sources and generate a new summary, citing the sources used. The optimisation strategies overlap significantly — structured, factual, question-answering content performs well in both." },
+    ],
   },
 
   {
@@ -442,6 +503,12 @@ const ARTICLES: Article[] = [
 <p>JSON-LD is added inside a <code>&lt;script type="application/ld+json"&gt;</code> tag in your page's HTML. Most CMS platforms (WordPress, Squarespace, Wix) have plugins or settings that add basic schema automatically. For custom-built sites, it's a one-time task for a developer.</p>
 <p>Google's Rich Results Test (search.google.com/test/rich-results) lets you check any URL to see what structured data it currently has and whether it's valid. Running a free website audit will also surface missing schema as part of the AI visibility and SEO sections.</p>
     `,
+    related: ["website-visibility-ai-search-chatgpt", "get-business-in-google-ai-overviews", "eeat-seo-guide-2026"],
+    faqs: [
+      { q: "What is structured data?", a: "Structured data is machine-readable information embedded in your page's HTML that tells search engines and AI systems exactly what your page is about. The most common format is JSON-LD — a small code block containing your business name, page type, content details, and other attributes that help systems accurately categorise your content." },
+      { q: "Does structured data directly improve Google rankings?", a: "Structured data does not directly boost rankings, but it enables rich results (star ratings, FAQ dropdowns, product information in search results) which significantly improve click-through rates. It also helps Google understand your content more accurately, which can improve relevance matching for your target queries." },
+      { q: "What schema types are most important for a business website?", a: "For most business websites: Organization schema (on every page), Service or Product schema (on service/product pages), FAQ schema (on pages with Q&A content), and BreadcrumbList schema (for site structure). If you have a physical location, LocalBusiness schema should be added." },
+    ],
   },
 
   // ─── New high-traffic articles ────────────────────────────────────────────
@@ -493,6 +560,12 @@ const ARTICLES: Article[] = [
 <h2>How to Measure Your Progress</h2>
 <p>After making changes, run PageSpeed Insights on your URL and compare scores. Allow 2–3 weeks for Google to recrawl and update your Search Console data. A free 5-pillar audit will show your current scores alongside an estimated monthly revenue impact — useful for prioritising which metric to fix first.</p>
     `,
+    related: ["cost-of-slow-website", "website-speed-optimisation-guide", "slow-website-google-ads-cost"],
+    faqs: [
+      { q: "What is the fastest single fix for Core Web Vitals?", a: "For most sites, compressing and converting the hero image to WebP has the highest impact on LCP — often moving it from poor to good on its own. This is because the hero image is typically the LCP element, and unoptimised images are the most common cause of poor LCP scores." },
+      { q: "How long does it take to fix Core Web Vitals?", a: "The fixes themselves — image compression, adding fetchpriority, deferring scripts — typically take a developer 1–2 days. Google recrawls and updates Search Console data over 2–4 weeks. Budget 4–6 weeks from implementing fixes to seeing ranking or Quality Score improvements." },
+      { q: "Do I need to fix all three Core Web Vitals?", a: "Google's 'good' threshold requires all three to be in the green zone. However, LCP has the highest single-metric impact on both rankings and user experience. Fixing LCP first typically delivers the most immediate improvement even while you work on TBT and CLS." },
+    ],
   },
 
   {
@@ -545,6 +618,12 @@ const ARTICLES: Article[] = [
 <h2>Where to Start</h2>
 <p>Run a free performance audit on your highest-traffic pages to check speed scores and Core Web Vitals. Speed alone accounts for the majority of avoidable bounces — and it's the one most business owners don't know they have until they check.</p>
     `,
+    related: ["fix-core-web-vitals", "cost-of-slow-website", "website-speed-optimisation-guide"],
+    faqs: [
+      { q: "What is a good bounce rate?", a: "It depends entirely on the page type and traffic source. For blog posts: 65–90% is typical. For service and landing pages: 30–55% is the target. For e-commerce: 20–45%. A high bounce rate is only meaningful relative to your page type and historical baseline." },
+      { q: "Does bounce rate directly affect Google rankings?", a: "Google does not use raw bounce rate as a ranking signal, but engagement signals — time on page, scroll depth, interaction events — do influence rankings. A high bounce rate that reflects poor user experience will indirectly suppress rankings." },
+      { q: "What is the most common cause of high bounce rate on mobile?", a: "Slow page load speed. Over 53% of mobile visitors leave a page that takes more than 3 seconds to load. For most small business websites, mobile LCP is well above this threshold — meaning the majority of mobile bounces are caused by a fixable speed problem." },
+    ],
   },
 
   {
@@ -588,6 +667,12 @@ const ARTICLES: Article[] = [
 <h2>What a Fix Typically Costs vs. the Return</h2>
 <p>For most small and medium business websites, the highest-impact speed fixes — image optimisation, script deferral, CDN setup — take a developer 1–2 days. At typical agency rates, that's £500–£1,500 one-time. For a business losing £1,000+/month in excess ad spend and suppressed conversions, the payback period is under 6 weeks.</p>
     `,
+    related: ["fix-core-web-vitals", "reduce-google-ads-cost-per-click", "why-bounce-rate-high"],
+    faqs: [
+      { q: "How much does a slow website actually cost per month?", a: "For a business spending £2,000/month on Google Ads with a poor performance score, the monthly overspend is typically £600–£1,400. Add conversion rate depression (typically 30–60% fewer conversions for a 5-second load vs a 1-second load) and organic traffic suppression, and most businesses find the total monthly cost well above £1,000." },
+      { q: "Does fixing website speed actually increase conversion rate?", a: "Yes, consistently. Google's research shows conversion rate approximately doubles when load time improves from 5 seconds to 1 second. Even moving from 5 seconds to 3 seconds typically increases conversion rate by 20–35%. The improvement is immediate and measurable." },
+      { q: "How do I calculate how much my slow site is costing me?", a: "A free 5-pillar audit will calculate this automatically based on your performance score. The calculation factors in estimated Quality Score penalty on your ad spend, conversion rate delta from your current load time vs. the 2-second benchmark, and organic traffic loss from suppressed Core Web Vitals rankings." },
+    ],
   },
 
   {
@@ -647,6 +732,12 @@ const ARTICLES: Article[] = [
 </ol>
 <p>A free accessibility audit will surface these issues automatically, ranked by severity and with fix guidance. Most critical failures can be addressed by a developer in a single day.</p>
     `,
+    related: ["ada-website-compliance-small-business", "website-audit-checklist-2026", "eeat-seo-guide-2026"],
+    faqs: [
+      { q: "What is WCAG 2.1 AA?", a: "WCAG 2.1 AA (Web Content Accessibility Guidelines) is the internationally recognised standard for web accessibility. It defines requirements across four principles: Perceivable, Operable, Understandable, and Robust. Level AA is the standard applied in US ADA cases, the UK Equality Act, and the EU's European Accessibility Act." },
+      { q: "Is WCAG 2.1 compliance legally required?", a: "In the US, courts consistently apply WCAG 2.1 AA as the standard for ADA compliance. In the UK, the Equality Act 2010 requires reasonable accessibility for service providers. In the EU, the European Accessibility Act requires WCAG 2.1 AA for most digital services." },
+      { q: "How do I test my website for WCAG 2.1 compliance?", a: "Free automated tools like WAVE (wave.webaim.org) and axe DevTools (browser extension) will surface the most common failures. A full accessibility audit combines automated scanning with manual testing of keyboard navigation, screen reader compatibility, and colour contrast. Most critical issues can be found automatically." },
+    ],
   },
 
   {
@@ -701,6 +792,12 @@ const ARTICLES: Article[] = [
 <p>Moving from Quality Score 4 to 8 on a keyword with a £2 average CPC reduces your effective CPC to approximately £0.80–£1.10 — a 45–60% reduction. For a campaign spending £2,000/month, that's £900–£1,200 saved per month. The fix is largely one-time; the saving is recurring every month.</p>
 <p>Run a free performance audit on your Google Ads landing page to see your current Core Web Vitals score and an estimated monthly overspend — the first step to improving that landing page experience component.</p>
     `,
+    related: ["slow-website-google-ads-cost", "fix-core-web-vitals", "reduce-google-ads-cost-per-click"],
+    faqs: [
+      { q: "What is a good Google Ads Quality Score?", a: "7 or above is generally considered good. A score of 8–10 earns a CPC discount relative to competitors. A score of 4–6 means you are paying close to average CPCs. A score of 1–3 indicates significant problems with ad relevance or landing page experience." },
+      { q: "How quickly does Quality Score change?", a: "Expected CTR and ad relevance can change within days of updating ad copy. Landing page experience updates when Google recrawls your page, typically within 1–2 weeks of deploying changes. Expect measurable CPC changes within 2–4 weeks of meaningful improvements." },
+      { q: "What is the most important factor in Quality Score?", a: "Expected CTR carries the most weight (roughly 35% of the score), but landing page experience is where the most significant improvements are possible for most accounts — because most advertisers neglect their website speed while focusing only on ad copy." },
+    ],
   },
 
   {
@@ -763,10 +860,183 @@ const ARTICLES: Article[] = [
 </ol>
 <p>E-E-A-T isn't a single fix — it's an ongoing investment in your site's credibility. A full technical audit can surface the missing trust signals (security headers, schema, HTTPS issues) that are easiest to fix and have an immediate signal impact.</p>
     `,
+    related: ["what-is-structured-data-website", "website-audit-checklist-2026", "website-security-headers-guide"],
+    faqs: [
+      { q: "What does E-E-A-T stand for?", a: "E-E-A-T stands for Experience, Expertise, Authoritativeness, and Trustworthiness. It is Google's framework for evaluating content quality, used by human quality raters and as part of the algorithmic signals that determine rankings. The second E for Experience was added in December 2022." },
+      { q: "Does E-E-A-T directly affect Google rankings?", a: "E-E-A-T is not a direct ranking factor with a measurable score Google publishes. But the signals that contribute to it — backlinks, structured data, content depth, security, trust signals — do directly affect algorithmic ranking. Strong E-E-A-T correlates strongly with ranking well for competitive queries." },
+      { q: "What is the fastest way to improve E-E-A-T?", a: "The quickest wins are technical: add Organisation schema, fix HTTPS issues, add security headers, ensure your About page clearly describes your expertise and team, and add author bios to content. These changes are visible to Google's crawlers immediately after deployment." },
+    ],
+  },
+
+  // ─── Wave 3: ultra-traffic articles ──────────────────────────────────────
+
+  {
+    slug: "free-website-speed-test",
+    title: "Best Free Website Speed Test Tools in 2026 (And How to Read the Results)",
+    description: "There are dozens of website speed test tools — but they measure different things and give different scores. Here's which ones actually matter, and how to interpret what they tell you.",
+    date: "March 2026",
+    isoDate: "2026-03-31",
+    readTime: "5 min read",
+    category: "Performance",
+    categoryColor: "#e8341a",
+    keywords: ["free website speed test", "website speed test", "best website speed test tool", "pagespeed insights", "gtmetrix vs pagespeed", "website performance test"],
+    html: `
+<h2>Why Different Tools Give Different Scores</h2>
+<p>Run your site through Google PageSpeed Insights, GTmetrix, and Pingdom and you'll likely get three different scores. This confuses most business owners — but it's not a bug. Each tool measures different things from different locations using different methodologies. Knowing which one to trust for which purpose is the first step.</p>
+
+<h2>Google PageSpeed Insights</h2>
+<p><strong>Best for:</strong> SEO and Google Ads Quality Score. <strong>URL:</strong> pagespeed.web.dev</p>
+<p>PageSpeed Insights is the most important tool for business owners because its scores directly correlate with Google's ranking signals and ad Quality Score calculations. It combines two data sources:</p>
+<ul>
+  <li><strong>Field data (CrUX)</strong> — real-world performance data collected from Chrome users who have visited your site. This is what Google actually uses for rankings.</li>
+  <li><strong>Lab data (Lighthouse)</strong> — a simulated test run in a controlled environment. Useful for diagnosis and tracking improvements.</li>
+</ul>
+<p>Scores: 90–100 Good · 50–89 Needs Improvement · 0–49 Poor. The <strong>mobile score</strong> matters more than desktop — Google's index is mobile-first.</p>
+
+<h2>GTmetrix</h2>
+<p><strong>Best for:</strong> Waterfall analysis and request-level debugging. <strong>URL:</strong> gtmetrix.com</p>
+<p>GTmetrix runs Lighthouse tests from its own servers (you can choose location) and presents results in a highly readable waterfall chart showing every network request. It's excellent for diagnosing what specific resource is blocking load — which third-party script is responsible, which image is oversized, which render-blocking CSS is the culprit.</p>
+<p>GTmetrix scores won't match PageSpeed Insights because they use different server locations and don't include real-world field data. Use it for diagnosis after PageSpeed Insights identifies a problem.</p>
+
+<h2>WebPageTest</h2>
+<p><strong>Best for:</strong> Advanced technical testing. <strong>URL:</strong> webpagetest.org</p>
+<p>WebPageTest is the most technically detailed free tool available. It allows testing from real devices, specific locations, different connection speeds (including throttled 3G to simulate mobile), and multiple test runs. It produces a filmstrip view showing exactly what a visitor sees second-by-second as the page loads.</p>
+<p>It's complex to read, but invaluable for diagnosing problems that PageSpeed Insights flags but doesn't fully explain — particularly for CLS and render-blocking resource issues.</p>
+
+<h2>Chrome DevTools Lighthouse</h2>
+<p><strong>Best for:</strong> Instant local testing during development. <strong>How:</strong> Chrome → F12 → Lighthouse tab</p>
+<p>Running Lighthouse directly in Chrome gives you the same underlying test as PageSpeed Insights lab data, but locally. It's the fastest way to test changes iteratively — make a fix, run Lighthouse, check the impact. The "Opportunities" and "Diagnostics" sections give specific, actionable recommendations.</p>
+
+<h2>How to Read Your Results</h2>
+<p>The three numbers that matter most across all tools:</p>
+<ul>
+  <li><strong>LCP (Largest Contentful Paint)</strong> — target under 2.5s. This is your ranking signal and your visitor's first perception of load speed.</li>
+  <li><strong>TBT / FID (Total Blocking Time / First Input Delay)</strong> — target under 200ms. This is how responsive the page feels.</li>
+  <li><strong>CLS (Cumulative Layout Shift)</strong> — target under 0.1. This measures visual stability.</li>
+</ul>
+<p>After getting your scores, run a free 5-pillar audit to see the revenue impact of your current performance — it translates your score into a monthly estimate of ad overspend and conversion loss.</p>
+    `,
+    related: ["fix-core-web-vitals", "cost-of-slow-website", "website-speed-optimisation-guide"],
+    faqs: [
+      { q: "What is the best free website speed test tool?", a: "Google PageSpeed Insights is the most important tool because its scores directly correlate with Google's ranking signals and ad Quality Score calculations. For waterfall analysis and request-level debugging, GTmetrix provides more detailed technical information." },
+      { q: "What is a good website speed test score?", a: "On Google PageSpeed Insights: 90–100 is Good, 50–89 is Needs Improvement, 0–49 is Poor. The mobile score is more important than desktop because Google primarily uses mobile performance for rankings and Quality Score calculations." },
+      { q: "Why is my website speed test score different on different tools?", a: "Each tool measures differently. PageSpeed Insights combines real-world CrUX field data with Lighthouse lab data. GTmetrix uses its own servers in specific locations to run Lighthouse tests. The scores differ because they are measuring different things from different locations. Google PageSpeed Insights is most relevant for SEO and ad Quality Score." },
+    ],
+  },
+
+  {
+    slug: "google-maps-seo",
+    title: "How to Rank on Google Maps: Local SEO Guide 2026",
+    description: "Google Maps rankings are determined by relevance, distance, and prominence. Here's how to improve all three — with specific actions that move the needle on local pack visibility.",
+    date: "March 2026",
+    isoDate: "2026-03-31",
+    readTime: "6 min read",
+    category: "SEO",
+    categoryColor: "#f59e0b",
+    keywords: ["google maps seo", "how to rank on google maps", "local seo 2026", "google maps ranking", "local pack seo", "google business profile optimisation"],
+    html: `
+<h2>How Google Decides Who Ranks in the Local Pack</h2>
+<p>The Google Maps "local pack" — the three businesses shown at the top of local search results — is driven by three factors Google explicitly names: <strong>Relevance</strong>, <strong>Distance</strong>, and <strong>Prominence</strong>. Distance is fixed. Relevance and Prominence are the levers you can move.</p>
+
+<h2>Relevance: Make Your Business Easy to Categorise</h2>
+<p>Relevance is how well Google believes your business matches the search query. The primary signals:</p>
+<ul>
+  <li><strong>Google Business Profile primary category</strong> — the single most important relevance signal. Choose the most specific category that accurately describes your core service. A web design agency should choose "Web Designer", not "Marketing Agency".</li>
+  <li><strong>Secondary categories</strong> — add up to 9 additional categories covering your other services. Each one expands the queries you can rank for.</li>
+  <li><strong>Business description</strong> — a 750-character description that includes your primary services and location naturally. Don't keyword-stuff; write for a human reader.</li>
+  <li><strong>Products and services</strong> — use the Products/Services sections to add individual offerings with descriptions. Each one creates an additional relevance signal.</li>
+</ul>
+
+<h2>Prominence: Build Your Business's Authority</h2>
+<p>Prominence is how well-known and trusted your business appears to Google. It's the most complex factor and the most impactful to improve.</p>
+
+<h3>Reviews — the highest-impact action</h3>
+<p>The quantity and recency of Google reviews is the single strongest prominence signal for most local businesses. Businesses with 50+ reviews rank significantly better than those with under 10, all else being equal. Recency matters — recent reviews signal an active, credible business.</p>
+<p>The most effective review strategy: ask at the point of highest satisfaction (immediately after a successful delivery, service, or purchase), make it easy (send a direct link), and respond to every review — positive and negative.</p>
+
+<h3>NAP consistency</h3>
+<p>Your business Name, Address, and Phone number must be identical across your website, Google Business Profile, and every online directory. Even minor variations ("St" vs "Street", different phone formats) reduce confidence in your entity and suppress local rankings.</p>
+
+<h3>Local citations</h3>
+<p>A citation is any online mention of your business with consistent NAP data. Yelp, Yell, Trustpilot, Checkatrade, industry directories — each one contributes to prominence. Aim for 20–30 quality citations across relevant directories. Tools like BrightLocal or Whitespark automate citation building.</p>
+
+<h3>Website quality</h3>
+<p>Google uses your website as a quality signal for local rankings. A slow, poorly structured website with missing schema markup is a negative prominence signal. Add LocalBusiness schema with your address, hours, and phone number. Ensure your site loads in under 3 seconds on mobile.</p>
+
+<h2>Optimising Your Google Business Profile</h2>
+<p>A fully completed profile consistently outranks incomplete ones:</p>
+<ul>
+  <li>Add at least 10 photos (exterior, interior, team, work examples)</li>
+  <li>Keep business hours current — including special hours for holidays</li>
+  <li>Post weekly Google Business Profile updates (offers, news, events)</li>
+  <li>Answer all Q&A questions — and add your own FAQs proactively</li>
+  <li>Enable messaging if appropriate for your business type</li>
+</ul>
+
+<h2>How to Measure Your Local SEO</h2>
+<p>Google Business Profile Insights shows impressions, clicks, and direction requests. Track your rankings for 5–10 target local queries using a rank tracker that shows local pack position (not just organic). A full website audit will surface the technical issues (missing LocalBusiness schema, slow mobile speed) that are suppressing your local prominence.</p>
+    `,
+    related: ["eeat-seo-guide-2026", "what-is-structured-data-website", "website-audit-checklist-2026"],
+    faqs: [
+      { q: "What factors determine Google Maps ranking?", a: "Google uses three primary factors: Relevance (how well your business matches the search), Distance (how far you are from the searcher), and Prominence (how well-known your business is based on reviews, citations, and links). Of these, Prominence is the most actionable." },
+      { q: "How do I rank higher on Google Maps?", a: "The most impactful steps are: verify and fully complete your Google Business Profile, actively request reviews and respond to all of them, ensure your NAP is identical across all online directories, add your business to 20+ relevant local citations, and ensure your website is fast and has LocalBusiness schema." },
+      { q: "Does my website speed affect Google Maps ranking?", a: "Yes, indirectly. Google uses website quality signals including Core Web Vitals as part of the Prominence assessment for local pack rankings. A slow or poor-quality website is a negative signal. Additionally, visitors who click through from Maps to a slow website bounce immediately, which signals poor relevance." },
+    ],
+  },
+
+  {
+    slug: "shopify-speed-optimisation",
+    title: "Shopify Speed Optimisation: How to Get a Faster Store in 2026",
+    description: "Most Shopify stores score 30–55 on PageSpeed Insights — well below the threshold that affects Google Shopping costs and conversion rates. Here's exactly how to fix it.",
+    date: "March 2026",
+    isoDate: "2026-03-31",
+    readTime: "6 min read",
+    category: "Performance",
+    categoryColor: "#e8341a",
+    keywords: ["shopify speed optimisation", "shopify speed", "how to speed up shopify", "shopify pagespeed score", "shopify core web vitals", "shopify performance"],
+    html: `
+<h2>Why Shopify Stores Tend to Be Slow</h2>
+<p>Shopify is a capable platform, but default setups have two structural speed problems: app bloat and unoptimised themes. Understanding both is the first step to fixing them.</p>
+
+<h3>App bloat</h3>
+<p>The average active Shopify store has 6–12 apps. Each app that loads on the storefront adds JavaScript, CSS, and external requests — often loading before your page content. A store with a review app, a loyalty app, a chat widget, a size guide app, a currency switcher, and a recently viewed products widget might be loading 15–25 additional scripts per page. Combined, these can add 2–4 seconds to your load time.</p>
+
+<h3>Theme weight</h3>
+<p>Many popular Shopify themes are built to be feature-rich, loading code for features you've never enabled. A theme with built-in video backgrounds, mega menus, countdown timers, and product carousels loads all that JavaScript even if your store uses none of those features.</p>
+
+<h2>The Highest-Impact Fixes</h2>
+
+<h3>1. Audit and remove unnecessary apps</h3>
+<p>Go through every app in your store and ask: does this app load code on the storefront? (Most do.) Is it actively generating value? Remove anything non-essential. For each app you remove, retest your PageSpeed score — you'll often see 5–15 point improvements per app removed from storefront loading.</p>
+
+<h3>2. Compress and convert product images</h3>
+<p>Product images are almost always the LCP element on Shopify product pages. Shopify automatically serves WebP to supported browsers, but only if you upload the source image at a reasonable size. Uploading a 4MB JPEG means Shopify serves a large WebP — still slow. Compress images to under 200KB before uploading using Squoosh or ImageOptim.</p>
+
+<h3>3. Use a lightweight theme or Dawn</h3>
+<p>Shopify's free Dawn theme (Online Store 2.0) is purpose-built for performance. It loads minimal JavaScript by default and scores 80–95 on PageSpeed Insights for stores with few apps and optimised images. If your current theme scores below 50 and you can't improve it, migrating to Dawn is often the highest single-impact change available.</p>
+
+<h3>4. Defer app scripts where possible</h3>
+<p>Some apps allow you to load their scripts after the page is interactive rather than blocking initial load. Check each app's settings for lazy loading or deferred loading options. For apps that don't have this option, a developer can add <code>defer</code> or load them on user interaction using a simple script wrapper.</p>
+
+<h3>5. Reduce font variants</h3>
+<p>Shopify themes often load 4–6 font weights from Google Fonts. Each weight is a separate network request. Audit which font weights are actually used in your theme settings and remove unused ones — many stores load Bold, Light, and Italic weights they never use.</p>
+
+<h2>What Score Should You Aim For?</h2>
+<p>Above 70 on mobile is considered good for Shopify stores. Above 80 puts you in the top tier for Core Web Vitals, which positively affects both organic rankings and Google Shopping Quality Scores. Most default Shopify setups with a typical app stack score 30–55 — so there's nearly always significant improvement available.</p>
+
+<h2>How Shopify Speed Affects Revenue</h2>
+<p>For Shopify stores specifically, speed affects four revenue channels: conversion rate (the primary impact), organic SEO rankings, Google Shopping CPCs, and abandoned cart rate. Run a free audit on your store URL to see your current performance score and an estimate of monthly revenue impact across all four channels.</p>
+    `,
+    related: ["fix-core-web-vitals", "cost-of-slow-website", "free-website-speed-test"],
+    faqs: [
+      { q: "Why is my Shopify store slow?", a: "The two main causes are too many apps and an unoptimised theme. Each Shopify app that loads on the storefront adds JavaScript and CSS — it is common to see stores with 10+ apps loading 30+ external requests on every page. The second cause is large, unoptimised product images, which are the biggest contributor to slow LCP." },
+      { q: "What is a good Shopify PageSpeed score?", a: "Above 70 on mobile is considered good for Shopify stores. Many default Shopify themes with a typical app stack score 30–55. A score above 80 puts your store in the top tier for Core Web Vitals, which positively affects both organic rankings and Google Shopping Quality Scores." },
+      { q: "Does Shopify speed affect Google Shopping ads?", a: "Yes. Google Shopping campaigns use the same Quality Score mechanism as search ads, including landing page experience. A slow Shopify product page directly increases your Google Shopping CPCs and can reduce impression share — meaning the same budget reaches fewer potential buyers." },
+    ],
   },
 ];
 
-export const articleList: ArticleMeta[] = ARTICLES.map(({ html: _html, ...meta }) => meta);
+export const articleList: ArticleMeta[] = ARTICLES.map(({ html: _html, faqs: _faqs, related: _related, ...meta }) => meta);
 
 export function getArticle(slug: string): Article | null {
   return ARTICLES.find(a => a.slug === slug) ?? null;
