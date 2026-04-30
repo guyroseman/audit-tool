@@ -66,6 +66,18 @@ export default async function ArticlePage({ params }: Props) {
     })),
   } : null;
 
+  // Speakable: marks the lede + FAQ summaries as eligible for voice search results.
+  const speakableJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: article.title,
+    url: `${BASE}/blog/${article.slug}`,
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: [".article-lede", ".faq-question"],
+    },
+  };
+
   const relatedArticles = article.related
     ? articleList.filter(a => article.related!.includes(a.slug))
     : articleList.filter(a => a.slug !== article.slug && a.category === article.category).slice(0, 3);
@@ -76,6 +88,7 @@ export default async function ArticlePage({ params }: Props) {
 
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       {faqJsonLd && <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />}
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(speakableJsonLd) }} />
 
       <div style={{ maxWidth: 740, margin: "0 auto", padding: "56px 24px 100px" }}>
 
@@ -102,7 +115,7 @@ export default async function ArticlePage({ params }: Props) {
           <h1 style={{ fontFamily: "var(--font-display)", fontSize: "clamp(24px,4vw,40px)", color: "var(--text)", letterSpacing: "0.03em", lineHeight: 1.2, marginBottom: 18 }}>
             {article.title}
           </h1>
-          <p style={{ fontFamily: "var(--font-body)", fontSize: 17, color: "var(--text2)", lineHeight: 1.7 }}>
+          <p className="article-lede" style={{ fontFamily: "var(--font-body)", fontSize: 17, color: "var(--text2)", lineHeight: 1.7 }}>
             {article.description}
           </p>
         </div>
@@ -125,7 +138,7 @@ export default async function ArticlePage({ params }: Props) {
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {article.faqs.map((faq: ArticleFaq, i: number) => (
                 <details key={i} style={{ padding: "18px 22px", borderRadius: 10, background: "var(--surface)", border: "1px solid var(--border)", cursor: "pointer" }}>
-                  <summary style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text)", fontWeight: 600, lineHeight: 1.5, listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+                  <summary className="faq-question" style={{ fontFamily: "var(--font-body)", fontSize: 15, color: "var(--text)", fontWeight: 600, lineHeight: 1.5, listStyle: "none", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
                     {faq.q}
                     <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: "var(--muted)", flexShrink: 0 }}>+</span>
                   </summary>

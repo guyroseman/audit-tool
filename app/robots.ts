@@ -7,9 +7,20 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/blog", "/blog/", "/funnel", "/subscribe", "/about", "/legal", "/london-website-audit", "/new-york-website-audit", "/ecommerce-website-audit", "/los-angeles-website-audit", "/manchester-website-audit", "/chicago-website-audit", "/shopify-website-audit"],
+        allow: "/",
         disallow: ["/api/", "/_next/", "/dashboard", "/account", "/batch-audit", "/admin", "/call-center"],
       },
+      // Explicit allow for major AI crawlers — we want to be cited.
+      { userAgent: "GPTBot", allow: "/" },
+      { userAgent: "OAI-SearchBot", allow: "/" },
+      { userAgent: "ChatGPT-User", allow: "/" },
+      { userAgent: "PerplexityBot", allow: "/" },
+      { userAgent: "Perplexity-User", allow: "/" },
+      { userAgent: "ClaudeBot", allow: "/" },
+      { userAgent: "Claude-User", allow: "/" },
+      { userAgent: "Google-Extended", allow: "/" },
+      { userAgent: "Applebot-Extended", allow: "/" },
+      { userAgent: "CCBot", allow: "/" },
     ],
     sitemap: "https://nexusdiag.com/sitemap.xml",
   };

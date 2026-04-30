@@ -8,7 +8,12 @@ import { createServerClient, type CookieOptions } from "@supabase/ssr";
 // AUTH    — must be logged in (any plan, including free)
 // PAID    — must be logged in AND have pulse or scale plan
 
-const PUBLIC_PREFIXES = ["/", "/funnel", "/subscribe", "/legal", "/api", "/blog", "/about", "/london-website-audit", "/new-york-website-audit", "/ecommerce-website-audit", "/los-angeles-website-audit", "/manchester-website-audit", "/chicago-website-audit", "/shopify-website-audit"];
+const PUBLIC_PREFIXES = ["/", "/funnel", "/subscribe", "/legal", "/api", "/blog", "/about"];
+// Programmatic SEO landing pages (geo + vertical + competitor)
+const PUBLIC_PATTERNS = [
+  /^\/[a-z0-9-]+-website-audit$/,
+  /^\/nexus-vs-[a-z0-9-]+$/,
+];
 const LOGIN_PATH      = "/login";
 const AUTH_PATHS      = ["/dashboard"];
 const ADMIN_PATHS     = ["/batch-audit"];
@@ -35,6 +40,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname === "/" ||
     PUBLIC_PREFIXES.some(p => p !== "/" && pathname.startsWith(p)) ||
+    PUBLIC_PATTERNS.some(re => re.test(pathname)) ||
     pathname === LOGIN_PATH
   ) {
     return NextResponse.next();
