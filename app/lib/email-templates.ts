@@ -2,7 +2,7 @@
 // Dark-themed HTML emails matching Nexus brand.
 // All styles are inline for maximum email client compatibility.
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexusdiag.com";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexusdiag.com";
 
 const HEADER = (tag: string, tagColor: string) => `
 <table width="100%" cellpadding="0" cellspacing="0">

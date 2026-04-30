@@ -35,7 +35,7 @@ function domain(url: string): string {
 function funnelLink(url: string, result?: import("../lib/audit").AuditResult | null): string {
   const base = (typeof window !== "undefined" ? window.location.origin : null)
     ?? process.env.NEXT_PUBLIC_SITE_URL
-    ?? "https://nexusdiag.com";
+    ?? "https://www.nexusdiag.com";
   if (result) {
     try {
       const encoded = btoa(JSON.stringify(result));

@@ -18,7 +18,7 @@ import { criticalDropEmail, weeklyDigestEmail } from "@/app/lib/email-templates"
 
 export const maxDuration = 300; // 5 min — requires Vercel Pro
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexusdiag.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexusdiag.com";
 const PULSE_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;   // 7 days
 const SCALE_INTERVAL_MS = 1 * 24 * 60 * 60 * 1000;   // 1 day
 const BATCH_SIZE = 5; // max concurrent scans

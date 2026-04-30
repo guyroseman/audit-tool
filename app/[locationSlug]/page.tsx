@@ -13,7 +13,7 @@ import {
   type Competitor,
 } from "../lib/seo-pages";
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexusdiag.com";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexusdiag.com";
 
 export const dynamicParams = false;
 

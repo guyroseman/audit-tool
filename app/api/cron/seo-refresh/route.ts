@@ -16,7 +16,7 @@ import { cities, verticals, competitors } from "@/app/lib/seo-pages";
 
 export const maxDuration = 60;
 
-const HOST = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexusdiag.com").replace(/\/$/, "");
+const HOST = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexusdiag.com").replace(/\/$/, "");
 const HOSTNAME = new URL(HOST).hostname;
 
 function buildUrlList(): string[] {

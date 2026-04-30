@@ -2,6 +2,8 @@ import { MetadataRoute } from "next";
 
 export const dynamic = "force-dynamic";
 
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexusdiag.com";
+
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
@@ -22,6 +24,6 @@ export default function robots(): MetadataRoute.Robots {
       { userAgent: "Applebot-Extended", allow: "/" },
       { userAgent: "CCBot", allow: "/" },
     ],
-    sitemap: "https://nexusdiag.com/sitemap.xml",
+    sitemap: `${BASE}/sitemap.xml`,
   };
 }

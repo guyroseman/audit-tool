@@ -6,7 +6,7 @@ import type { ArticleFaq } from "../../lib/articles";
 
 interface Props { params: Promise<{ slug: string }> }
 
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexusdiag.com";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexusdiag.com";
 
 export function generateStaticParams() {
   return articleList.map(a => ({ slug: a.slug }));

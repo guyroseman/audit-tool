@@ -2,15 +2,17 @@ import type { Metadata } from "next";
 import { articleList } from "../lib/articles";
 import { NavBar } from "../components/nav";
 
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexusdiag.com";
+
 export const metadata: Metadata = {
   title: "Blog — Website Performance, SEO & Revenue Insights | Nexus",
   description: "Expert guides on Core Web Vitals, ADA compliance, AI search visibility, and website security — written for business owners, not developers.",
-  alternates: { canonical: "https://nexusdiag.com/blog" },
+  alternates: { canonical: `${BASE}/blog` },
   openGraph: {
     type: "website",
     title: "Nexus Blog — Website Performance, SEO & Revenue Insights",
     description: "Practical guides on performance, SEO, accessibility, security, and AI search visibility for business owners.",
-    url: "https://nexusdiag.com/blog",
+    url: `${BASE}/blog`,
     siteName: "Nexus",
     images: [{ url: "/og-image.png", width: 1200, height: 630 }],
   },

@@ -3,7 +3,7 @@ import { articleList } from "./lib/articles";
 import { cities, verticals, competitors } from "./lib/seo-pages";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://nexusdiag.com";
+  const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.nexusdiag.com";
   const now = new Date();
 
   return [
